@@ -20,7 +20,8 @@ class AuthController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $credentials = $request->validated();
-        $this->auth->login($credentials['email'], $credentials['password'], $request->boolean('remember'), $request->ip() ?? 'unknown');
+        $sessionId = $this->auth->login($credentials['email'], $credentials['password'], $request->ip() ?? '127.0.0.1', $request->userAgent() ?? '');
+        $request->session()->put('login_session_id', $sessionId);
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'));
@@ -28,7 +29,7 @@ class AuthController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
-        $this->auth->logout();
+        $this->auth->logout($request->session()->get('login_session_id'));
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

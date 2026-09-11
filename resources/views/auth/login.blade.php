@@ -18,10 +18,10 @@
         <form method="POST" action="{{ route('login.store') }}">
             @csrf
             <div class="field">
-                <label class="sr-only" for="email">Correo electrónico</label>
+                <label class="sr-only" for="email">Correo o usuario</label>
                 <div class="input-row @error('email') invalid @enderror">
                     <span class="input-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 22v-4a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v4"/></svg></span>
-                    <input id="email" name="email" type="email" autocomplete="username" placeholder="Correo electrónico" value="{{ old('email') }}" required maxlength="254" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
+                    <input id="email" name="email" type="text" autocomplete="username" placeholder="Correo o usuario" value="{{ old('email') }}" required maxlength="150" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
                 </div>
                 @error('email')<p id="email-error" class="error" role="alert">{{ $message }}</p>@enderror
             </div>

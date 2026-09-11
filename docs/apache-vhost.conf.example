@@ -1,0 +1,9 @@
+<VirtualHost *:80>
+    ServerName lunnys.local
+    DocumentRoot "C:/Users/USUARIO/Desktop/Nueva carpeta/Capstone_Proyecto/public"
+    <Directory "C:/Users/USUARIO/Desktop/Nueva carpeta/Capstone_Proyecto/public">
+        AllowOverride All
+        Options -Indexes +FollowSymLinks
+        Require local
+    </Directory>
+</VirtualHost>

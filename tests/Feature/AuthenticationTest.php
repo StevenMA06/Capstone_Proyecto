@@ -4,17 +4,16 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_form_is_available(): void
+    public function test_login_form_uses_the_company_logo_and_csrf(): void
     {
-        $this->get('/login')->assertOk()->assertSee('Iniciar sesión')->assertSee('name="_token"', false);
+        $this->get('/login')->assertOk()->assertSee('Iniciar sesión')->assertSee('lunnys-peru.png')->assertSee('name="_token"', false);
     }
 
     public function test_guest_cannot_access_dashboard(): void
@@ -22,103 +21,122 @@ class AuthenticationTest extends TestCase
         $this->get('/dashboard')->assertRedirect('/login');
     }
 
-    public function test_login_rejects_requests_without_csrf_protection(): void
+    public function test_login_by_email_normalizes_input_and_regenerates_session(): void
     {
-        $this->app['env'] = 'local';
-        $this->post('/login', ['email' => 'demo@example.com', 'password' => 'anything'])
-            ->assertStatus(419);
-        $this->assertGuest();
-    }
-
-    public function test_valid_credentials_start_a_session_and_normalize_email(): void
-    {
-        $user = User::factory()->create(['email' => 'demo@example.com', 'password' => 'UnaClaveSegura123']);
+        $user = User::factory()->create(['correo' => 'ana@example.com']);
         $this->withSession(['before_login' => true]);
-        $oldSession = session()->getId();
-        $this->post('/login', ['email' => ' DEMO@EXAMPLE.COM ', 'password' => 'UnaClaveSegura123'])
-            ->assertSessionHasNoErrors()->assertRedirect('/dashboard');
+        $old = session()->getId();
+        $this->post('/login', ['email' => ' ANA@EXAMPLE.COM ', 'password' => 'ClaveSegura12345'])
+            ->assertRedirect('/dashboard')->assertSessionHasNoErrors();
         $this->assertAuthenticatedAs($user);
-        $this->assertNotSame($oldSession, session()->getId());
-        $this->get('/dashboard')->assertOk()->assertSee($user->name);
+        $this->assertNotSame($old, session()->getId());
+        $this->assertDatabaseHas('historial_accesos', ['usuario_id' => $user->getKey(), 'resultado' => 'EXITOSO']);
+        $this->assertDatabaseHas('sesiones_usuario', ['usuario_id' => $user->getKey(), 'estado' => 'ACTIVA']);
+        $this->assertNotNull($user->fresh()->ultimo_acceso_en);
+        $this->get('/dashboard')->assertOk();
     }
 
-    public function test_wrong_password_and_unknown_user_have_the_same_error(): void
+    public function test_login_by_username_is_supported(): void
     {
-        User::factory()->create(['email' => 'demo@example.com']);
-        foreach (['demo@example.com', 'missing@example.com'] as $email) {
-            $this->from('/login')->post('/login', ['email' => $email, 'password' => 'incorrecta'])
-                ->assertRedirect('/login')
-                ->assertSessionHasErrors(['email' => 'El correo o la contraseña no son correctos.'])
+        $user = User::factory()->create(['nombre_usuario' => 'ana.perez']);
+        $this->post('/login', ['email' => 'ANA.PEREZ', 'password' => 'ClaveSegura12345'])->assertRedirect('/dashboard');
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_invalid_credentials_are_generic_and_never_flash_password(): void
+    {
+        User::factory()->create(['correo' => 'ana@example.com']);
+        foreach (['ana@example.com', 'missing@example.com'] as $login) {
+            $this->from('/login')->post('/login', ['email' => $login, 'password' => 'incorrecta'])
+                ->assertRedirect('/login')->assertSessionHasErrors(['email' => 'Las credenciales no son correctas o la cuenta no está disponible.'])
                 ->assertSessionMissing('_old_input.password');
             $this->assertGuest();
         }
+        $this->assertDatabaseCount('historial_accesos', 2);
+        $this->assertDatabaseCount('sesiones_usuario', 0);
     }
 
-    public function test_login_requires_valid_input(): void
+    public function test_inactive_and_blocked_accounts_are_rejected(): void
     {
-        $this->post('/login', ['email' => 'invalido'])->assertSessionHasErrors(['email', 'password']);
+        foreach (['INACTIVO', 'BLOQUEADO'] as $state) {
+            $user = User::factory()->create(['estado' => $state]);
+            $this->post('/login', ['email' => $user->correo, 'password' => 'ClaveSegura12345'])->assertSessionHasErrors('email');
+            $this->assertGuest();
+            $this->assertDatabaseHas('historial_accesos', ['usuario_id' => $user->getKey(), 'resultado' => $state === 'BLOQUEADO' ? 'BLOQUEADO' : 'CUENTA_INACTIVA']);
+        }
+    }
+
+    public function test_inactive_roles_cannot_access(): void
+    {
+        $user = User::factory()->create();
+        $user->role->update(['estado' => 'INACTIVO']);
+        $this->post('/login', ['email' => $user->correo, 'password' => 'ClaveSegura12345'])->assertSessionHasErrors('email');
         $this->assertGuest();
     }
 
-    public function test_five_failed_attempts_temporarily_block_even_correct_credentials(): void
+    public function test_login_validates_required_fields_and_rejects_unsupported_remember_me(): void
     {
-        User::factory()->create(['email' => 'demo@example.com', 'password' => 'UnaClaveSegura123']);
-        for ($attempt = 0; $attempt < 5; $attempt++) {
-            $this->post('/login', ['email' => 'demo@example.com', 'password' => 'incorrecta']);
+        $this->post('/login', [])->assertSessionHasErrors(['email', 'password']);
+        $this->post('/login', ['email' => 'ana', 'password' => 'ClaveSegura12345', 'remember' => true])->assertSessionHasErrors('remember');
+        $this->assertGuest();
+    }
+
+    public function test_csrf_protection_is_enforced(): void
+    {
+        $this->app['env'] = 'local';
+        $this->post('/login', ['email' => 'ana', 'password' => 'whatever'])->assertStatus(419);
+    }
+
+    public function test_five_failures_block_login_until_timeout(): void
+    {
+        $user = User::factory()->create();
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['email' => $user->correo, 'password' => 'incorrecta']);
         }
-        $this->post('/login', ['email' => 'demo@example.com', 'password' => 'UnaClaveSegura123'])
-            ->assertSessionHasErrors('email');
+        $this->post('/login', ['email' => $user->correo, 'password' => 'ClaveSegura12345'])->assertSessionHasErrors('email');
         $this->assertGuest();
         $this->travel(61)->seconds();
-        $this->post('/login', ['email' => 'demo@example.com', 'password' => 'UnaClaveSegura123'])
-            ->assertRedirect('/dashboard')->assertSessionHasNoErrors();
+        $this->post('/login', ['email' => $user->correo, 'password' => 'ClaveSegura12345'])->assertRedirect('/dashboard');
         $this->assertAuthenticated();
     }
 
-    public function test_successful_login_clears_failed_attempts_and_supports_remember_me(): void
+    public function test_logout_closes_logical_session_and_invalidates_browser_session(): void
     {
-        User::factory()->create(['email' => 'demo@example.com', 'password' => 'UnaClaveSegura123']);
-        $this->post('/login', ['email' => 'demo@example.com', 'password' => 'incorrecta']);
-        $response = $this->post('/login', ['email' => 'demo@example.com', 'password' => 'UnaClaveSegura123', 'remember' => '1']);
-        $response->assertRedirect('/dashboard')->assertCookie(auth()->guard('web')->getRecallerName());
-        $this->assertSame(0, RateLimiter::attempts('login:'.hash('sha256', 'demo@example.com|127.0.0.1')));
-    }
-
-    public function test_authenticated_user_is_redirected_away_from_login(): void
-    {
-        $this->actingAs(User::factory()->create())->get('/login')->assertRedirect('/dashboard');
-    }
-
-    public function test_logout_invalidates_the_session(): void
-    {
-        $this->actingAs(User::factory()->create())->withSession(['private_data' => 'secret']);
+        $user = User::factory()->create();
+        $this->signIn($user)->withSession(['private_data' => true]);
+        $id = session('login_session_id');
         $this->post('/logout')->assertRedirect('/login')->assertSessionMissing('private_data');
         $this->assertGuest();
+        $this->assertDatabaseHas('sesiones_usuario', ['sesion_id' => $id, 'estado' => 'CERRADA']);
+    }
+
+    public function test_revoked_or_expired_sessions_cannot_continue(): void
+    {
+        $user = User::factory()->create();
+        $this->signIn($user);
+        DB::table('sesiones_usuario')->where('sesion_id', session('login_session_id'))->update(['estado' => 'CERRADA']);
         $this->get('/dashboard')->assertRedirect('/login');
+        $this->assertGuest();
+        $this->signIn($user);
+        DB::table('sesiones_usuario')->where('sesion_id', session('login_session_id'))->update(['expira_en' => now()->subMinute()]);
+        $this->get('/dashboard')->assertRedirect('/login');
+        $this->assertGuest();
     }
 
-    public function test_logout_requires_post(): void
+    public function test_disabled_accounts_are_removed_from_existing_sessions(): void
     {
-        $this->actingAs(User::factory()->create())->get('/logout')->assertStatus(405);
+        $user = User::factory()->create(['estado' => 'INACTIVO']);
+        $this->signIn($user)->get('/dashboard')->assertRedirect('/login');
+        $this->assertGuest();
     }
 
-    public function test_user_creation_hashes_password_and_rejects_duplicate_email(): void
+    public function test_active_sessions_survive_multiple_requests_in_the_same_second(): void
     {
-        $this->artisan('app:create-user')
-            ->expectsQuestion('Nombre', 'Ana')
-            ->expectsQuestion('Correo electrónico', 'ana@example.com')
-            ->expectsQuestion('Contraseña (mínimo 12 caracteres, letras y números)', 'MiClaveSegura123')
-            ->expectsQuestion('Confirma la contraseña', 'MiClaveSegura123')
-            ->assertSuccessful();
-        $user = User::where('email', 'ana@example.com')->firstOrFail();
-        $this->assertNotSame('MiClaveSegura123', $user->password);
-        $this->assertTrue(Hash::check('MiClaveSegura123', $user->password));
-        $this->artisan('app:create-user')
-            ->expectsQuestion('Nombre', 'Otra persona')
-            ->expectsQuestion('Correo electrónico', 'ana@example.com')
-            ->expectsQuestion('Contraseña (mínimo 12 caracteres, letras y números)', 'MiClaveSegura123')
-            ->expectsQuestion('Confirma la contraseña', 'MiClaveSegura123')
-            ->assertFailed();
-        $this->assertDatabaseCount('users', 1);
+        $this->freezeTime();
+        $this->signIn(User::factory()->create());
+        $this->get('/dashboard')->assertOk();
+        $this->get('/dashboard')->assertOk();
+        $this->get('/login')->assertRedirect('/dashboard');
+        $this->get('/logout')->assertStatus(405);
     }
 }

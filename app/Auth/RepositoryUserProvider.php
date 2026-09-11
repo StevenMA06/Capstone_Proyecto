@@ -18,10 +18,10 @@ class RepositoryUserProvider extends EloquentUserProvider
     /** @param array<string, mixed> $credentials */
     public function retrieveByCredentials(array $credentials): ?Authenticatable
     {
-        if (! isset($credentials['email']) || ! is_string($credentials['email'])) {
+        if (! isset($credentials['login']) || ! is_string($credentials['login'])) {
             return null;
         }
 
-        return $this->users->findByEmail($credentials['email']);
+        return $this->users->findByLogin($credentials['login']);
     }
 }
