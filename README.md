@@ -71,6 +71,18 @@ Las cuentas inactivas o bloqueadas, los roles inactivos y los empleados vinculad
 
 La autenticación registra intentos en `historial_accesos` y sesiones en `sesiones_usuario`. Laravel almacena el contenido de la sesión en archivos. Incluye hash de contraseñas, protección CSRF, regeneración de sesión y límite de intentos. El esquema suministrado contiene tablas para otros módulos y para 2FA; esas funcionalidades y la recuperación de contraseña no están implementadas.
 
+## Registro de clientes: RF-CLI-01
+
+Desde el panel, **Gerencia** y **Personal autorizado** pueden abrir **Registrar cliente**. El formulario guarda en la tabla original `clientes` y muestra el identificador del registro creado. Al guardar, vuelve al formulario vacío para registrar otro cliente; actualizar esa página no repite el envío.
+
+Los datos obligatorios son tipo de documento (DNI, CE, RUC u OTRO), número de documento, nombres o razón social y dirección. Apellidos, correo, teléfono, referencia de dirección, distrito, provincia, departamento y coordenadas son opcionales, conforme al SQL. El servidor asigna `estado = ACTIVO`, `creado_por` desde la sesión y las fechas de creación y actualización. El número de documento se conserva como texto, incluidos ceros iniciales.
+
+Se mantiene el flujo Blade → ClientController / StoreClientRequest → ClientService → ClientRepository → Client → MariaDB. No requiere modificar el SQL ni agregar migraciones o dependencias.
+
+Este avance corresponde únicamente a RF-CLI-01. Incluye comprobaciones mínimas para guardar datos compatibles con el esquema y manejo del rechazo por la restricción única existente. Las validaciones específicas y la identificación individual de campos de RF-CLI-02 a RF-CLI-04 quedan para su siguiente entrega; tampoco agrega búsquedas, edición, inhabilitación, consultas ni historiales.
+
+Para comprobarlo manualmente, inicia sesión con uno de los dos roles, abre **Registrar cliente**, completa los cuatro campos obligatorios y pulsa **Registrar cliente**. Debe aparecer la confirmación con el identificador; en `clientes` deben persistir esos datos, el usuario creador, estado activo y las fechas.
+
 ## Capas y MVC
 
 | Capa | Componentes | Responsabilidad |
@@ -94,7 +106,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **30 pruebas, 171 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos y las restricciones de la base suministrada.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **39 pruebas, 250 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. Las nueve pruebas de ClientRegistrationTest cubren RF-CLI-01: persistencia de campos obligatorios y opcionales, tipos de documento, autor y estado asignados por el servidor, acceso al formulario, permisos, rechazo de una cuenta inactiva, compatibilidad con el esquema y conservación del cliente existente ante un documento duplicado.
 
 ## Repositorio
 
