@@ -138,7 +138,7 @@ class ClientRegistrationTest extends TestCase
     {
         $this->signIn($this->userWithRole('Gerencia'))->post('/clients', $this->data())->assertSessionHasNoErrors();
         $this->from('/clients/create')->post('/clients', $this->data(['nombres_razon_social' => 'Otro nombre']))
-            ->assertRedirect('/clients/create')->assertSessionHasErrors('registro')
+            ->assertRedirect('/clients/create')->assertSessionHasErrors('numero_documento')
             ->assertSessionHasInput('nombres_razon_social', 'Otro nombre');
         $this->assertDatabaseCount('clientes', 1);
         $this->assertDatabaseHas('clientes', ['nombres_razon_social' => 'Ana María']);

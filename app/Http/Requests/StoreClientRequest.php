@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Client;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,12 +15,19 @@ class StoreClientRequest extends FormRequest
 
     public function rules(): array
     {
+        $client = $this->route('client');
+        $document = Rule::unique('clientes', 'numero_documento')
+            ->where('tipo_documento', is_string($this->input('tipo_documento')) ? $this->input('tipo_documento') : null);
+        if ($client instanceof Client) {
+            $document->ignore($client);
+        }
+
         return [
-            'tipo_documento' => ['required', Rule::in(['DNI', 'CE', 'RUC', 'OTRO'])],
-            'numero_documento' => ['required', 'string', 'max:20'],
+            'tipo_documento' => ['bail', 'required', 'string', Rule::in(['DNI', 'CE', 'RUC', 'OTRO'])],
+            'numero_documento' => ['bail', 'required', 'string', 'max:20', $document],
             'nombres_razon_social' => ['required', 'string', 'max:180'],
             'apellidos' => ['nullable', 'string', 'max:120'],
-            'correo' => ['nullable', 'string', 'max:150'],
+            'correo' => ['nullable', 'string', 'email', 'max:150'],
             'telefono' => ['nullable', 'string', 'max:25'],
             'direccion' => ['required', 'string', 'max:255'],
             'referencia_direccion' => ['nullable', 'string', 'max:255'],
@@ -47,6 +55,8 @@ class StoreClientRequest extends FormRequest
             'string' => 'El campo :attribute debe ser texto.',
             'max' => 'El campo :attribute admite hasta :max caracteres.',
             'in' => 'Selecciona un tipo de documento válido.',
+            'unique' => 'Este número ya está registrado para el tipo de documento seleccionado.',
+            'email' => 'Escribe un correo electrónico válido.',
             'numeric' => 'El campo :attribute debe ser numérico.',
             'between' => 'El campo :attribute debe estar entre :min y :max.',
         ];

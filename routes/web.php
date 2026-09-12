@@ -23,6 +23,6 @@ Route::middleware(['auth', 'can:manage-users'])->group(function (): void {
 });
 
 Route::middleware(['auth', 'can:register-clients'])->group(function (): void {
-    Route::get('/clients/create', [ClientController::class, 'create'])->name('clients.create');
-    Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
+    Route::patch('/clients/{client}/deactivate', [ClientController::class, 'deactivate'])->name('clients.deactivate');
+    Route::resource('clients', ClientController::class)->except('destroy');
 });

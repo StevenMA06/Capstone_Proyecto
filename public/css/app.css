@@ -1,4 +1,16 @@
 * { box-sizing: border-box; }
+/* Client forms, details and history navigation. */
+.clients-management h2 { overflow-wrap: anywhere; }
+.clients-management select[aria-invalid=true] { border-color: #b6473d; }
+.clients-management .error-summary a { color: inherit; text-underline-offset: 3px; }
+.client-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+.client-deactivate { border: 1px solid #dcbab5; border-radius: 10px; padding: 18px; margin: 0 0 28px; }
+.clients-management summary { cursor: pointer; color: #16683b; line-height: 1.5; }
+.client-deactivate summary { color: #973c33; }
+.clients-management summary:focus-visible { outline: 3px solid #56bb84; outline-offset: 4px; }
+.history-detail dt { font-weight: bold; margin-top: 10px; }
+.history-detail dd { margin: 4px 0 12px; white-space: pre-wrap; }
+.clients-management .form-actions, .clients-management .row-actions { flex-wrap: wrap; }
 :root { font-family: Arial, Helvetica, sans-serif; color: #173d30; background: #f7f8f7; font-synthesis: none; }
 body { margin: 0; min-height: 100svh; display: flex; flex-direction: column; position: relative; }
 .page-decoration { position: fixed; inset: 0; z-index: -1; background: #f7f8f7 url('../images/login-background.svg') center / 100% 100% no-repeat; pointer-events: none; }
