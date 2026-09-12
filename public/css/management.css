@@ -1,0 +1,101 @@
+/* Workspace shell used by the clients module. */
+.workspace-shell { background: #f4f7f6; color: #243b33; }
+.workspace-topbar { height: 84px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 0 32px; background: #fff; border-bottom: 1px solid #e2eae5; }
+.workspace-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #173d30; font-size: 23px; letter-spacing: -.6px; }
+.workspace-brand strong { color: #148053; }
+.workspace-brand small { display: block; font-size: 9px; letter-spacing: 1.8px; color: #6b8275; margin-top: 5px; }
+.brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: #087846; color: #fff; font-size: 29px; font-weight: bold; }
+.workspace-account { display: flex; align-items: center; gap: 12px; }
+.user-avatar { display: grid; place-items: center; height: 38px; width: 38px; border-radius: 50%; background: #e8f2ec; color: #167345; font-weight: bold; flex-shrink: 0; }
+.user-label { display: grid; gap: 5px; min-width: 90px; max-width: 220px; overflow-wrap: anywhere; font-size: 13px; }
+.user-label span { color: #74857b; font-size: 11px; }
+.workspace-account form { margin-left: 15px; }
+.workspace-account .secondary { font-size: 12px; padding: 10px 13px; }
+.workspace-body { display: flex; flex: 1; min-width: 0; }
+.workspace-sidebar { width: 218px; flex-shrink: 0; padding: 26px 14px 18px; background: #fff; border-right: 1px solid #e2eae5; display: flex; flex-direction: column; }
+.module-menu summary { font-size: 10px; font-weight: bold; color: #84958b; letter-spacing: 1.1px; text-transform: uppercase; margin: 0 12px 17px; cursor: pointer; }
+.module-menu nav { display: grid; gap: 3px; }
+.module-menu nav>a, .nav-pending { min-height: 40px; padding: 9px 12px; border-radius: 8px; display: flex; align-items: center; gap: 11px; color: #4c6456; text-decoration: none; font-size: 13px; }
+.module-menu svg { width: 18px; height: 18px; stroke-width: 1.6; }
+.module-menu nav>a:hover { background: #f0f6f2; }
+.module-menu nav>a.nav-active { background: #e7f3ec; color: #087846; font-weight: bold; }
+.nav-dot { margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: #168553; }
+.nav-section { margin: 23px 12px 8px; color: #96a399; font-size: 9px; font-weight: bold; letter-spacing: 1px; }
+.nav-pending { color: #8a9990; }
+.nav-pending small { margin-left: auto; font-size: 9px; color: #84958b; }
+.sidebar-note { margin-top: auto; padding: 28px 12px 0; font-size: 10px; color: #91a095; display: flex; gap: 8px; align-items: center; }
+.online-dot { height: 5px; width: 5px; border-radius: 50%; background: #85b99a; }
+.workspace-main { display: block; padding: 30px; min-width: 0; flex: 1; width: auto; }
+.workspace-shell .clients-management { width: 100%; max-width: 1600px; margin: 0 auto; padding: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.workspace-breadcrumb { display: flex; gap: 10px; font-size: 11px; color: #7d9083; margin-bottom: 22px; }
+.workspace-breadcrumb a { color: #60796a; text-decoration: none; }
+.module-heading { margin-bottom: 28px; }
+.module-heading .eyebrow { font-size: 9px; letter-spacing: 1.5px; }
+.workspace-shell .module-heading h1 { font-size: 29px; margin: 10px 0 9px; letter-spacing: -.7px; }
+.module-heading p { margin: 0; font-size: 13px; color: #73867a; line-height: 1.6; }
+.clients-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 22px; align-items: start; }
+.client-filter-panel, .client-list-panel { background: #fff; border: 1px solid #e1eae4; border-radius: 12px; overflow: hidden; }
+.client-filter-panel { padding: 22px 18px; }
+.workspace-shell .client-filter-panel h2, .workspace-shell .client-list-panel h2 { font-size: 17px; letter-spacing: -.3px; }
+.client-filter-panel>.muted { font-size: 11px; margin: 9px 0 25px; }
+.workspace-shell .client-filters { display: flex; flex-direction: column; align-items: stretch; background: transparent; border-radius: 0; padding: 0; margin: 0; gap: 24px; }
+.workspace-shell .client-filters>div:first-child { min-width: 0; flex: initial; }
+.client-filters small { display: block; color: #89978e; font-size: 10px; line-height: 1.6; margin-top: 9px; }
+.client-filters fieldset { border: 0; border-top: 1px solid #eef2ef; padding: 20px 0 0; margin: 0; min-width: 0; }
+.client-filters legend { font-size: 12px; font-weight: bold; padding: 0 8px 0 0; }
+.workspace-shell .client-filters .state-option { display: flex; align-items: center; gap: 9px; font-weight: normal; font-size: 12px; margin: 0 0 14px; cursor: pointer; }
+.workspace-shell .client-filters input[type=radio] { width: 15px; height: 15px; margin: 0; accent-color: #087846; }
+.filter-buttons { display: flex; flex-direction: column; text-align: center; border-top: 1px solid #eef2ef; padding-top: 20px; }
+.filter-buttons .clear-link { font-size: 11px; padding: 15px 0 0; }
+.workspace-shell .client-list-panel .management-toolbar { margin: 0; padding: 22px; }
+.client-list-panel .management-toolbar .muted { font-size: 11px; margin: 8px 0 0; }
+.client-list-panel .action-link { gap: 7px; font-size: 12px; padding: 11px 14px; }
+.workspace-shell .client-table { font-size: 12px; }
+.workspace-shell .client-table th { font-size: 10px; background: #f7f9f8; color: #718679; padding: 14px; }
+.workspace-shell .client-table td { padding: 19px 14px; max-width: 200px; }
+.client-table tbody tr:hover { background: #fafcfb; }
+.client-table .client-name { text-decoration: none; font-weight: 600; }
+.table-subtitle { display: block; margin-top: 5px; font-size: 10px; color: #8b9c90; }
+.client-table .row-actions { gap: 10px; flex-wrap: nowrap; font-size: 11px; white-space: nowrap; }
+.workspace-shell .client-table .state { font-size: 10px; }
+.client-list-panel .pagination { margin: 0; padding: 20px 22px; font-size: 11px; }
+.workspace-shell .account-form { background: #fff; padding: 28px; border: 1px solid #e1eae4; border-radius: 12px; }
+.workspace-shell .account-detail { background: #fff; border: 1px solid #e1eae4; }
+.workspace-shell .client-deactivate { background: #fff; }
+.skip-content { position: absolute; left: 12px; top: -80px; z-index: 5; padding: 12px; background: #fff; color: #087846; }
+.skip-content:focus { top: 12px; }
+@media (max-width: 1250px) {
+    .workspace-main { padding: 24px; }
+    .workspace-sidebar { width: 192px; }
+    .clients-grid { grid-template-columns: 200px minmax(0, 1fr); gap: 16px; }
+    .client-list-panel .management-toolbar { align-items: flex-start; flex-direction: column; gap: 16px; }
+    .client-table { min-width: 660px; }
+}
+@media (max-width: 1000px) {
+    .clients-grid { grid-template-columns: minmax(0, 1fr); }
+    .workspace-shell .client-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .client-filters fieldset { border: 0; padding: 0; }
+    .filter-buttons { grid-column: 1/-1; flex-direction: row; gap: 18px; align-items: center; padding-top: 16px; }
+    .filter-buttons .clear-link { padding: 0; }
+    .workspace-shell .client-list-panel .management-toolbar { flex-direction: row; align-items: center; }
+}
+@media (max-width: 680px) {
+    .workspace-topbar { height: auto; min-height: 76px; padding: 15px 18px; flex-wrap: wrap; gap: 16px; }
+    .workspace-brand { font-size: 20px; }
+    .workspace-account { width: 100%; }
+    .workspace-account form { margin-left: auto; }
+    .user-label { max-width: 170px; }
+    .workspace-body { flex-direction: column; }
+    .workspace-sidebar { width: 100%; border-right: 0; border-bottom: 1px solid #e2eae5; padding: 14px 18px; }
+    .module-menu summary { margin: 0; padding: 8px 0; }
+    .module-menu nav { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 12px; }
+    .nav-section { grid-column: 1/-1; }
+    .sidebar-note { display: none; }
+    .workspace-main { padding: 24px 16px; }
+    .workspace-shell .module-heading h1 { font-size: 25px; }
+    .workspace-shell .client-filters { grid-template-columns: minmax(0, 1fr); }
+    .filter-buttons { grid-column: auto; }
+    .workspace-shell .client-list-panel .management-toolbar { flex-direction: column; align-items: stretch; }
+    .workspace-shell .account-form { padding: 20px; }
+    .client-list-panel .pagination { padding: 16px; }
+}

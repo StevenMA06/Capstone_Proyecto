@@ -1,10 +1,12 @@
-@extends('layouts.app')
+@extends('layouts.management')
 @section('title', 'Gestión de clientes')
-@section('content')
+@section('workspace-content')
 <section class="management clients-management">
-    <header class="management-header">
-        <div><span class="eyebrow">LUNNY’S PERU R.2.D.</span><h1>Gestión de clientes</h1><p>Consulta y administra los datos y el historial de tus clientes.</p></div>
-        <a class="secondary" href="{{ route('dashboard') }}">Volver al panel</a>
+    <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><a href="{{ route('dashboard') }}">Inicio</a><span aria-hidden="true">/</span><span>Gestión de clientes</span></nav>
+    <header class="module-heading">
+        <span class="eyebrow">RELACIÓN CON TUS CLIENTES</span>
+        <h1>Gestión de clientes</h1>
+        <p>Administra su información y consulta todo su historial en un solo lugar.</p>
     </header>
     @if(session('status'))<div class="notice success" role="status">{{ session('status') }}</div>@endif
     @if($errors->any())
