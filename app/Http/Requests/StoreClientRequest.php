@@ -24,7 +24,11 @@ class StoreClientRequest extends FormRequest
 
         return [
             'tipo_documento' => ['bail', 'required', 'string', Rule::in(['DNI', 'CE', 'RUC', 'OTRO'])],
-            'numero_documento' => ['bail', 'required', 'string', 'max:20', $document],
+            'numero_documento' => [
+                'bail', 'required', 'string', 'max:20',
+                Rule::when($this->input('tipo_documento') === 'DNI', ['regex:/^[0-9]{8}$/D']),
+                $document,
+            ],
             'nombres_razon_social' => ['required', 'string', 'max:180'],
             'apellidos' => ['nullable', 'string', 'max:120'],
             'correo' => ['nullable', 'string', 'email', 'max:150'],
@@ -56,6 +60,7 @@ class StoreClientRequest extends FormRequest
             'max' => 'El campo :attribute admite hasta :max caracteres.',
             'in' => 'Selecciona un tipo de documento válido.',
             'unique' => 'Este número ya está registrado para el tipo de documento seleccionado.',
+            'numero_documento.regex' => 'El DNI debe contener exactamente 8 dígitos numéricos.',
             'email' => 'Escribe un correo electrónico válido.',
             'numeric' => 'El campo :attribute debe ser numérico.',
             'between' => 'El campo :attribute debe estar entre :min y :max.',

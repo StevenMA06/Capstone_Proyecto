@@ -67,14 +67,15 @@ class ClientRegistrationTest extends TestCase
     {
         $this->signIn($this->userWithRole('Gerencia'));
         foreach (['DNI', 'CE', 'RUC', 'OTRO'] as $type) {
+            $number = $type === 'DNI' ? '00123456' : '00123456789';
             $data = $this->data([
-                'tipo_documento' => $type, 'numero_documento' => '00123456789',
+                'tipo_documento' => $type, 'numero_documento' => $number,
                 'nombres_razon_social' => $type === 'RUC' ? 'Empresa de prueba SAC' : 'Cliente de prueba',
                 'apellidos' => '',
             ]);
             $this->post('/clients', $data)->assertSessionHasNoErrors()->assertRedirect('/clients/create');
             $this->assertDatabaseHas('clientes', [
-                'tipo_documento' => $type, 'numero_documento' => '00123456789', 'apellidos' => null,
+                'tipo_documento' => $type, 'numero_documento' => $number, 'apellidos' => null,
             ]);
         }
         $this->assertDatabaseCount('clientes', 4);
@@ -98,7 +99,9 @@ class ClientRegistrationTest extends TestCase
     public function test_form_is_reachable_from_dashboard_for_both_roles(): void
     {
         foreach (['Gerencia', 'Personal autorizado'] as $role) {
-            $this->signIn($this->userWithRole($role))->get('/dashboard')->assertOk()->assertSee('Registrar cliente');
+            $this->signIn($this->userWithRole($role))->get('/dashboard')->assertOk()
+                ->assertSee('Gestionar clientes')->assertDontSee('Registrar cliente');
+            $this->get('/clients')->assertOk()->assertSee('Registrar cliente');
             $this->get('/clients/create')->assertOk()->assertSee('Nombres o razón social')
                 ->assertSee('name="_token"', false)->assertSee('name="direccion"', false);
         }

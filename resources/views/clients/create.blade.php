@@ -41,7 +41,7 @@
                 @required($required) @if($length) maxlength="{{ $length }}" @endif
                 @if($type === 'number') step="0.0000001" min="{{ $name === 'latitud' ? -90 : -180 }}" max="{{ $name === 'latitud' ? 90 : 180 }}" @endif
                 @error($name) aria-invalid="true" aria-describedby="{{ $name }}-error" @enderror>
-            @error($name)<p id="{{ $name }}-error" class="error">{{ $message }}</p>@enderror
+            <p id="{{ $name }}-error" class="error" @if(!$errors->has($name)) hidden @endif>{{ $errors->first($name) }}</p>
         </div>
     @endforeach
     <div class="form-actions">
@@ -49,4 +49,5 @@
         <a class="secondary" href="{{ $client->exists ? route('clients.show', $client) : route('clients.index') }}">Cancelar</a>
     </div>
 </form>
+<script src="{{ asset('js/clients.js') }}" defer></script>
 @endsection

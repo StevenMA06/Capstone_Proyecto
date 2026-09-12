@@ -73,7 +73,7 @@ La autenticación registra intentos en `historial_accesos` y sesiones en `sesion
 
 ## Gestión de clientes: RF-CLI-01 a RF-CLI-13
 
-**Gerencia** y **Personal autorizado** acceden desde el panel a **Gestionar clientes**. El listado permite buscar por nombres, apellidos, razón social o número de documento, combinar la búsqueda con el estado y recorrer los resultados paginados. Los clientes inactivos también permanecen disponibles.
+**Gerencia** y **Personal autorizado** acceden desde el panel a **Gestionar clientes**. La acción **Registrar cliente** está dentro del panel de clientes y no en el dashboard principal. El listado permite buscar por nombres, apellidos, razón social o número de documento, combinar la búsqueda con el estado y recorrer los resultados paginados. Los clientes inactivos también permanecen disponibles.
 
 | Requisito | Comportamiento |
 |---|---|
@@ -87,7 +87,7 @@ La autenticación registra intentos en `historial_accesos` y sesiones en `sesion
 | RF-CLI-11 | Conserva y consulta pagos a través de los contratos del cliente, incluyendo pagos pendientes, realizados, vencidos y anulados. |
 | RF-CLI-12 | Conserva y consulta instalaciones vinculadas, con programación, técnico y estado; admite registros aún sin técnico o fecha. |
 
-Los datos obligatorios son tipo de documento (DNI, CE, RUC u OTRO), número de documento, nombres o razón social y dirección. Apellidos, correo, teléfono, referencia de dirección, distrito, provincia, departamento y coordenadas son opcionales, conforme al SQL. Se comprueban longitudes, formato del correo cuando se proporciona y rangos de coordenadas. No se agregan consultas a servicios externos de identidad ni reglas de longitud de DNI/RUC ajenas al esquema suministrado. El número de documento conserva sus ceros iniciales.
+Los datos obligatorios son tipo de documento (DNI, CE, RUC u OTRO), número de documento, nombres o razón social y dirección. Apellidos, correo, teléfono, referencia de dirección, distrito, provincia, departamento y coordenadas son opcionales, conforme al SQL. Se comprueban longitudes, formato del correo cuando se proporciona y rangos de coordenadas. El DNI exige exactamente 8 dígitos ASCII (0–9), tanto en el formulario como en el servidor, al registrar y al editar. CE, RUC y OTRO conservan sus reglas previas. No se consulta a servicios externos de identidad. El número de documento conserva sus ceros iniciales.
 
 Al registrar, el servidor asigna `estado = ACTIVO`, `creado_por` desde la sesión y las fechas. Al editar, solo acepta los campos del perfil; no se pueden modificar desde el navegador el identificador, creador, estado o fecha de creación. La inhabilitación únicamente cambia el estado a INACTIVO y es idempotente: repetirla no altera otros datos. Tanto editar como inhabilitar dejan intactos los contratos, pagos e instalaciones existentes.
 
@@ -127,7 +127,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **57 pruebas, 459 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 27 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **59 pruebas, 546 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 

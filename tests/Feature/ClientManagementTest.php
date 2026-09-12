@@ -38,6 +38,35 @@ class ClientManagementTest extends TestCase
         return Client::create($this->data($overrides) + ['creado_por' => $actor->getKey()]);
     }
 
+    public function test_dni_requires_exactly_eight_ascii_digits_on_create_and_update(): void
+    {
+        $actor = $this->actor();
+        $client = $this->client($actor);
+        $this->signIn($actor);
+        foreach (['', null, '   ', '1234567', '123456789', 'abcdefgh', '1234A678', '1.234567', '-1234567', '1e000007', '１２３４５６７８', "12345678\n9"] as $invalid) {
+            $data = $this->data(['numero_documento' => $invalid, 'nombres_razon_social' => 'No guardar']);
+            $this->post('/clients', $data)->assertSessionHasErrors('numero_documento');
+            $this->put('/clients/'.$client->getKey(), $data)->assertSessionHasErrors('numero_documento');
+            $this->assertDatabaseCount('clientes', 1);
+            $this->assertDatabaseHas('clientes', [
+                'cliente_id' => $client->getKey(), 'numero_documento' => '00123456', 'nombres_razon_social' => 'Ana María',
+            ]);
+        }
+        $this->post('/clients', $this->data(['numero_documento' => '00000002']))->assertSessionHasNoErrors();
+        $this->put('/clients/'.$client->getKey(), $this->data(['numero_documento' => '00000003']))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('clientes', ['cliente_id' => $client->getKey(), 'numero_documento' => '00000003']);
+    }
+
+    public function test_dni_length_rule_does_not_apply_to_other_document_types(): void
+    {
+        $this->signIn($this->actor());
+        foreach (['CE' => 'CE123456789', 'RUC' => '20123456789', 'OTRO' => 'ABC-123'] as $type => $number) {
+            $this->post('/clients', $this->data(['tipo_documento' => $type, 'numero_documento' => $number]))
+                ->assertSessionHasNoErrors();
+            $this->assertDatabaseHas('clientes', ['tipo_documento' => $type, 'numero_documento' => $number]);
+        }
+    }
+
     public function test_rf02_and_rf03_reject_blank_fields_and_identify_each_in_form(): void
     {
         $this->signIn($this->actor())->from('/clients/create')->post('/clients', [
