@@ -71,13 +71,46 @@ Las cuentas inactivas o bloqueadas, los roles inactivos y los empleados vinculad
 
 La autenticación registra intentos en `historial_accesos` y sesiones en `sesiones_usuario`. Laravel almacena el contenido de la sesión en archivos. Incluye hash de contraseñas, protección CSRF, regeneración de sesión y límite de intentos. El esquema suministrado contiene tablas para otros módulos y para 2FA; esas funcionalidades y la recuperación de contraseña no están implementadas.
 
+## Gestión de clientes: RF-CLI-01 a RF-CLI-13
+
+**Gerencia** y **Personal autorizado** acceden desde el panel a **Gestionar clientes**. La acción **Registrar cliente** está dentro del panel de clientes y no en el dashboard principal. El listado permite buscar por nombres, apellidos, razón social o número de documento, combinar la búsqueda con el estado y recorrer los resultados paginados. Los clientes inactivos también permanecen disponibles.
+
+| Requisito | Comportamiento |
+|---|---|
+| RF-CLI-01 | Registra en la tabla original `clientes`, con confirmación e identificador. |
+| RF-CLI-02 y RF-CLI-03 | Bloquea datos obligatorios vacíos y muestra un mensaje junto a cada campo, borde de error y resumen con enlaces; conserva lo ingresado. |
+| RF-CLI-04 | Verifica la combinación tipo y número de documento, incluso en clientes inactivos. Al editar permite conservar el documento propio y rechaza el de otro cliente. La restricción SQL sigue protegiendo envíos simultáneos. |
+| RF-CLI-05 | Busca por nombre completo, razón social o número de documento; trata `%` y `_` como caracteres literales. |
+| RF-CLI-06 | Permite editar la información del cliente, conservando su identificador, autor, fecha de creación y estado. |
+| RF-CLI-07 a RF-CLI-09 | Inhabilita desde la ficha, muestra el estado vigente y mantiene la información consultable. No ofrece eliminación ni reactivación. |
+| RF-CLI-10 y RF-CLI-13 | Consulta contratos de cualquier estado, con plan, vigencia, importe y detalle de dirección, duración y observaciones. |
+| RF-CLI-11 | Conserva y consulta pagos a través de los contratos del cliente, incluyendo pagos pendientes, realizados, vencidos y anulados. |
+| RF-CLI-12 | Conserva y consulta instalaciones vinculadas, con programación, técnico y estado; admite registros aún sin técnico o fecha. |
+
+Los datos obligatorios son tipo de documento (DNI, CE, RUC u OTRO), número de documento, nombres o razón social y dirección. Apellidos, correo, teléfono, referencia de dirección, distrito, provincia, departamento y coordenadas son opcionales, conforme al SQL. Se comprueban longitudes, formato del correo cuando se proporciona y rangos de coordenadas. El DNI exige exactamente 8 dígitos ASCII (0–9), tanto en el formulario como en el servidor, al registrar y al editar. CE, RUC y OTRO conservan sus reglas previas. No se consulta a servicios externos de identidad. El número de documento conserva sus ceros iniciales.
+
+Al registrar, el servidor asigna `estado = ACTIVO`, `creado_por` desde la sesión y las fechas. Al editar, solo acepta los campos del perfil; no se pueden modificar desde el navegador el identificador, creador, estado o fecha de creación. La inhabilitación únicamente cambia el estado a INACTIVO y es idempotente: repetirla no altera otros datos. Tanto editar como inhabilitar dejan intactos los contratos, pagos e instalaciones existentes.
+
+La ficha contiene las pestañas **Contratos**, **Pagos** e **Instalaciones**, paginadas por separado y limitadas al cliente seleccionado. Los datos se consultan desde las tablas existentes; crear o modificar contratos, pagos e instalaciones corresponde a sus respectivos módulos y no forma parte de la gestión de clientes. Si aún no hay registros vinculados, la pestaña muestra un mensaje vacío.
+
+Se mantiene el flujo Blade → ClientController / StoreClientRequest → ClientService → ClientRepository → MariaDB. No requiere cambiar el SQL, agregar migraciones ni instalar nuevas dependencias. Las rutas usan sesión activa, autorización en el servidor y CSRF para operaciones de escritura.
+
+### Comprobación manual
+
+1. Inicia sesión con uno de los dos roles y abre **Gestionar clientes**.
+2. Abre **Registrar cliente** y envía el formulario vacío: los campos incompletos deben quedar identificados. Completa los datos obligatorios y guarda.
+3. Intenta registrar de nuevo el mismo tipo y número de documento: debe rechazarse sin duplicar al cliente.
+4. Busca por nombre o documento, abre **Ver ficha**, entra a **Editar cliente** y guarda un cambio. Verifica el dato actualizado.
+5. Consulta las tres pestañas del historial. En una base con registros vinculados, verifica sus códigos, estados y pertenencia al cliente.
+6. Despliega **Inhabilitar cliente** y pulsa **Confirmar inhabilitación**. La ficha debe mostrar estado inactivo y conservar los datos y las tres pestañas. El cliente debe seguir apareciendo en la búsqueda y en el filtro de inactivos.
+
 ## Capas y MVC
 
 | Capa | Componentes | Responsabilidad |
 |---|---|---|
 | Presentación | Blade, controladores y Form Requests | Formularios, validación y respuestas |
-| Negocio | AuthService y UserService | Autenticación y reglas de gestión |
-| Datos | UserRepository, AccessRepository y modelos Eloquent | Consultas y persistencia en el esquema del equipo |
+| Negocio | AuthService, UserService y ClientService | Autenticación y reglas de gestión |
+| Datos | UserRepository, AccessRepository, ClientRepository y modelos Eloquent | Consultas y persistencia en el esquema del equipo |
 | Integración | RepositoryUserProvider, middleware y Gate | Autenticación de Laravel, sesiones y permisos |
 
 Flujo: vista → controlador → servicio → repositorio → modelo → MariaDB.
@@ -94,7 +127,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **30 pruebas, 171 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos y las restricciones de la base suministrada.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **59 pruebas, 546 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 
