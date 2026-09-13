@@ -65,6 +65,22 @@ Configura `APP_URL=http://lunnys.local` en `.env` y ejecuta `php artisan config:
 
 Gerencia accede desde el panel a **Gestionar usuarios** y puede registrar, listar, actualizar, asignar roles, habilitar, inhabilitar, buscar por nombre de usuario, filtrar por rol y consultar el detalle (identificador, usuario, rol y estado).
 
+Las pantallas de usuarios comparten el menú vertical de la plataforma, con Usuarios marcado como módulo actual. El formulario identifica los errores junto a cada campo y conserva los datos no sensibles.
+
+| Requisito | Comportamiento disponible para Gerencia |
+|---|---|
+| RF-USU-01 | Registrar con usuario, correo, rol y contraseña confirmada; empleado opcional. La cuenta se crea activa y la contraseña se almacena como hash. |
+| RF-USU-02 | Consultar las cuentas registradas, incluidas las inactivas, en un listado paginado. |
+| RF-USU-03 | Editar los datos de una cuenta; una contraseña vacía conserva la actual. |
+| RF-USU-04 | Asignar un rol activo del catálogo de la base. Los cambios de rol revocan las sesiones anteriores. |
+| RF-USU-05 | Habilitar una cuenta desde su ficha y guardar el estado ACTIVO. |
+| RF-USU-06 | Inhabilitar desde la ficha, guardar INACTIVO y revocar sus sesiones sin eliminar la cuenta. |
+| RF-USU-07 | Buscar por nombre de usuario completo o parcial, hasta 60 caracteres. El guion bajo se interpreta literalmente. |
+| RF-USU-08 | Filtrar por rol y combinarlo con la búsqueda; la paginación conserva ambos filtros. |
+| RF-USU-09 | Ver identificador, nombre de usuario, rol y estado en la ficha de la cuenta. |
+
+Estas operaciones requieren autorización de Gerencia también al acceder directamente por URL o enviar una petición al servidor. `UserManagementTest` verifica los nueve requisitos, validaciones, permisos y protección de la última cuenta activa de Gerencia.
+
 Se usan los campos originales de `usuarios`: `usuario_id`, `nombre_usuario`, `correo`, `password_hash`, `rol_id`, `empleado_id` y `estado`. Los roles se consultan desde `roles`; la asociación a un empleado activo es opcional. El nombre completo se obtiene del empleado vinculado, cuando existe. La administración de empleados y la creación de nuevos roles no forman parte de este módulo.
 
 Las cuentas inactivas o bloqueadas, los roles inactivos y los empleados vinculados inactivos no pueden entrar. Se protege la última Gerencia activa y se revocan las sesiones al cambiar permisos, estado o contraseña. Las operaciones se autorizan también en el servidor.

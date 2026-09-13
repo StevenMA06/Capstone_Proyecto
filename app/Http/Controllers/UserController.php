@@ -20,6 +20,7 @@ class UserController extends Controller
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:60', 'regex:/^[a-zA-Z0-9_.-]*$/'],
             'role' => ['nullable', 'integer', Rule::exists('roles', 'rol_id')],
+            'page' => ['nullable', 'integer', 'min:1'],
         ]);
 
         return view('users.index', [

@@ -24,7 +24,7 @@
             <summary>Módulos del sistema</summary>
             <nav aria-label="Navegación principal">
                 <a href="{{ route('dashboard') }}">@include('layouts.module-icon', ['icon' => 'home'])<span>Dashboard</span></a>
-                @can('manage-users')<a href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Usuarios</span></a>@endcan
+                @can('manage-users')<a class="{{ request()->routeIs('users.*') ? 'nav-active' : '' }}" @if(request()->routeIs('users.*')) aria-current="page" @endif href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Usuarios</span></a>@endcan
                 @can('register-clients')<a class="{{ request()->routeIs('clients.*') ? 'nav-active' : '' }}" @if(request()->routeIs('clients.*')) aria-current="page" @endif href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Clientes</span></a>@endcan
                 @can('view-access-history')<a class="{{ request()->routeIs('access.index') ? 'nav-active' : '' }}" @if(request()->routeIs('access.index')) aria-current="page" @endif href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Historial de accesos</span></a>@endcan
                 <p class="nav-section">PRÓXIMOS MÓDULOS</p>

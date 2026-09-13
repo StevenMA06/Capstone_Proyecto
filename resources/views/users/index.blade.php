@@ -2,7 +2,7 @@
 @section('management-content')
 <div class="management-toolbar"><h2>Cuentas registradas <span class="count">{{ $users->total() }}</span></h2><a class="action-link" href="{{ route('users.create') }}">+ Registrar cuenta</a></div>
 <form class="filters" method="GET" action="{{ route('users.index') }}">
-    <div><label for="search">Nombre de usuario</label><input id="search" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre de usuario" maxlength="50"></div>
+    <div><label for="search">Nombre de usuario</label><input id="search" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre de usuario" maxlength="60"></div>
     <div><label for="role">Rol</label><select name="role" id="role"><option value="">Todos los roles</option>@foreach($roles as $role)<option value="{{ $role->rol_id }}" @selected((string) request('role') === (string) $role->rol_id)>{{ $role->nombre }}</option>@endforeach</select></div>
     <button class="action-link" type="submit">Buscar</button><a class="clear-link" href="{{ route('users.index') }}">Limpiar</a>
 </form>
