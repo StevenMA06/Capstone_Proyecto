@@ -69,7 +69,45 @@ Se usan los campos originales de `usuarios`: `usuario_id`, `nombre_usuario`, `co
 
 Las cuentas inactivas o bloqueadas, los roles inactivos y los empleados vinculados inactivos no pueden entrar. Se protege la última Gerencia activa y se revocan las sesiones al cambiar permisos, estado o contraseña. Las operaciones se autorizan también en el servidor.
 
-La autenticación registra intentos en `historial_accesos` y sesiones en `sesiones_usuario`. Laravel almacena el contenido de la sesión en archivos. Incluye hash de contraseñas, protección CSRF, regeneración de sesión y límite de intentos. El esquema suministrado contiene tablas para otros módulos y para 2FA; esas funcionalidades y la recuperación de contraseña no están implementadas.
+La autenticación registra intentos en `historial_accesos` y sesiones en `sesiones_usuario`. Laravel almacena el contenido de la sesión en archivos. Incluye hash de contraseñas, protección CSRF, regeneración de sesión y límite de intentos. La recuperación de contraseña no está implementada.
+
+## Control de acceso: RF-ACC-01 a RF-ACC-26
+
+El inicio de sesión exige dos pasos: correo o usuario y contraseña, seguidos de un código de seis dígitos enviado al correo registrado. Validar la contraseña no autentica al usuario ni permite entrar a rutas protegidas. La sesión y el acceso exitoso se registran únicamente después de verificar el código.
+
+| Requisitos | Implementación |
+|---|---|
+| RF-ACC-01 a RF-ACC-04 | Formulario de credenciales, comprobación de contraseña, rechazo y mensaje genérico sin revelar cuentas existentes. |
+| RF-ACC-05 a RF-ACC-13 | Código aleatorio almacenado como hash en `codigos_acceso_2fa`, correo SMTP, formulario de verificación, vencimiento, uso único y reenvío que sustituye el código anterior. |
+| RF-ACC-14 a RF-ACC-16 | Menús y rutas autorizados por rol; cuentas, roles y empleados inactivos no acceden. Los cambios de cuenta durante el segundo factor invalidan la solicitud. |
+| RF-ACC-17 a RF-ACC-19 | Cierre de sesión con retorno al login y expiración por inactividad, aplicada en servidor y comprobada desde el navegador. |
+| RF-ACC-20 a RF-ACC-26 | Historial exclusivo de Gerencia con usuario, fecha, hora y resultado, búsqueda por usuario, filtros combinables de fecha y resultado, y paginación. Incluye rechazos de credenciales y códigos. |
+
+Gerencia administra usuarios, clientes e historial de accesos. Personal autorizado accede al dashboard y a clientes. Los módulos futuros del menú siguen siendo referencias sin rutas habilitadas.
+
+El código dura **5 minutos** (`ACCESS_CODE_MINUTES`, entre 1 y 10). Se permiten **5 intentos por código**, un reenvío cada **60 segundos** y un máximo de **5 envíos por usuario en 15 minutos**. La solicitud de acceso dura como máximo 15 minutos; después se vuelven a pedir las credenciales. Un error del transporte invalida el código emitido y mantiene bloqueado el acceso. Los códigos no se guardan en texto plano ni se muestran en la pantalla o en logs.
+
+`SESSION_LIFETIME=120` establece 120 minutos sin solicitudes autenticadas. La comprobación automática del navegador no renueva ese plazo. El servidor rechaza la sesión vencida aunque JavaScript esté deshabilitado; al volver a una pestaña visible se comprueba el estado y se regresa al login si corresponde. Las fechas y los filtros del historial usan la zona horaria de la aplicación, actualmente UTC, indicada en pantalla.
+
+### Configurar el envío de códigos
+
+Antes de iniciar sesión, configura un servidor SMTP real en tu `.env`:
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_SCHEME=smtp
+MAIL_HOST=servidor-de-tu-proveedor
+MAIL_PORT=587
+MAIL_USERNAME=cuenta-remitente
+MAIL_PASSWORD=credencial-del-servicio
+MAIL_FROM_ADDRESS=correo-remitente-verificado
+MAIL_FROM_NAME="LUNNYS PERU"
+ACCESS_CODE_MINUTES=5
+```
+
+Usa el host, puerto, esquema y autenticación indicados por tu proveedor (por ejemplo, `smtps` para TLS directo si lo requiere). Ejecuta `php artisan config:clear` después de modificar `.env`. El correo registrado del usuario debe ser un buzón al que pueda acceder. No subas `.env` ni credenciales a GitHub.
+
+Fuera de pruebas, los transportes `log` y `array` se rechazan para evitar un acceso que dependa de leer códigos de registros internos. Si SMTP no está configurado o falla, aparece una advertencia y no se inicia la sesión. La suite simula el correo para comprobar destinatario y código; la entrega a un buzón real requiere verificar la configuración SMTP del entorno. No se necesita modificar el SQL ni instalar dependencias nuevas.
 
 ## Gestión de clientes: RF-CLI-01 a RF-CLI-13
 
@@ -109,7 +147,7 @@ Se mantiene el flujo Blade → ClientController / StoreClientRequest → ClientS
 | Capa | Componentes | Responsabilidad |
 |---|---|---|
 | Presentación | Blade, controladores y Form Requests | Formularios, validación y respuestas |
-| Negocio | AuthService, UserService y ClientService | Autenticación y reglas de gestión |
+| Negocio | AuthService, TwoFactorService, UserService y ClientService | Autenticación y reglas de gestión |
 | Datos | UserRepository, AccessRepository, ClientRepository y modelos Eloquent | Consultas y persistencia en el esquema del equipo |
 | Integración | RepositoryUserProvider, middleware y Gate | Autenticación de Laravel, sesiones y permisos |
 
@@ -127,7 +165,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **59 pruebas, 546 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **76 pruebas, 745 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 

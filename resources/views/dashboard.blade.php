@@ -9,6 +9,7 @@
     <p class="muted">Rol: {{ auth()->user()->role->nombre }} · Usuario: {{ auth()->user()->nombre_usuario }}</p>
     @can('manage-users')<p><a class="action-link" href="{{ route('users.index') }}">Gestionar usuarios</a></p>@endcan
     @can('register-clients')<p><a class="action-link" href="{{ route('clients.index') }}">Gestionar clientes</a></p>@endcan
+    @can('view-access-history')<p><a class="action-link" href="{{ route('access.index') }}">Historial de accesos</a></p>@endcan
     <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="secondary">Cerrar sesión <span aria-hidden="true">↗</span></button></form>
 </section>
 @endsection

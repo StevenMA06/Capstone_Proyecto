@@ -1,8 +1,12 @@
 <?php
 
+use App\Http\Controllers\AccessHistoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\SessionStatusController;
+use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
+use App\Http\Middleware\EnsureAccountActive;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
@@ -10,9 +14,15 @@ Route::redirect('/', '/login');
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->middleware('throttle:30,1')->name('login.store');
+    Route::get('/access/code', [TwoFactorController::class, 'create'])->name('two-factor.create');
+    Route::post('/access/code', [TwoFactorController::class, 'store'])->middleware('throttle:20,1')->name('two-factor.store');
+    Route::post('/access/code/resend', [TwoFactorController::class, 'resend'])->middleware('throttle:5,1')->name('two-factor.resend');
+    Route::post('/access/code/cancel', [TwoFactorController::class, 'cancel'])->name('two-factor.cancel');
 });
 
 Route::middleware('auth')->group(function (): void {
+    Route::get('/session/status', SessionStatusController::class)->withoutMiddleware(EnsureAccountActive::class)->name('session.status');
+    Route::get('/access-history', AccessHistoryController::class)->middleware('can:view-access-history')->name('access.index');
     Route::view('/dashboard', 'dashboard')->name('dashboard');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
 });
