@@ -16,6 +16,7 @@ class AuthenticationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['access.two_factor_enabled' => true]);
         Mail::fake();
     }
 
