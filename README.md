@@ -73,7 +73,9 @@ La autenticación registra intentos en `historial_accesos` y sesiones en `sesion
 
 ## Control de acceso: RF-ACC-01 a RF-ACC-26
 
-El inicio de sesión exige dos pasos: correo o usuario y contraseña, seguidos de un código de seis dígitos enviado al correo registrado. Validar la contraseña no autentica al usuario ni permite entrar a rutas protegidas. La sesión y el acceso exitoso se registran únicamente después de verificar el código.
+El segundo factor está temporalmente desactivado por defecto (`ACCESS_TWO_FACTOR_ENABLED=false`). Se ingresa con correo o usuario y contraseña, sin necesitar SMTP. Se conservan las restricciones por rol, cuentas inhabilitadas, auditoría y expiración de sesión. Se pospone RF-ACC-06 y, por dependencia, el flujo RF-ACC-05 a RF-ACC-13; no se considera cumplido mientras esté desactivado.
+
+Cuando se habilita `ACCESS_TWO_FACTOR_ENABLED=true`, el inicio de sesión exige dos pasos: correo o usuario y contraseña, seguidos de un código de seis dígitos enviado al correo registrado. Validar la contraseña no autentica al usuario ni permite entrar a rutas protegidas. La sesión y el acceso exitoso se registran únicamente después de verificar el código.
 
 | Requisitos | Implementación |
 |---|---|
@@ -91,7 +93,7 @@ El código dura **5 minutos** (`ACCESS_CODE_MINUTES`, entre 1 y 10). Se permiten
 
 ### Configurar el envío de códigos
 
-Antes de iniciar sesión, configura un servidor SMTP real en tu `.env`:
+Para activar en el futuro el segundo factor, configura un servidor SMTP real en tu `.env` y cambia `ACCESS_TWO_FACTOR_ENABLED=true`:
 
 ```dotenv
 MAIL_MAILER=smtp
@@ -107,7 +109,7 @@ ACCESS_CODE_MINUTES=5
 
 Usa el host, puerto, esquema y autenticación indicados por tu proveedor (por ejemplo, `smtps` para TLS directo si lo requiere). Ejecuta `php artisan config:clear` después de modificar `.env`. El correo registrado del usuario debe ser un buzón al que pueda acceder. No subas `.env` ni credenciales a GitHub.
 
-Fuera de pruebas, los transportes `log` y `array` se rechazan para evitar un acceso que dependa de leer códigos de registros internos. Si SMTP no está configurado o falla, aparece una advertencia y no se inicia la sesión. La suite simula el correo para comprobar destinatario y código; la entrega a un buzón real requiere verificar la configuración SMTP del entorno. No se necesita modificar el SQL ni instalar dependencias nuevas.
+Con el segundo factor habilitado, fuera de pruebas, los transportes `log` y `array` se rechazan para evitar un acceso que dependa de leer códigos de registros internos. Si SMTP no está configurado o falla, aparece una advertencia y no se inicia la sesión. La suite simula el correo para comprobar destinatario y código; la entrega a un buzón real requiere verificar la configuración SMTP del entorno. No se necesita modificar el SQL ni instalar dependencias nuevas.
 
 ## Gestión de clientes: RF-CLI-01 a RF-CLI-13
 
@@ -165,7 +167,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **76 pruebas, 745 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **79 pruebas, 777 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 

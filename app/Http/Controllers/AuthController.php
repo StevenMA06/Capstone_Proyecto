@@ -23,6 +23,11 @@ class AuthController extends Controller
         $request->session()->forget('pending_access');
         $pending = $this->auth->login($credentials['email'], $credentials['password'], $request->ip() ?? '127.0.0.1', $request->userAgent() ?? '');
         $request->session()->regenerate();
+        if (isset($pending['session_id'])) {
+            $request->session()->put('login_session_id', $pending['session_id']);
+
+            return redirect()->intended(route('dashboard'));
+        }
         $request->session()->put('pending_access', $pending);
 
         return redirect()->route('two-factor.create');

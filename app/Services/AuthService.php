@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Repositories\AccessRepository;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -26,6 +27,18 @@ class AuthService
             $result = $user?->estado === 'BLOQUEADO' ? 'BLOQUEADO' : ($user && ! $user->canAccess() ? 'CUENTA_INACTIVA' : 'CREDENCIALES_INCORRECTAS');
             $this->access->record($user, $login, $result, $ip, $agent);
             throw ValidationException::withMessages(['email' => 'Las credenciales no son correctas o la cuenta no está disponible.']);
+        }
+        if (! config('access.two_factor_enabled')) {
+            $session = DB::transaction(function () use ($user, $login, $ip, $agent): string {
+                $session = $this->access->begin($user, $ip, $agent);
+                $this->access->record($user, $login, 'EXITOSO', $ip, $agent);
+
+                return $session;
+            });
+            Auth::guard('web')->login($user);
+            RateLimiter::clear($key);
+
+            return ['session_id' => $session];
         }
         $pending = $this->factor->issue($user);
         RateLimiter::clear($key);

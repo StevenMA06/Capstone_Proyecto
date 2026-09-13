@@ -16,7 +16,7 @@ class TwoFactorController extends Controller
     private function pending(Request $request): ?array
     {
         $pending = $request->session()->get('pending_access');
-        if (! is_array($pending) || ($pending['until'] ?? 0) <= now()->timestamp) {
+        if (! config('access.two_factor_enabled') || ! is_array($pending) || ($pending['until'] ?? 0) <= now()->timestamp) {
             $this->factor->cancel(is_array($pending) ? $pending : null);
             $request->session()->forget('pending_access');
 
