@@ -20,11 +20,12 @@ class AuthController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $credentials = $request->validated();
-        $sessionId = $this->auth->login($credentials['email'], $credentials['password'], $request->ip() ?? '127.0.0.1', $request->userAgent() ?? '');
-        $request->session()->put('login_session_id', $sessionId);
+        $request->session()->forget('pending_access');
+        $pending = $this->auth->login($credentials['email'], $credentials['password'], $request->ip() ?? '127.0.0.1', $request->userAgent() ?? '');
         $request->session()->regenerate();
+        $request->session()->put('pending_access', $pending);
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->route('two-factor.create');
     }
 
     public function destroy(Request $request): RedirectResponse

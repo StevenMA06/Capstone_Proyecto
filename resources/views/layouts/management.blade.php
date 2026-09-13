@@ -6,6 +6,7 @@
     <title>@yield('title', 'Gestión de clientes') · Lunnys Perú</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=4">
     <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=1">
+    @include('layouts.session-monitor')
 </head>
 <body class="workspace-shell">
 <a class="skip-content" href="#module-content">Ir al contenido</a>
@@ -24,7 +25,8 @@
             <nav aria-label="Navegación principal">
                 <a href="{{ route('dashboard') }}">@include('layouts.module-icon', ['icon' => 'home'])<span>Dashboard</span></a>
                 @can('manage-users')<a href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Usuarios</span></a>@endcan
-                <a class="nav-active" aria-current="page" href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Clientes</span><span class="nav-dot" aria-hidden="true"></span></a>
+                @can('register-clients')<a class="{{ request()->routeIs('clients.*') ? 'nav-active' : '' }}" @if(request()->routeIs('clients.*')) aria-current="page" @endif href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Clientes</span></a>@endcan
+                @can('view-access-history')<a class="{{ request()->routeIs('access.index') ? 'nav-active' : '' }}" @if(request()->routeIs('access.index')) aria-current="page" @endif href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Historial de accesos</span></a>@endcan
                 <p class="nav-section">PRÓXIMOS MÓDULOS</p>
                 @foreach(['Ventas' => 'cart', 'Contratos' => 'file', 'Pagos' => 'money', 'Facturación' => 'file', 'Equipos' => 'box', 'Materiales' => 'box', 'Zonas' => 'pin', 'Instalaciones' => 'tool', 'Reportes' => 'chart', 'BI' => 'chart', 'Chatbot' => 'chat'] as $module => $icon)
                     <span class="nav-pending" aria-disabled="true" title="{{ $module }}: próximamente">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span><small>Pronto</small></span>

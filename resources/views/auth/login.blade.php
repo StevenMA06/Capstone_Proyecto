@@ -15,6 +15,7 @@
         <div class="company-logo"><img src="{{ asset('images/lunnys-peru.png') }}" alt="LUNNY’S PERU R.2.D. — colibríes y orquídea" width="1600" height="1600"></div>
         <div class="form-divider" aria-hidden="true"><span></span><i><svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="3" width="4" height="18" rx="1"/><rect x="17" y="8" width="4" height="13" rx="1"/></svg></i><span></span></div>
         @if (session('status'))<div class="notice success" role="status">{{ session('status') }}</div>@endif
+        @error('code')<div class="notice error-summary" role="alert">{{ $message }}</div>@enderror
         <form method="POST" action="{{ route('login.store') }}">
             @csrf
             <div class="field">

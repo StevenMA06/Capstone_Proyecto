@@ -4,8 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Mi panel') · LUNNY’S PERU R.2.D.</title>
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=4">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=5">
     <script src="{{ asset('js/login.js') }}" defer></script>
+    @include('layouts.session-monitor')
 </head>
 <body>
     <div class="page-decoration" aria-hidden="true"></div>

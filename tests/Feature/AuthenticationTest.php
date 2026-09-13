@@ -2,14 +2,28 @@
 
 namespace Tests\Feature;
 
+use App\Mail\AccessCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Mail::fake();
+    }
+
+    private function completeCode(): void
+    {
+        $code = Mail::sent(AccessCode::class)->last()->code;
+        $this->post('/access/code', ['code' => $code])->assertRedirect('/dashboard');
+    }
 
     public function test_login_form_uses_the_company_logo_and_csrf(): void
     {
@@ -27,7 +41,8 @@ class AuthenticationTest extends TestCase
         $this->withSession(['before_login' => true]);
         $old = session()->getId();
         $this->post('/login', ['email' => ' ANA@EXAMPLE.COM ', 'password' => 'ClaveSegura12345'])
-            ->assertRedirect('/dashboard')->assertSessionHasNoErrors();
+            ->assertRedirect('/access/code')->assertSessionHasNoErrors();
+        $this->completeCode();
         $this->assertAuthenticatedAs($user);
         $this->assertNotSame($old, session()->getId());
         $this->assertDatabaseHas('historial_accesos', ['usuario_id' => $user->getKey(), 'resultado' => 'EXITOSO']);
@@ -39,7 +54,8 @@ class AuthenticationTest extends TestCase
     public function test_login_by_username_is_supported(): void
     {
         $user = User::factory()->create(['nombre_usuario' => 'ana.perez']);
-        $this->post('/login', ['email' => 'ANA.PEREZ', 'password' => 'ClaveSegura12345'])->assertRedirect('/dashboard');
+        $this->post('/login', ['email' => 'ANA.PEREZ', 'password' => 'ClaveSegura12345'])->assertRedirect('/access/code');
+        $this->completeCode();
         $this->assertAuthenticatedAs($user);
     }
 
@@ -96,7 +112,8 @@ class AuthenticationTest extends TestCase
         $this->post('/login', ['email' => $user->correo, 'password' => 'ClaveSegura12345'])->assertSessionHasErrors('email');
         $this->assertGuest();
         $this->travel(61)->seconds();
-        $this->post('/login', ['email' => $user->correo, 'password' => 'ClaveSegura12345'])->assertRedirect('/dashboard');
+        $this->post('/login', ['email' => $user->correo, 'password' => 'ClaveSegura12345'])->assertRedirect('/access/code');
+        $this->completeCode();
         $this->assertAuthenticated();
     }
 

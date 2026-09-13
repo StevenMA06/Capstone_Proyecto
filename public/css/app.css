@@ -1,4 +1,7 @@
 * { box-sizing: border-box; }
+.management.two-factor-panel { width: min(620px, 100%); }
+.two-factor-panel .row-actions { flex-wrap: wrap; }
+.two-factor-panel #code { font-size: 24px; letter-spacing: .4em; text-align: center; }
 /* Client forms, details and history navigation. */
 .clients-management h2 { overflow-wrap: anywhere; }
 .clients-management select[aria-invalid=true] { border-color: #b6473d; }
