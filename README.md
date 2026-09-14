@@ -162,6 +162,14 @@ Se mantiene el flujo Blade → ClientController / StoreClientRequest → ClientS
 
 ## Capas y MVC
 
+### Dashboard principal
+
+El panel comparte la cabecera y el menú vertical de la plataforma. Gerencia consulta seis indicadores reales: clientes registrados (incluidos inactivos), contratos en estado ACTIVO, pagos PENDIENTE o VENCIDO, instalaciones PROGRAMADO o REPROGRAMADO, equipos DISPONIBLE y materiales activos cuyo stock es igual o inferior al mínimo. Los indicadores son de consulta y no habilitan la gestión de módulos pendientes.
+
+El resumen muestra las ventas CONFIRMADA de los últimos seis meses, incluido el mes actual hasta el momento de la consulta, agrupadas por mes en la zona horaria de la aplicación. Excluye anuladas y fechas futuras, completa meses sin ventas con cero y muestra un estado vacío si corresponde. No estima una evolución histórica de contratos activos a partir de su estado actual.
+
+Los accesos rápidos respetan el rol; únicamente Gerencia recibe las estadísticas operativas y de ventas. El personal con permiso de clientes ve su indicador y acceso al módulo. BI y Chatbot figuran como Próximamente, sin enlaces a funcionalidades inexistentes. No se incluyen cifras de demostración en la aplicación.
+
 | Capa | Componentes | Responsabilidad |
 |---|---|---|
 | Presentación | Blade, controladores y Form Requests | Formularios, validación y respuestas |
@@ -183,7 +191,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **79 pruebas, 777 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **82 pruebas, 793 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 
