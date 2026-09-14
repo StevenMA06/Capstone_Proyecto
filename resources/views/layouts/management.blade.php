@@ -28,8 +28,13 @@
                 @can('manage-users')<a class="{{ request()->routeIs('users.*') ? 'nav-active' : '' }}" @if(request()->routeIs('users.*')) aria-current="page" @endif href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Usuarios</span></a>@endcan
                 @can('register-clients')<a class="{{ request()->routeIs('clients.*') ? 'nav-active' : '' }}" @if(request()->routeIs('clients.*')) aria-current="page" @endif href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Clientes</span></a>@endcan
                 @can('view-access-history')<a class="{{ request()->routeIs('access.index') ? 'nav-active' : '' }}" @if(request()->routeIs('access.index')) aria-current="page" @endif href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Historial de accesos</span></a>@endcan
+                @can('view-operations')
+                @foreach(['contracts' => ['Contratos', 'file'], 'payments' => ['Pagos', 'money'], 'installations' => ['Instalaciones', 'tool'], 'equipment' => ['Equipos', 'box'], 'materials' => ['Materiales', 'box']] as $key => [$module, $icon])
+                    <a class="{{ request()->routeIs($key.'.*') ? 'nav-active' : '' }}" @if(request()->routeIs($key.'.*')) aria-current="page" @endif href="{{ route($key.'.index') }}">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></a>
+                @endforeach
+                @endcan
                 <p class="nav-section">PRÓXIMOS MÓDULOS</p>
-                @foreach(['Ventas' => 'cart', 'Contratos' => 'file', 'Pagos' => 'money', 'Facturación' => 'file', 'Equipos' => 'box', 'Materiales' => 'box', 'Zonas' => 'pin', 'Instalaciones' => 'tool', 'Reportes' => 'chart', 'BI' => 'chart', 'Chatbot' => 'chat'] as $module => $icon)
+                @foreach(['Ventas' => 'cart', 'Facturación' => 'file', 'Zonas' => 'pin', 'Reportes' => 'chart', 'BI' => 'chart', 'Chatbot' => 'chat'] as $module => $icon)
                     <span class="nav-pending" aria-disabled="true" title="{{ $module }}: próximamente">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span><small>Pronto</small></span>
                 @endforeach
             </nav>

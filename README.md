@@ -164,11 +164,15 @@ Se mantiene el flujo Blade → ClientController / StoreClientRequest → ClientS
 
 ### Dashboard principal
 
-El panel comparte la cabecera y el menú vertical de la plataforma. Gerencia consulta seis indicadores reales: clientes registrados (incluidos inactivos), contratos en estado ACTIVO, pagos PENDIENTE o VENCIDO, instalaciones PROGRAMADO o REPROGRAMADO, equipos DISPONIBLE y materiales activos cuyo stock es igual o inferior al mínimo. Los indicadores son de consulta y no habilitan la gestión de módulos pendientes.
+El dashboard es la primera vista después de iniciar sesión, incluso si antes se intentó abrir otra URL protegida. La raíz de la aplicación lleva al dashboard cuando hay sesión y al login para invitados.
 
-El resumen muestra las ventas CONFIRMADA de los últimos seis meses, incluido el mes actual hasta el momento de la consulta, agrupadas por mes en la zona horaria de la aplicación. Excluye anuladas y fechas futuras, completa meses sin ventas con cero y muestra un estado vacío si corresponde. No estima una evolución histórica de contratos activos a partir de su estado actual.
+Gerencia tiene siete ítems: clientes registrados (incluidos inactivos), contratos ACTIVO, pagos PENDIENTE o VENCIDO, instalaciones EN_PROCESO, tarjetas de Equipos y Materiales, y ventas de seis meses. Las cuatro primeras tarjetas abren sus interfaces. Equipos y Materiales abren modales con nombre, stock actual a la derecha y un enlace a su interfaz de consulta. Las nuevas interfaces de contratos, pagos, instalaciones e inventario son consultas paginadas; no incluyen todavía registro ni edición. Sus rutas están restringidas a Gerencia.
 
-Los accesos rápidos respetan el rol; únicamente Gerencia recibe las estadísticas operativas y de ventas. El personal con permiso de clientes ve su indicador y acceso al módulo. BI y Chatbot figuran como Próximamente, sin enlaces a funcionalidades inexistentes. No se incluyen cifras de demostración en la aplicación.
+Cada equipo es una unidad individual. El stock se agrupa por nombre, tipo, marca y modelo y cuenta solo unidades DISPONIBLE; los grupos con unidades asignadas o en mantenimiento siguen visibles con cero disponibles. Los inactivos se excluyen. El mínimo por grupo se configura con `EQUIPMENT_MINIMUM_STOCK` en el `.env` local (por defecto 1). Los materiales usan sus campos `stock_actual`, `stock_minimo` y `unidad_medida`, manteniendo hasta tres decimales. Las tarjetas y filas avisan cuando el stock es igual o inferior al mínimo. Los modales se cierran con el botón, Escape o clic fuera; el foco vuelve a la tarjeta.
+
+El gráfico muestra las ventas CONFIRMADA de los últimos seis meses, incluido el mes actual hasta el momento de la consulta, agrupadas por mes en la zona horaria de la aplicación. Excluye anuladas y fechas futuras, completa meses sin ventas con cero y muestra un estado vacío si corresponde.
+
+Los accesos respetan el rol; únicamente Gerencia recibe inventarios y estadísticas operativas y de ventas. El personal con permiso de clientes ve su indicador y acceso al módulo. BI y Chatbot figuran como Próximamente. No se incluyen cifras de demostración en la aplicación.
 
 | Capa | Componentes | Responsabilidad |
 |---|---|---|
@@ -191,7 +195,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **82 pruebas, 793 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **84 pruebas, 837 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 

@@ -39,7 +39,7 @@ class AuthenticationTest extends TestCase
     public function test_login_by_email_normalizes_input_and_regenerates_session(): void
     {
         $user = User::factory()->create(['correo' => 'ana@example.com']);
-        $this->withSession(['before_login' => true]);
+        $this->withSession(['before_login' => true, 'url.intended' => '/clients']);
         $old = session()->getId();
         $this->post('/login', ['email' => ' ANA@EXAMPLE.COM ', 'password' => 'ClaveSegura12345'])
             ->assertRedirect('/access/code')->assertSessionHasNoErrors();

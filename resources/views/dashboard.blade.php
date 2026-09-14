@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', 'Dashboard')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v=1">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v=2"><script src="{{ asset('js/dashboard.js') }}?v=1" defer></script>@endpush
 @section('workspace-content')
 <section class="overview">
     <header class="overview-heading">
@@ -10,17 +10,23 @@
     </header>
     <div class="overview-metrics">
         @if($clientCount !== null)
-        <article class="metric-card"><div class="metric-top"><h2>Clientes registrados</h2>@include('layouts.module-icon', ['icon' => 'users'])</div><p class="metric-value">{{ number_format($clientCount) }}</p><p class="metric-note">Activos e inactivos</p></article>
+        <a class="metric-card" href="{{ route('clients.index') }}"><div class="metric-top"><h2>Clientes registrados</h2>@include('layouts.module-icon', ['icon' => 'users'])</div><p class="metric-value">{{ number_format($clientCount) }}</p><p class="metric-note">Activos e inactivos · Ver clientes →</p></a>
         @endif
         @if($summary !== null)
         @foreach([
             ['Contratos activos', 'contracts', 'file', 'Estado activo vigente'],
             ['Pagos pendientes', 'payments', 'money', 'Incluye pagos vencidos'],
-            ['Instalaciones programadas', 'installations', 'tool', 'Incluye reprogramadas'],
-            ['Equipos disponibles', 'equipment', 'box', 'Disponibles para asignación'],
-            ['Materiales en mínimo', 'materials', 'box', 'Stock igual o inferior al mínimo'],
+            ['Instalaciones en proceso', 'installations', 'tool', 'Trabajos en ejecución'],
         ] as [$label, $key, $icon, $note])
-        <article class="metric-card {{ $key === 'materials' && $summary[$key] > 0 ? 'metric-alert' : '' }}"><div class="metric-top"><h2>{{ $label }}</h2>@include('layouts.module-icon', ['icon' => $icon])</div><p class="metric-value">{{ number_format($summary[$key]) }}</p><p class="metric-note">{{ $note }}</p></article>
+        <a class="metric-card" href="{{ route($key.'.index') }}"><div class="metric-top"><h2>{{ $label }}</h2>@include('layouts.module-icon', ['icon' => $icon])</div><p class="metric-value">{{ number_format($summary[$key]) }}</p><p class="metric-note">{{ $note }} · Abrir →</p></a>
+        @endforeach
+        @foreach(['equipment' => 'Equipos', 'materials' => 'Materiales'] as $key => $label)
+        <button type="button" class="metric-card inventory-trigger {{ $summary[$key.'Low'] ? 'metric-alert' : '' }}" data-inventory-open="{{ $key }}-dialog" aria-haspopup="dialog" aria-controls="{{ $key }}-dialog">
+            <span class="inventory-title">{{ $label }}</span>
+            @include('layouts.module-icon', ['icon' => 'box'])
+            <span class="metric-note">Haz clic para ver stock</span>
+            @if($summary[$key.'Low'])<span class="stock-warning">⚠ Stock mínimo</span>@endif
+        </button>
         @endforeach
         @endif
     </div>
@@ -33,7 +39,7 @@
             <li><span class="bar-amount">S/ {{ number_format($month['total'], 2) }}</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" style="height: {{ round($month['total'] / $summary['salesMax'] * 100, 2) }}%"></div></div><span class="bar-month">{{ $month['label'] }}</span></li>
             @endforeach
         </ol>
-        <p class="chart-note">Indicadores calculados con los registros existentes. La gestión de ventas, inventario e instalaciones estará disponible en sus próximos módulos.</p>
+        <p class="chart-note">Indicadores calculados con los registros existentes.</p>
     </section>
     @endif
     <section class="overview-shortcuts" aria-labelledby="shortcuts-heading"><h2 id="shortcuts-heading">Accesos rápidos</h2>
@@ -48,5 +54,16 @@
             <div class="future-shortcut" aria-disabled="true">@include('layouts.module-icon', ['icon' => 'chat'])<div><strong>Chatbot IA</strong><span>Asistencia para tu operación</span></div><span class="coming-soon">Próximamente</span></div>
         </div>@endif
     </section>
+    @if($summary !== null)
+        @foreach(['equipment' => 'Equipos', 'materials' => 'Materiales'] as $key => $label)
+        <dialog class="inventory-dialog" id="{{ $key }}-dialog" aria-labelledby="{{ $key }}-title">
+            <header class="inventory-heading"><h2 id="{{ $key }}-title">Inventario de {{ mb_strtolower($label) }}</h2><form method="dialog"><button type="submit" class="secondary" autofocus aria-label="Cerrar inventario de {{ mb_strtolower($label) }}">Cerrar ×</button></form></header>
+            @if($key === 'equipment')<p class="muted">Unidades disponibles para asignación, agrupadas por nombre, tipo, marca y modelo. Mínimo: {{ config('inventory.equipment_minimum') }} por grupo.</p>@endif
+            @if($summary[$key.'Low'])<p class="stock-warning" role="status">⚠ Stock igual o inferior al mínimo: {{ $summary[$key.'Low'] }} {{ $key === 'equipment' ? ($summary[$key.'Low'] === 1 ? 'grupo de equipos' : 'grupos de equipos') : ($summary[$key.'Low'] === 1 ? 'material' : 'materiales') }}.</p>@endif
+            @include('operations.inventory-table', ['records' => $summary[$key], 'kind' => $key])
+            <footer class="inventory-footer"><a class="action-link" href="{{ route($key.'.index') }}">Abrir {{ mb_strtolower($label) }} →</a></footer>
+        </dialog>
+        @endforeach
+    @endif
 </section>
 @endsection

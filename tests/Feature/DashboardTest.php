@@ -35,6 +35,7 @@ class DashboardTest extends TestCase
         $manager = $this->manager();
         $client = Client::create(['tipo_documento' => 'DNI', 'numero_documento' => '00000001', 'nombres_razon_social' => 'Prueba', 'direccion' => 'Dirección', 'estado' => 'INACTIVO', 'creado_por' => $manager->getKey()]);
         ClientHistoryFixtures::attach($client, $manager, 'DASH', 4);
+        DB::table('pedidos_instalacion')->where('codigo', 'DASH-I-3')->update(['estado' => 'EN_PROCESO']);
         $contracts = DB::table('contratos')->orderBy('contrato_id')->get();
         foreach ($contracts as $i => $contract) {
             DB::table('ventas')->insert(['contrato_id' => $contract->contrato_id, 'cliente_id' => $client->getKey(), 'responsable_id' => $contract->responsable_id,
@@ -48,7 +49,44 @@ class DashboardTest extends TestCase
             DB::table('materiales')->insert(['codigo' => 'M'.$i, 'nombre' => 'Cable', 'unidad_medida' => 'metro', 'stock_actual' => $stock, 'stock_minimo' => $min, 'estado' => $state, 'creado_por' => $manager->getKey()]);
         }
         $this->signIn($manager)->get('/dashboard')->assertOk()->assertViewHas('clientCount', 1)
-            ->assertViewHas('summary', fn ($s) => $s['contracts'] === 1 && $s['payments'] === 2 && $s['installations'] === 1 && $s['equipment'] === 1 && $s['materials'] === 2 && $s['salesTotal'] === 100.25 && $s['months'][0]['total'] === 100.25);
+            ->assertViewHas('summary', fn ($s) => $s['contracts'] === 1 && $s['payments'] === 2 && $s['installations'] === 1 && (int) $s['equipment']->first()->stock_actual === 1 && $s['materialsLow'] === 2 && $s['salesTotal'] === 100.25 && $s['months'][0]['total'] === 100.25);
+        $this->get('/contracts')->assertOk()->assertSee('DASH-C-0')->assertSee('Prueba');
+        $this->get('/payments')->assertOk()->assertSee('DASH-P-0')->assertSee('DASH-C-0');
+        $this->get('/installations')->assertOk()->assertSee('DASH-I-3')->assertSee('En proceso');
+    }
+
+    public function test_inventory_groups_available_equipment_and_preserves_zero_stock_and_minimum_alerts(): void
+    {
+        config(['inventory.equipment_minimum' => 1]);
+        $manager = $this->manager();
+        foreach ([['A', 'DISPONIBLE'], ['A', 'DISPONIBLE'], ['B', 'ASIGNADO'], ['C', 'MANTENIMIENTO'], ['D', 'INACTIVO']] as $i => [$model, $state]) {
+            DB::table('equipos')->insert(['codigo' => 'E'.$i, 'nombre' => 'Router <script>', 'tipo' => 'Router', 'modelo' => $model, 'estado' => $state, 'creado_por' => $manager->getKey()]);
+        }
+        foreach ([[0, 1, 'ACTIVO'], [1, 1, 'ACTIVO'], [1.125, 1, 'ACTIVO'], [0, 1, 'INACTIVO']] as $i => [$stock, $minimum, $state]) {
+            DB::table('materiales')->insert(['codigo' => 'MAT'.$i, 'nombre' => 'Fibra <script>', 'unidad_medida' => 'm', 'stock_actual' => $stock, 'stock_minimo' => $minimum, 'estado' => $state, 'creado_por' => $manager->getKey()]);
+        }
+        $this->signIn($manager)->get('/dashboard')->assertOk()
+            ->assertSee('Router &lt;script&gt;', false)->assertDontSee('Router <script>', false)
+            ->assertSee('1.125 m')->assertSee('equipment-dialog')->assertSee('materials-dialog')
+            ->assertViewHas('summary', fn ($s) => $s['equipment']->count() === 3 && (int) $s['equipment']->first()->stock_actual === 2 && $s['equipmentLow'] === 2 && $s['materials']->count() === 3 && $s['materialsLow'] === 2);
+        $this->get('/equipment')->assertOk()->assertSee('Router &lt;script&gt;', false);
+        $this->get('/materials')->assertOk()->assertSee('1.125 m')->assertDontSee('MAT3');
+    }
+
+    public function test_operation_destinations_are_available_to_management_and_protected_from_other_roles(): void
+    {
+        foreach (['contracts', 'payments', 'installations', 'equipment', 'materials'] as $path) {
+            $this->get('/'.$path)->assertRedirect('/login');
+        }
+        $this->signIn($this->manager());
+        foreach (['contracts', 'payments', 'installations', 'equipment', 'materials'] as $path) {
+            $this->get('/'.$path)->assertOk();
+        }
+        $this->get('/')->assertRedirect('/dashboard');
+        $this->signIn(User::factory()->create());
+        foreach (['contracts', 'payments', 'installations', 'equipment', 'materials'] as $path) {
+            $this->get('/'.$path)->assertForbidden();
+        }
     }
 
     public function test_staff_does_not_receive_management_statistics(): void

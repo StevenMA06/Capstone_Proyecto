@@ -21,10 +21,10 @@ class PasswordOnlyLoginTest extends TestCase
     public function test_login_without_smtp_creates_session_and_audit_then_logout_works(): void
     {
         $user = User::factory()->create();
-        $this->withSession(['before' => true]);
+        $this->withSession(['before' => true, 'url.intended' => '/clients']);
         $old = session()->getId();
         $this->post('/login', ['email' => $user->correo, 'password' => 'ClaveSegura12345'])
-            ->assertRedirect('/dashboard')->assertSessionMissing('pending_access')->assertSessionHasNoErrors();
+            ->assertRedirect('/dashboard')->assertSessionMissing('pending_access')->assertSessionMissing('url.intended')->assertSessionHasNoErrors();
         $this->assertAuthenticatedAs($user);
         $this->assertNotSame($old, session()->getId());
         Mail::assertNothingSent();

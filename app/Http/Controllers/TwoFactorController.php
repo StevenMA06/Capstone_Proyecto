@@ -51,7 +51,9 @@ class TwoFactorController extends Controller
         $request->session()->regenerate();
         $request->session()->put('login_session_id', $result['session']);
 
-        return redirect()->intended(route('dashboard'));
+        $request->session()->forget('url.intended');
+
+        return redirect()->route('dashboard');
     }
 
     public function resend(Request $request)

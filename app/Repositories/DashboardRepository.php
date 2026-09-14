@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardRepository
 {
+    public function __construct(private InventoryRepository $inventory) {}
+
     public function clients(): int
     {
         return DB::table('clientes')->count();
@@ -24,12 +26,17 @@ class DashboardRepository
             $months[] = ['label' => $month->locale('es')->translatedFormat('M Y'), 'total' => (float) ($totals[$month->format('Y-m')] ?? 0)];
         }
 
+        $equipment = $this->inventory->equipment()->get();
+        $materials = $this->inventory->materials()->get();
+
         return [
             'contracts' => DB::table('contratos')->where('estado', 'ACTIVO')->count(),
             'payments' => DB::table('pagos')->whereIn('estado', ['PENDIENTE', 'VENCIDO'])->count(),
-            'installations' => DB::table('pedidos_instalacion')->whereIn('estado', ['PROGRAMADO', 'REPROGRAMADO'])->count(),
-            'equipment' => DB::table('equipos')->where('estado', 'DISPONIBLE')->count(),
-            'materials' => DB::table('materiales')->where('estado', 'ACTIVO')->whereColumn('stock_actual', '<=', 'stock_minimo')->count(),
+            'installations' => DB::table('pedidos_instalacion')->where('estado', 'EN_PROCESO')->count(),
+            'equipment' => $equipment,
+            'materials' => $materials,
+            'equipmentLow' => $equipment->filter(fn ($item) => $item->stock_actual <= $item->stock_minimo)->count(),
+            'materialsLow' => $materials->filter(fn ($item) => $item->stock_actual <= $item->stock_minimo)->count(),
             'months' => $months,
             'salesTotal' => array_sum(array_column($months, 'total')),
             'salesMax' => max(1, ...array_column($months, 'total')),

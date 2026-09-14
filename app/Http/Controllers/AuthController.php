@@ -26,7 +26,9 @@ class AuthController extends Controller
         if (isset($pending['session_id'])) {
             $request->session()->put('login_session_id', $pending['session_id']);
 
-            return redirect()->intended(route('dashboard'));
+            $request->session()->forget('url.intended');
+
+            return redirect()->route('dashboard');
         }
         $request->session()->put('pending_access', $pending);
 
