@@ -9,7 +9,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (['Gerencia', 'Personal autorizado'] as $name) {
+        foreach (Role::NAMES as $name) {
             Role::firstOrCreate(['nombre' => $name], ['estado' => 'ACTIVO']);
         }
     }

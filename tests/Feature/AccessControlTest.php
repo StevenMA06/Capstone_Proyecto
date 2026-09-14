@@ -224,7 +224,7 @@ class AccessControlTest extends TestCase
     {
         $staff = User::factory()->create();
         $this->signIn($staff)->get('/access-history')->assertForbidden();
-        $role = Role::firstOrCreate(['nombre' => 'Gerencia'], ['estado' => 'ACTIVO']);
+        $role = Role::firstOrCreate(['nombre' => 'Gerente'], ['estado' => 'ACTIVO']);
         $manager = User::factory()->create(['rol_id' => $role->getKey()]);
         DB::table('historial_accesos')->insert([
             ['usuario_id' => $staff->getKey(), 'nombre_usuario_intentado' => 'buscado', 'fecha_hora' => '2026-09-12 10:20:30', 'resultado' => '2FA_INCORRECTO'],

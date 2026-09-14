@@ -6,6 +6,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OperationController;
 use App\Http\Controllers\SessionStatusController;
+use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\EnsureAccountActive;
@@ -35,11 +36,22 @@ Route::middleware(['auth', 'can:manage-users'])->group(function (): void {
 });
 
 Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
-    Route::get('/contracts', [OperationController::class, 'contracts'])->name('contracts.index');
-    Route::get('/payments', [OperationController::class, 'payments'])->name('payments.index');
     Route::get('/installations', [OperationController::class, 'installations'])->name('installations.index');
     Route::get('/equipment', [OperationController::class, 'equipment'])->name('equipment.index');
     Route::get('/materials', [OperationController::class, 'materials'])->name('materials.index');
+});
+
+Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+    Route::get('/contracts', [OperationController::class, 'contracts'])->name('contracts.index');
+    Route::get('/payments', [OperationController::class, 'payments'])->name('payments.index');
+    Route::get('/plans', [OperationController::class, 'plans'])->name('plans.index');
+});
+
+Route::middleware(['auth', 'can:view-technician'])->group(function (): void {
+    Route::get('/technician', [TechnicianController::class, 'index'])->name('technician.index');
+    Route::get('/technician/installations/{pedido}', [TechnicianController::class, 'show'])->whereNumber('pedido')->name('technician.show');
+    Route::post('/technician/installations/{pedido}/evidence', [TechnicianController::class, 'store'])->whereNumber('pedido')->name('technician.evidence.store');
+    Route::get('/technician/installations/{pedido}/evidence/{evidence}', [TechnicianController::class, 'download'])->whereNumber(['pedido', 'evidence'])->name('technician.evidence.download');
 });
 
 Route::middleware(['auth', 'can:register-clients'])->group(function (): void {

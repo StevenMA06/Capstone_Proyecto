@@ -6,6 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
+    public const ADMIN = 'Administrador';
+
+    public const MANAGER = 'Gerente';
+
+    public const OFFICE = 'Usuario de oficina';
+
+    public const TECHNICIAN = 'Técnico';
+
+    public const NAMES = [self::ADMIN, self::MANAGER, self::OFFICE, self::TECHNICIAN];
+
     protected $table = 'roles';
 
     protected $primaryKey = 'rol_id';
@@ -18,6 +28,6 @@ class Role extends Model
 
     public function isManagement(): bool
     {
-        return mb_strtolower(trim($this->nombre)) === 'gerencia';
+        return in_array($this->nombre, [self::ADMIN, self::MANAGER], true);
     }
 }

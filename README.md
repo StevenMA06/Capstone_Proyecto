@@ -45,13 +45,13 @@ CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 php artisan key:generate
 php artisan config:clear
 php artisan migrate --seed
-php artisan app:create-user --role=Gerencia --username=gerencia
+php artisan app:create-user --role=Administrador --username=administrador
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 
 El comando de creación pide correo y contraseña de forma interactiva. Abre `http://127.0.0.1:8000/login` e ingresa con el correo o nombre de usuario y la contraseña elegida. No se incluyen cuentas ni contraseñas predeterminadas. En instalaciones existentes conserva la `APP_KEY` y omite `key:generate`.
 
-La migración importa las tablas del archivo **`database/sql/Db_LunnysPeru.sql`**, copia del SQL suministrado por el equipo. Si ya lo importaste con phpMyAdmin, la migración conserva las tablas existentes. No crea tablas alternativas `users` ni altera el SQL original. Las tablas existentes deben tener la estructura del archivo suministrado; `IF NOT EXISTS` no corrige estructuras distintas. El seeder agrega únicamente los roles iniciales que falten: **Gerencia** y **Personal autorizado**.
+La migración importa las tablas del archivo **`database/sql/Db_LunnysPeru.sql`**, copia del SQL suministrado por el equipo. Si ya lo importaste con phpMyAdmin, la migración conserva las tablas existentes. No crea tablas alternativas `users` ni altera el SQL original. Las tablas existentes deben tener la estructura del archivo suministrado; `IF NOT EXISTS` no corrige estructuras distintas. La migración normaliza los roles anteriores y conserva las cuentas. El seeder agrega los cuatro roles que falten: **Administrador**, **Gerente**, **Usuario de oficina** y **Técnico**. No crea usuarios ni contraseñas predeterminadas.
 
 No uses `migrate:fresh` en la base del equipo: elimina tablas. El rollback de esta importación se bloquea para evitar eliminar la base compartida. Los datos de una antigua tabla Laravel `users`, si existe, no se transfieren automáticamente a `usuarios`.
 
@@ -63,11 +63,11 @@ Configura `APP_URL=http://lunnys.local` en `.env` y ejecuta `php artisan config:
 
 ## Gestión de usuarios: RF-USU-01 a RF-USU-09
 
-Gerencia accede desde el panel a **Gestionar usuarios** y puede registrar, listar, actualizar, asignar roles, habilitar, inhabilitar, buscar por nombre de usuario, filtrar por rol y consultar el detalle (identificador, usuario, rol y estado).
+Administrador y Gerente acceden desde el panel a **Gestionar usuarios** y puede registrar, listar, actualizar, asignar roles, habilitar, inhabilitar, buscar por nombre de usuario, filtrar por rol y consultar el detalle (identificador, usuario, rol y estado).
 
 Las pantallas de usuarios comparten el menú vertical de la plataforma, con Usuarios marcado como módulo actual. El formulario identifica los errores junto a cada campo y conserva los datos no sensibles.
 
-| Requisito | Comportamiento disponible para Gerencia |
+| Requisito | Comportamiento disponible para Administrador y Gerente |
 |---|---|
 | RF-USU-01 | Registrar con usuario, correo, rol y contraseña confirmada; empleado opcional. La cuenta se crea activa y la contraseña se almacena como hash. |
 | RF-USU-02 | Consultar las cuentas registradas, incluidas las inactivas, en un listado paginado. |
@@ -79,11 +79,11 @@ Las pantallas de usuarios comparten el menú vertical de la plataforma, con Usua
 | RF-USU-08 | Filtrar por rol y combinarlo con la búsqueda; la paginación conserva ambos filtros. |
 | RF-USU-09 | Ver identificador, nombre de usuario, rol y estado en la ficha de la cuenta. |
 
-Estas operaciones requieren autorización de Gerencia también al acceder directamente por URL o enviar una petición al servidor. `UserManagementTest` verifica los nueve requisitos, validaciones, permisos y protección de la última cuenta activa de Gerencia.
+Estas operaciones requieren autorización de Administrador y Gerente también al acceder directamente por URL o enviar una petición al servidor. `UserManagementTest` verifica los nueve requisitos, validaciones, permisos y protección de la última cuenta activa de Administrador y Gerente.
 
 Se usan los campos originales de `usuarios`: `usuario_id`, `nombre_usuario`, `correo`, `password_hash`, `rol_id`, `empleado_id` y `estado`. Los roles se consultan desde `roles`; la asociación a un empleado activo es opcional. El nombre completo se obtiene del empleado vinculado, cuando existe. La administración de empleados y la creación de nuevos roles no forman parte de este módulo.
 
-Las cuentas inactivas o bloqueadas, los roles inactivos y los empleados vinculados inactivos no pueden entrar. Se protege la última Gerencia activa y se revocan las sesiones al cambiar permisos, estado o contraseña. Las operaciones se autorizan también en el servidor.
+Las cuentas inactivas o bloqueadas, los roles inactivos y los empleados vinculados inactivos no pueden entrar. Se protege la última cuenta administrativa activa y se revocan las sesiones al cambiar permisos, estado o contraseña. Las operaciones se autorizan también en el servidor.
 
 La autenticación registra intentos en `historial_accesos` y sesiones en `sesiones_usuario`. Laravel almacena el contenido de la sesión en archivos. Incluye hash de contraseñas, protección CSRF, regeneración de sesión y límite de intentos. La recuperación de contraseña no está implementada.
 
@@ -99,9 +99,9 @@ Cuando se habilita `ACCESS_TWO_FACTOR_ENABLED=true`, el inicio de sesión exige 
 | RF-ACC-05 a RF-ACC-13 | Código aleatorio almacenado como hash en `codigos_acceso_2fa`, correo SMTP, formulario de verificación, vencimiento, uso único y reenvío que sustituye el código anterior. |
 | RF-ACC-14 a RF-ACC-16 | Menús y rutas autorizados por rol; cuentas, roles y empleados inactivos no acceden. Los cambios de cuenta durante el segundo factor invalidan la solicitud. |
 | RF-ACC-17 a RF-ACC-19 | Cierre de sesión con retorno al login y expiración por inactividad, aplicada en servidor y comprobada desde el navegador. |
-| RF-ACC-20 a RF-ACC-26 | Historial exclusivo de Gerencia con usuario, fecha, hora y resultado, búsqueda por usuario, filtros combinables de fecha y resultado, y paginación. Incluye rechazos de credenciales y códigos. |
+| RF-ACC-20 a RF-ACC-26 | Historial exclusivo de Administrador y Gerente con usuario, fecha, hora y resultado, búsqueda por usuario, filtros combinables de fecha y resultado, y paginación. Incluye rechazos de credenciales y códigos. |
 
-Gerencia administra usuarios, clientes e historial de accesos. Personal autorizado accede al dashboard y a clientes. Los módulos futuros del menú siguen siendo referencias sin rutas habilitadas.
+Administrador y Gerente accedenn a todos los módulos implementados. Usuario de oficina accede a clientes, planes, contratos y pagos. Técnico accede únicamente a su panel, con instalaciones asignadas y evidencias. Las rutas aplican los mismos permisos que el menú.
 
 El código dura **5 minutos** (`ACCESS_CODE_MINUTES`, entre 1 y 10). Se permiten **5 intentos por código**, un reenvío cada **60 segundos** y un máximo de **5 envíos por usuario en 15 minutos**. La solicitud de acceso dura como máximo 15 minutos; después se vuelven a pedir las credenciales. Un error del transporte invalida el código emitido y mantiene bloqueado el acceso. Los códigos no se guardan en texto plano ni se muestran en la pantalla o en logs.
 
@@ -129,7 +129,7 @@ Con el segundo factor habilitado, fuera de pruebas, los transportes `log` y `arr
 
 ## Gestión de clientes: RF-CLI-01 a RF-CLI-13
 
-**Gerencia** y **Personal autorizado** acceden desde el panel a **Gestionar clientes**. La acción **Registrar cliente** está dentro del panel de clientes y no en el dashboard principal. El listado permite buscar por nombres, apellidos, razón social o número de documento, combinar la búsqueda con el estado y recorrer los resultados paginados. Los clientes inactivos también permanecen disponibles.
+**Administrador y Gerente** y **Usuario de oficina** acceden desde el panel a **Gestionar clientes**. La acción **Registrar cliente** está dentro del panel de clientes y no en el dashboard principal. El listado permite buscar por nombres, apellidos, razón social o número de documento, combinar la búsqueda con el estado y recorrer los resultados paginados. Los clientes inactivos también permanecen disponibles.
 
 | Requisito | Comportamiento |
 |---|---|
@@ -153,7 +153,7 @@ Se mantiene el flujo Blade → ClientController / StoreClientRequest → ClientS
 
 ### Comprobación manual
 
-1. Inicia sesión con uno de los dos roles y abre **Gestionar clientes**.
+1. Inicia sesión con un rol autorizado y abre **Gestionar clientes**.
 2. Abre **Registrar cliente** y envía el formulario vacío: los campos incompletos deben quedar identificados. Completa los datos obligatorios y guarda.
 3. Intenta registrar de nuevo el mismo tipo y número de documento: debe rechazarse sin duplicar al cliente.
 4. Busca por nombre o documento, abre **Ver ficha**, entra a **Editar cliente** y guarda un cambio. Verifica el dato actualizado.
@@ -164,15 +164,15 @@ Se mantiene el flujo Blade → ClientController / StoreClientRequest → ClientS
 
 ### Dashboard principal
 
-El dashboard es la primera vista después de iniciar sesión, incluso si antes se intentó abrir otra URL protegida. La raíz de la aplicación lleva al dashboard cuando hay sesión y al login para invitados.
+El dashboard es la primera vista después de iniciar sesión para administración, gerencia y oficina, incluso si antes se intentó abrir otra URL protegida. El técnico es redirigido a su panel técnico. La raíz de la aplicación lleva al dashboard cuando hay sesión y al login para invitados.
 
-Gerencia tiene siete ítems: clientes registrados (incluidos inactivos), contratos ACTIVO, pagos PENDIENTE o VENCIDO, instalaciones EN_PROCESO, tarjetas de Equipos y Materiales, y ventas de seis meses. Las cuatro primeras tarjetas abren sus interfaces. Equipos y Materiales abren modales con nombre, stock actual a la derecha y un enlace a su interfaz de consulta. Las nuevas interfaces de contratos, pagos, instalaciones e inventario son consultas paginadas; no incluyen todavía registro ni edición. Sus rutas están restringidas a Gerencia.
+Administrador y Gerente tienen siete ítems: clientes registrados (incluidos inactivos), contratos ACTIVO, pagos PENDIENTE o VENCIDO, instalaciones EN_PROCESO, tarjetas de Equipos y Materiales, y ventas de seis meses. Las cuatro primeras tarjetas abren sus interfaces. Equipos y Materiales abren modales con nombre, stock actual a la derecha y un enlace a su interfaz de consulta. Las nuevas interfaces de contratos, pagos, instalaciones e inventario son consultas paginadas; no incluyen todavía registro ni edición. Oficina puede consultar planes, contratos y pagos; instalaciones e inventario general están restringidos a Administrador y Gerente.
 
 Cada equipo es una unidad individual. El stock se agrupa por nombre, tipo, marca y modelo y cuenta solo unidades DISPONIBLE; los grupos con unidades asignadas o en mantenimiento siguen visibles con cero disponibles. Los inactivos se excluyen. El mínimo por grupo se configura con `EQUIPMENT_MINIMUM_STOCK` en el `.env` local (por defecto 1). Los materiales usan sus campos `stock_actual`, `stock_minimo` y `unidad_medida`, manteniendo hasta tres decimales. Las tarjetas y filas avisan cuando el stock es igual o inferior al mínimo. Los modales se cierran con el botón, Escape o clic fuera; el foco vuelve a la tarjeta.
 
 El gráfico muestra las ventas CONFIRMADA de los últimos seis meses, incluido el mes actual hasta el momento de la consulta, agrupadas por mes en la zona horaria de la aplicación. Excluye anuladas y fechas futuras, completa meses sin ventas con cero y muestra un estado vacío si corresponde.
 
-Los accesos respetan el rol; únicamente Gerencia recibe inventarios y estadísticas operativas y de ventas. El personal con permiso de clientes ve su indicador y acceso al módulo. BI y Chatbot figuran como Próximamente. No se incluyen cifras de demostración en la aplicación.
+Los accesos respetan el rol; únicamente Administrador y Gerente reciben inventarios y estadísticas operativas y de ventas. El personal con permiso de clientes ve su indicador y acceso al módulo. BI y Chatbot figuran como Próximamente. No se incluyen cifras de demostración en la aplicación.
 
 | Capa | Componentes | Responsabilidad |
 |---|---|---|
@@ -195,8 +195,27 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **84 pruebas, 837 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **91 pruebas, 934 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 
 Se incluyen código fuente, SQL del esquema y `composer.lock`. `.env`, dependencias, sesiones, registros y credenciales locales quedan fuera de Git. Para un servidor público configura HTTPS, `APP_DEBUG=false` y credenciales propias del entorno.
+
+## Roles y cuenta owner
+
+| Rol | Acceso |
+| --- | --- |
+| Administrador | Todos los módulos; administra las cuentas owner. |
+| Gerente | Todos los módulos; no puede modificar credenciales ni asignar el rol Administrador. |
+| Usuario de oficina | Clientes, planes de servicio, contratos y pagos. |
+| Técnico | Panel técnico: únicamente instalaciones asignadas a su empleado y sus evidencias. |
+
+La cuenta Administrador no se puede eliminar, inhabilitar ni degradar de rol. No existe eliminación de cuentas desde la interfaz. Al cambiar credenciales o permisos se revocan sesiones. Se conserva la protección de la última cuenta con acceso administrativo.
+
+Al actualizar un entorno existente, ejecuta `php artisan migrate --force`. La migración convierte Gerencia a Gerente y Personal autorizado a Usuario de oficina, además de variantes de Técnico/Administrador. Conserva cuentas y roles retirados para referencias existentes, pero solo los cuatro roles oficiales son asignables y pueden ingresar. Conserva el bloqueo de cuentas cuyo rol anterior estaba inactivo y cierra las sesiones existentes. No convierte automáticamente un gerente en owner. Para crear el primer owner, usa el comando interactivo `php artisan app:create-user --role=Administrador --username=administrador`.
+
+Para que un técnico vea sus asignaciones, vincula su cuenta con el empleado indicado en `pedidos_instalacion.tecnico_id`. Sin empleado asociado no verá instalaciones. Las fotografías JPG, PNG y WEBP (hasta 5 MB) se guardan en almacenamiento privado; cada consulta, carga y descarga verifica la asignación. Los planes, contratos y pagos siguen siendo interfaces de consulta; su registro/edición se implementará con las historias correspondientes.
+
+## Estrategia de ramas y commits
+
+Cada historia se trabaja en `feature/nombre-historia`. Los commits usan `tipo: descripción` (por ejemplo, `feat: definir permisos para los cuatro roles`). Los cambios se integran mediante Pull Request a `main`, después de la revisión por un compañero. No se publican commits directamente en `main`. La revisión debe corresponder a la versión final de la PR antes del merge.

@@ -12,13 +12,13 @@ use Illuminate\Validation\Rules\Password;
 
 class CreateUser extends Command
 {
-    protected $signature = 'app:create-user {--username= : Nombre de usuario} {--role=Personal autorizado : Nombre del rol activo}';
+    protected $signature = 'app:create-user {--username= : Nombre de usuario} {--role=Usuario de oficina : Nombre del rol activo}';
 
     protected $description = 'Crea una cuenta en usuarios sin contraseñas predeterminadas';
 
     public function handle(UserService $users): int
     {
-        $role = Role::where('nombre', $this->option('role'))->where('estado', 'ACTIVO')->first();
+        $role = Role::whereIn('nombre', Role::NAMES)->where('nombre', $this->option('role'))->where('estado', 'ACTIVO')->first();
         if (! $role) {
             $this->error('Rol activo no encontrado. Ejecuta php artisan db:seed o usa el nombre de un rol existente.');
 

@@ -4,7 +4,7 @@
 @section('workspace-content')
 <section class="overview">
     <header class="overview-heading">
-        <div><span class="eyebrow">RESUMEN DE TU OPERACIÓN</span><h1>{{ auth()->user()->isManager() ? 'Panel principal de Gerencia' : 'Panel principal' }}</h1>
+        <div><span class="eyebrow">RESUMEN DE TU OPERACIÓN</span><h1>{{ auth()->user()->isAdministrator() ? 'Panel de Administración' : (auth()->user()->isManager() ? 'Panel principal de Gerencia' : 'Panel de oficina') }}</h1>
         <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><span>Inicio</span><span aria-hidden="true">/</span><span aria-current="page">Dashboard</span></nav></div>
         <p class="overview-greeting">Hola, <strong>{{ auth()->user()->name }}</strong><br><span>Bienvenido a Lunnys Perú</span></p>
     </header>
@@ -46,6 +46,11 @@
         <div class="shortcut-grid">
             @can('register-clients')<a class="shortcut" href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<div><strong>Gestionar clientes</strong><span>Consulta y administra su información</span></div><span aria-hidden="true">→</span></a>@endcan
             @can('manage-users')<a class="shortcut" href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<div><strong>Gestionar usuarios</strong><span>Administra cuentas, roles y estados</span></div><span aria-hidden="true">→</span></a>@endcan
+            @can('view-office')
+            @foreach(['plans' => 'Planes de servicio', 'contracts' => 'Contratos', 'payments' => 'Pagos'] as $module => $label)
+            <a class="shortcut" href="{{ route($module.'.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<div><strong>{{ $label }}</strong><span>Consultar {{ mb_strtolower($label) }}</span></div><span aria-hidden="true">→</span></a>
+            @endforeach
+            @endcan
             @can('view-access-history')<a class="shortcut" href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<div><strong>Historial de accesos</strong><span>Consulta los ingresos al sistema</span></div><span aria-hidden="true">→</span></a>@endcan
             @if($clientCount === null && $summary === null)<p>No tienes módulos habilitados por el momento. Consulta con Gerencia.</p>@endif
         </div>
