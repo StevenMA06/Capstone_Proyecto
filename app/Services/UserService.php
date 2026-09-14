@@ -32,6 +32,9 @@ class UserService
             $managers = $this->users->lockManagers();
             $locked = $this->users->lock($user->getKey());
             $role = Role::findOrFail($data['rol_id']);
+            if ($locked->role?->nombre === Role::ADMIN && $role->nombre !== Role::ADMIN) {
+                throw ValidationException::withMessages(['rol_id' => 'El rol Administrador no se puede cambiar.']);
+            }
             $employee = ! empty($data['empleado_id']) ? Employee::findOrFail($data['empleado_id']) : null;
             $willManage = $locked->estado === 'ACTIVO' && $role->estado === 'ACTIVO' && $role->isManagement()
                 && (! $employee || $employee->estado === 'ACTIVO');
@@ -50,6 +53,9 @@ class UserService
         return DB::transaction(function () use ($user, $active): User {
             $managers = $this->users->lockManagers();
             $locked = $this->users->lock($user->getKey());
+            if ($locked->role?->nombre === Role::ADMIN && ! $active) {
+                throw ValidationException::withMessages(['rol_id' => 'La cuenta Administrador no se puede inhabilitar.']);
+            }
             $this->protectLastManager($locked, $active, $managers->filter(fn ($u) => $u->isManager())->count());
             $updated = $this->users->update($locked, ['estado' => $active ? 'ACTIVO' : 'INACTIVO']);
             if (! $active) {
@@ -63,7 +69,7 @@ class UserService
     private function protectLastManager(User $user, bool $willManage, int $managers): void
     {
         if ($user->isManager() && ! $willManage && $managers <= 1) {
-            throw ValidationException::withMessages(['rol_id' => 'Debe quedar al menos una cuenta activa de Gerencia.']);
+            throw ValidationException::withMessages(['rol_id' => 'Debe quedar al menos una cuenta activa de Administrador o Gerente.']);
         }
     }
 

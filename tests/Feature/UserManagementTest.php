@@ -16,14 +16,14 @@ class UserManagementTest extends TestCase
 
     private function manager(): User
     {
-        $role = Role::firstOrCreate(['nombre' => 'Gerencia'], ['estado' => 'ACTIVO']);
+        $role = Role::firstOrCreate(['nombre' => 'Gerente'], ['estado' => 'ACTIVO']);
 
         return User::factory()->create(['rol_id' => $role->getKey()]);
     }
 
     private function data(array $overrides = []): array
     {
-        $role = Role::firstOrCreate(['nombre' => 'Personal autorizado'], ['estado' => 'ACTIVO']);
+        $role = Role::firstOrCreate(['nombre' => 'Usuario de oficina'], ['estado' => 'ACTIVO']);
 
         return array_merge(['nombre_usuario' => 'ana.perez', 'correo' => 'ana@example.com', 'rol_id' => $role->getKey(), 'empleado_id' => null,
             'password' => 'ClaveSegura12345', 'password_confirmation' => 'ClaveSegura12345'], $overrides);
@@ -93,11 +93,11 @@ class UserManagementTest extends TestCase
 
     public function test_rf04_assigns_any_active_database_role(): void
     {
-        $role = Role::create(['nombre' => 'Técnico de campo', 'estado' => 'ACTIVO']);
+        $role = Role::firstOrCreate(['nombre' => 'Técnico', 'estado' => 'ACTIVO']);
         $target = User::factory()->create();
-        $session = app(\App\Repositories\AccessRepository::class)->begin($target, '127.0.0.1', 'test');
+        $session = app(AccessRepository::class)->begin($target, '127.0.0.1', 'test');
         $this->signIn($this->manager())->put('/users/'.$target->getKey(), $this->data(['rol_id' => $role->getKey(), 'password' => '', 'password_confirmation' => '']))->assertSessionHasNoErrors();
-        $this->assertSame('Técnico de campo', $target->fresh()->role->nombre);
+        $this->assertSame('Técnico', $target->fresh()->role->nombre);
         $this->assertDatabaseHas('sesiones_usuario', ['sesion_id' => $session, 'estado' => 'CERRADA']);
         $role->update(['estado' => 'INACTIVO']);
         $this->put('/users/'.$target->getKey(), $this->data(['rol_id' => $role->getKey()]))->assertSessionHasErrors('rol_id');
@@ -139,7 +139,7 @@ class UserManagementTest extends TestCase
     {
         $target = User::factory()->create(['estado' => 'BLOQUEADO']);
         $this->signIn($this->manager())->get('/users/'.$target->getKey())->assertOk()
-            ->assertSee('#'.$target->getKey())->assertSee($target->nombre_usuario)->assertSee('Personal autorizado')->assertSee('Bloqueado')
+            ->assertSee('#'.$target->getKey())->assertSee($target->nombre_usuario)->assertSee('Usuario de oficina')->assertSee('Bloqueado')
             ->assertDontSee($target->password_hash);
         $this->get('/users/999999')->assertNotFound();
     }
@@ -166,9 +166,9 @@ class UserManagementTest extends TestCase
     {
         $this->seed();
         $this->seed();
-        $this->assertDatabaseCount('roles', 2);
+        $this->assertDatabaseCount('roles', 4);
         $this->assertDatabaseCount('usuarios', 0);
-        $this->artisan('app:create-user', ['--role' => 'Gerencia', '--username' => 'gerencia'])
+        $this->artisan('app:create-user', ['--role' => 'Gerente', '--username' => 'gerencia'])
             ->expectsQuestion('Correo electrónico', 'gerencia@example.com')
             ->expectsQuestion('Contraseña (mínimo 12 caracteres, letras y números)', 'MiClaveSegura123')
             ->expectsQuestion('Confirma la contraseña', 'MiClaveSegura123')->assertSuccessful();

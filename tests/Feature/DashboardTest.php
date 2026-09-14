@@ -16,7 +16,7 @@ class DashboardTest extends TestCase
 
     private function manager(): User
     {
-        $role = Role::firstOrCreate(['nombre' => 'Gerencia'], ['estado' => 'ACTIVO']);
+        $role = Role::firstOrCreate(['nombre' => 'Gerente'], ['estado' => 'ACTIVO']);
 
         return User::factory()->create(['rol_id' => $role->getKey()]);
     }
@@ -84,7 +84,10 @@ class DashboardTest extends TestCase
         }
         $this->get('/')->assertRedirect('/dashboard');
         $this->signIn(User::factory()->create());
-        foreach (['contracts', 'payments', 'installations', 'equipment', 'materials'] as $path) {
+        foreach (['contracts', 'payments', 'plans'] as $path) {
+            $this->get('/'.$path)->assertOk();
+        }
+        foreach (['installations', 'equipment', 'materials'] as $path) {
             $this->get('/'.$path)->assertForbidden();
         }
     }
@@ -93,8 +96,8 @@ class DashboardTest extends TestCase
     {
         $this->signIn(User::factory()->create())->get('/dashboard')->assertOk()
             ->assertViewHas('summary', null)->assertSee('Gestionar clientes')->assertDontSee('Resumen de ventas')->assertDontSee('Gestionar usuarios');
-        $role = Role::create(['nombre' => 'Técnico', 'estado' => 'ACTIVO']);
-        $this->signIn(User::factory()->create(['rol_id' => $role->getKey()]))->get('/dashboard')->assertOk()
-            ->assertViewHas('clientCount', null)->assertViewHas('summary', null)->assertDontSee('Clientes registrados');
+        $role = Role::firstOrCreate(['nombre' => 'Técnico', 'estado' => 'ACTIVO']);
+        $this->signIn(User::factory()->create(['rol_id' => $role->getKey()]))->get('/dashboard')->assertRedirect('/technician');
+        $this->get('/technician')->assertOk()->assertDontSee('Clientes registrados');
     }
 }

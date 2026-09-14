@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Gestión de clientes') · Lunnys Perú</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=4">
-    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=2">
     @include('layouts.session-monitor')
     @stack('styles')
 </head>
 <body class="workspace-shell">
 <a class="skip-content" href="#module-content">Ir al contenido</a>
 <header class="workspace-topbar">
-    <a class="workspace-brand" href="{{ route('dashboard') }}"><span class="brand-mark" aria-hidden="true">L</span><span>Lunnys <strong>Perú</strong><small>PLATAFORMA DE GESTIÓN</small></span></a>
+    <a class="workspace-brand" href="{{ auth()->user()->isTechnician() ? route('technician.index') : route('dashboard') }}"><img class="brand-logo" src="{{ asset('images/lunnys-peru.png') }}" alt="Logo de Lunnys Perú"><span>Lunnys <strong>Perú</strong><small>PLATAFORMA DE GESTIÓN</small></span></a>
     <div class="workspace-account">
         <span class="user-avatar" aria-hidden="true">{{ mb_substr(auth()->user()->name, 0, 1) }}</span>
         <div class="user-label"><strong>{{ auth()->user()->name }}</strong><span>{{ auth()->user()->role->nombre }}</span></div>
@@ -24,19 +24,25 @@
         <details class="module-menu" open>
             <summary>Módulos del sistema</summary>
             <nav aria-label="Navegación principal">
-                <a class="{{ request()->routeIs('dashboard') ? 'nav-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif href="{{ route('dashboard') }}">@include('layouts.module-icon', ['icon' => 'home'])<span>Dashboard</span></a>
+                @unless(auth()->user()->isTechnician())<a class="{{ request()->routeIs('dashboard') ? 'nav-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif href="{{ route('dashboard') }}">@include('layouts.module-icon', ['icon' => 'home'])<span>Dashboard</span></a>@endunless
                 @can('manage-users')<a class="{{ request()->routeIs('users.*') ? 'nav-active' : '' }}" @if(request()->routeIs('users.*')) aria-current="page" @endif href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Usuarios</span></a>@endcan
                 @can('register-clients')<a class="{{ request()->routeIs('clients.*') ? 'nav-active' : '' }}" @if(request()->routeIs('clients.*')) aria-current="page" @endif href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Clientes</span></a>@endcan
                 @can('view-access-history')<a class="{{ request()->routeIs('access.index') ? 'nav-active' : '' }}" @if(request()->routeIs('access.index')) aria-current="page" @endif href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Historial de accesos</span></a>@endcan
-                @can('view-operations')
-                @foreach(['contracts' => ['Contratos', 'file'], 'payments' => ['Pagos', 'money'], 'installations' => ['Instalaciones', 'tool'], 'equipment' => ['Equipos', 'box'], 'materials' => ['Materiales', 'box']] as $key => [$module, $icon])
+                @can('view-office')
+                @foreach(['plans' => ['Planes de servicio', 'file'], 'contracts' => ['Contratos', 'file'], 'payments' => ['Pagos', 'money']] as $key => [$module, $icon])
                     <a class="{{ request()->routeIs($key.'.*') ? 'nav-active' : '' }}" @if(request()->routeIs($key.'.*')) aria-current="page" @endif href="{{ route($key.'.index') }}">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></a>
                 @endforeach
                 @endcan
+                @can('view-technician')<a class="{{ request()->routeIs('technician.*') ? 'nav-active' : '' }}" @if(request()->routeIs('technician.*')) aria-current="page" @endif href="{{ route('technician.index') }}">@include('layouts.module-icon', ['icon' => 'tool'])<span>Panel técnico</span></a>@endcan
+                @can('view-operations')
+                @foreach(['installations' => ['Instalaciones', 'tool'], 'equipment' => ['Equipos', 'box'], 'materials' => ['Materiales', 'box']] as $key => [$module, $icon])
+                    <a class="{{ request()->routeIs($key.'.*') ? 'nav-active' : '' }}" @if(request()->routeIs($key.'.*')) aria-current="page" @endif href="{{ route($key.'.index') }}">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></a>
+                @endforeach
                 <p class="nav-section">PRÓXIMOS MÓDULOS</p>
                 @foreach(['Ventas' => 'cart', 'Facturación' => 'file', 'Zonas' => 'pin', 'Reportes' => 'chart', 'BI' => 'chart', 'Chatbot' => 'chat'] as $module => $icon)
                     <span class="nav-pending" aria-disabled="true" title="{{ $module }}: próximamente">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span><small>Pronto</small></span>
                 @endforeach
+                @endcan
             </nav>
         </details>
         <div class="sidebar-note"><span class="online-dot" aria-hidden="true"></span> Lunnys Perú R.2.D.</div>

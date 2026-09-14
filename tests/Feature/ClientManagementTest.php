@@ -17,7 +17,7 @@ class ClientManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function actor(string $name = 'Gerencia'): User
+    private function actor(string $name = 'Gerente'): User
     {
         $role = Role::firstOrCreate(['nombre' => $name], ['estado' => 'ACTIVO']);
 
@@ -167,7 +167,7 @@ class ClientManagementTest extends TestCase
     public function test_rf06_updates_all_profile_data_without_changing_identity_creator_or_state(): void
     {
         $creator = $this->actor();
-        $editor = $this->actor('Personal autorizado');
+        $editor = $this->actor('Usuario de oficina');
         $client = $this->client($creator, ['estado' => 'INACTIVO']);
         $created = $client->fresh()->creado_en->toDateTimeString();
         $data = $this->data([
@@ -272,7 +272,7 @@ class ClientManagementTest extends TestCase
 
     public function test_guest_and_unapproved_role_cannot_access_any_client_operation(): void
     {
-        $actor = $this->actor('Técnico de campo');
+        $actor = $this->actor('Técnico');
         $client = $this->client($actor);
         foreach (['/clients', '/clients/create', '/clients/'.$client->getKey(), '/clients/'.$client->getKey().'/edit'] as $url) {
             $this->get($url)->assertRedirect('/login');
@@ -290,7 +290,7 @@ class ClientManagementTest extends TestCase
 
     public function test_authorized_personnel_can_list_consult_and_deactivate_clients(): void
     {
-        $actor = $this->actor('Personal autorizado');
+        $actor = $this->actor('Usuario de oficina');
         $client = $this->client($actor);
         $this->signIn($actor)->get('/clients')->assertOk();
         $this->get('/clients/'.$client->getKey())->assertOk()->assertSee('Activo');

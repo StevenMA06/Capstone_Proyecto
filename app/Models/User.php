@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Validation\ValidationException;
 
 class User extends Authenticatable
 {
@@ -24,6 +25,15 @@ class User extends Authenticatable
     protected $hidden = ['password_hash'];
 
     protected $rememberTokenName = '';
+
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user): void {
+            if ($user->role?->nombre === Role::ADMIN) {
+                throw ValidationException::withMessages(['account' => 'La cuenta Administrador no se puede eliminar.']);
+            }
+        });
+    }
 
     protected function casts(): array
     {
@@ -47,13 +57,28 @@ class User extends Authenticatable
 
     public function canAccess(): bool
     {
-        return $this->estado === 'ACTIVO' && $this->role?->estado === 'ACTIVO'
+        return $this->estado === 'ACTIVO' && $this->role?->estado === 'ACTIVO' && in_array($this->role->nombre, Role::NAMES, true)
             && ($this->empleado_id === null || $this->employee?->estado === 'ACTIVO');
     }
 
     public function isManager(): bool
     {
         return $this->canAccess() && $this->role->isManagement();
+    }
+
+    public function isAdministrator(): bool
+    {
+        return $this->canAccess() && $this->role->nombre === Role::ADMIN;
+    }
+
+    public function isOffice(): bool
+    {
+        return $this->canAccess() && $this->role->nombre === Role::OFFICE;
+    }
+
+    public function isTechnician(): bool
+    {
+        return $this->canAccess() && $this->role->nombre === Role::TECHNICIAN;
     }
 
     public function getNameAttribute(): string

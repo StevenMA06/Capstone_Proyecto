@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SaveUserRequest;
+use App\Models\Role;
 use App\Models\User;
 use App\Repositories\UserRepository;
 use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -31,7 +33,7 @@ class UserController extends Controller
 
     public function create(): View
     {
-        return view('users.form', ['account' => new User, 'roles' => $this->repository->roles(), 'employees' => $this->repository->employees()]);
+        return view('users.form', ['account' => new User, 'roles' => $this->assignableRoles(), 'employees' => $this->repository->employees()]);
     }
 
     public function store(SaveUserRequest $request): RedirectResponse
@@ -48,7 +50,9 @@ class UserController extends Controller
 
     public function edit(User $user): View
     {
-        return view('users.form', ['account' => $user, 'roles' => $this->repository->roles(), 'employees' => $this->repository->employees($user)]);
+        Gate::authorize('edit-user', $user);
+
+        return view('users.form', ['account' => $user, 'roles' => $user->role->nombre === Role::ADMIN ? $this->repository->roles()->where('nombre', Role::ADMIN) : $this->assignableRoles(), 'employees' => $this->repository->employees($user)]);
     }
 
     public function update(SaveUserRequest $request, User $user): RedirectResponse
@@ -60,9 +64,15 @@ class UserController extends Controller
 
     public function status(Request $request, User $user): RedirectResponse
     {
+        Gate::authorize('edit-user', $user);
         $data = $request->validate(['is_active' => ['required', 'boolean']]);
         $this->users->setActive($user, (bool) $data['is_active']);
 
         return redirect()->route('users.show', $user)->with('status', $data['is_active'] ? 'Cuenta habilitada.' : 'Cuenta inhabilitada.');
+    }
+
+    private function assignableRoles()
+    {
+        return $this->repository->roles()->filter(fn ($role) => auth()->user()->isAdministrator() || $role->nombre !== Role::ADMIN);
     }
 }
