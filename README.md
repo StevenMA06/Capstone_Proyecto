@@ -195,7 +195,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **91 pruebas, 934 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **94 pruebas, 959 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 
@@ -218,4 +218,8 @@ Para que un técnico vea sus asignaciones, vincula su cuenta con el empleado ind
 
 ## Estrategia de ramas y commits
 
-Cada historia se trabaja en `feature/nombre-historia`. Los commits usan `tipo: descripción` (por ejemplo, `feat: definir permisos para los cuatro roles`). Los cambios se integran mediante Pull Request a `main`, después de la revisión por un compañero. No se publican commits directamente en `main`. La revisión debe corresponder a la versión final de la PR antes del merge.
+Cada historia se trabaja en `feature/nombre-historia`. Los commits usan `tipo: descripción` (por ejemplo, `feat: definir permisos para los cuatro roles`). Los cambios se integran mediante Pull Request a `main`, después de verificar las pruebas y revisar los cambios. Por indicación del responsable, no se espera una revisión externa para realizar el merge. No se publican commits directamente en `main`. La verificación debe corresponder a la versión final de la PR antes del merge.
+
+### Compatibilidad de acceso durante la actualización
+
+El login y los permisos reconocen los nombres anteriores de los roles (por ejemplo, Gerencia como Gerente y Personal autorizado como Usuario de oficina) aunque aún no se haya aplicado la migración. Esta compatibilidad no modifica contraseñas ni habilita cuentas o roles inactivos. Se recomienda completar las migraciones al actualizar el entorno.
