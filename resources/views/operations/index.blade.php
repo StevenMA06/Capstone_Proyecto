@@ -5,6 +5,8 @@
 <section class="overview">
     <header class="overview-heading"><div><h1>{{ $title }}</h1><nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><a href="{{ route('dashboard') }}">Inicio</a><span aria-hidden="true">/</span><span aria-current="page">{{ $title }}</span></nav></div></header>
     <section class="overview-chart">
+        @if(session('status'))<div class="notice success" role="status">{{ session('status') }}</div>@endif
+        @if($kind === 'contracts')<div class="management-toolbar"><a class="action-link" href="{{ route('contracts.create') }}">+ Registrar contrato</a></div>@endif
         <h2>Consulta de {{ mb_strtolower($title) }}</h2><p class="muted">{{ $records->total() }} registros · Vista de consulta</p>
         @if(in_array($kind, ['equipment', 'materials']))
             @if($kind === 'equipment')<p class="muted">Stock disponible para asignación por nombre, tipo, marca y modelo.</p>@endif
