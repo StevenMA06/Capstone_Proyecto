@@ -101,7 +101,7 @@ Cuando se habilita `ACCESS_TWO_FACTOR_ENABLED=true`, el inicio de sesión exige 
 | RF-ACC-17 a RF-ACC-19 | Cierre de sesión con retorno al login y expiración por inactividad, aplicada en servidor y comprobada desde el navegador. |
 | RF-ACC-20 a RF-ACC-26 | Historial exclusivo de Administrador y Gerente con usuario, fecha, hora y resultado, búsqueda por usuario, filtros combinables de fecha y resultado, y paginación. Incluye rechazos de credenciales y códigos. |
 
-Administrador y Gerente accedenn a todos los módulos implementados. Usuario de oficina accede a clientes, planes, contratos y pagos. Técnico accede únicamente a su panel, con instalaciones asignadas y evidencias. Las rutas aplican los mismos permisos que el menú.
+Administrador y Gerente acceden a todos los módulos implementados. Usuario de oficina accede a clientes, planes, contratos y pagos. Técnico accede únicamente a su panel, con instalaciones asignadas y evidencias. Las rutas aplican los mismos permisos que el menú.
 
 El código dura **5 minutos** (`ACCESS_CODE_MINUTES`, entre 1 y 10). Se permiten **5 intentos por código**, un reenvío cada **60 segundos** y un máximo de **5 envíos por usuario en 15 minutos**. La solicitud de acceso dura como máximo 15 minutos; después se vuelven a pedir las credenciales. Un error del transporte invalida el código emitido y mantiene bloqueado el acceso. Los códigos no se guardan en texto plano ni se muestran en la pantalla o en logs.
 
@@ -166,7 +166,7 @@ Se mantiene el flujo Blade → ClientController / StoreClientRequest → ClientS
 
 El dashboard es la primera vista después de iniciar sesión para administración, gerencia y oficina, incluso si antes se intentó abrir otra URL protegida. El técnico es redirigido a su panel técnico. La raíz de la aplicación lleva al dashboard cuando hay sesión y al login para invitados.
 
-Administrador y Gerente tienen siete ítems: clientes registrados (incluidos inactivos), contratos ACTIVO, pagos PENDIENTE o VENCIDO, instalaciones EN_PROCESO, tarjetas de Equipos y Materiales, y ventas de seis meses. Las cuatro primeras tarjetas abren sus interfaces. Equipos y Materiales abren modales con nombre, stock actual a la derecha y un enlace a su interfaz de consulta. Las nuevas interfaces de contratos, pagos, instalaciones e inventario son consultas paginadas; no incluyen todavía registro ni edición. Oficina puede consultar planes, contratos y pagos; instalaciones e inventario general están restringidos a Administrador y Gerente.
+Administrador y Gerente tienen siete ítems: clientes registrados (incluidos inactivos), contratos ACTIVO, pagos PENDIENTE o VENCIDO, instalaciones EN_PROCESO, tarjetas de Equipos y Materiales, y ventas de seis meses. Las cuatro primeras tarjetas abren sus interfaces. Equipos y Materiales abren modales con nombre, stock actual a la derecha y un enlace a su interfaz de consulta. Las interfaces de pagos, instalaciones e inventario general son consultas paginadas. Contratos incluye registro básico con planes activos. Oficina puede consultar planes, contratos y pagos; instalaciones e inventario general están restringidos a Administrador y Gerente.
 
 Cada equipo es una unidad individual. El stock se agrupa por nombre, tipo, marca y modelo y cuenta solo unidades DISPONIBLE; los grupos con unidades asignadas o en mantenimiento siguen visibles con cero disponibles. Los inactivos se excluyen. El mínimo por grupo se configura con `EQUIPMENT_MINIMUM_STOCK` en el `.env` local (por defecto 1). Los materiales usan sus campos `stock_actual`, `stock_minimo` y `unidad_medida`, manteniendo hasta tres decimales. Las tarjetas y filas avisan cuando el stock es igual o inferior al mínimo. Los modales se cierran con el botón, Escape o clic fuera; el foco vuelve a la tarjeta.
 
@@ -195,7 +195,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **91 pruebas, 934 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **99 pruebas, 1057 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 
@@ -214,7 +214,7 @@ La cuenta Administrador no se puede eliminar, inhabilitar ni degradar de rol. No
 
 Al actualizar un entorno existente, ejecuta `php artisan migrate --force`. La migración convierte Gerencia a Gerente y Personal autorizado a Usuario de oficina, además de variantes de Técnico/Administrador. Conserva cuentas y roles retirados para referencias existentes, pero solo los cuatro roles oficiales son asignables y pueden ingresar. Conserva el bloqueo de cuentas cuyo rol anterior estaba inactivo y cierra las sesiones existentes. No convierte automáticamente un gerente en owner. Para crear el primer owner, usa el comando interactivo `php artisan app:create-user --role=Administrador --username=administrador`.
 
-Para que un técnico vea sus asignaciones, vincula su cuenta con el empleado indicado en `pedidos_instalacion.tecnico_id`. Sin empleado asociado no verá instalaciones. Las fotografías JPG, PNG y WEBP (hasta 5 MB) se guardan en almacenamiento privado; cada consulta, carga y descarga verifica la asignación. Los planes, contratos y pagos siguen siendo interfaces de consulta; su registro/edición se implementará con las historias correspondientes.
+Para que un técnico vea sus asignaciones, vincula su cuenta con el empleado indicado en `pedidos_instalacion.tecnico_id`. Sin empleado asociado no verá instalaciones. Las fotografías JPG, PNG y WEBP (hasta 5 MB) se guardan en almacenamiento privado; cada consulta, carga y descarga verifica la asignación. Planes cuenta con gestión completa para Administrador y Gerente. Oficina consulta planes y puede registrar contratos básicos. Pagos mantiene su alcance de consulta.
 
 ## Estrategia de ramas y commits
 
@@ -231,3 +231,24 @@ php artisan optimize:clear
 ```
 
 La migración convierte Gerencia a Gerente y Personal autorizado a Usuario de oficina sin cambiar contraseñas. El login requiere los nombres oficiales; no interpreta los alias antiguos. Completa esta actualización antes de volver a iniciar sesión.
+
+## Gestión de planes de servicio: RF-PLA-01 a RF-PLA-11
+
+Administrador y Gerente registran, editan, activan e inhabilitan planes desde **Planes de servicio**. Usuario de oficina consulta el listado y las fichas; Técnico no accede. Los permisos se aplican también en cada ruta del servidor.
+
+| Requisito | Comportamiento |
+| --- | --- |
+| RF-PLA-01 | Registro en `planes_servicio`, con estado activo y usuario creador. |
+| RF-PLA-02 y RF-PLA-03 | Número, nombre, tipo de servicio y precio obligatorios; errores en español junto a los campos y resumen accesible. |
+| RF-PLA-04 y RF-PLA-05 | Listado paginado y ficha completa, incluyendo descripción, condiciones, estado, creador y fechas. |
+| RF-PLA-06 | Edición sin alterar el creador, el estado ni los contratos existentes. |
+| RF-PLA-07 a RF-PLA-09 | Activación e inhabilitación sin eliminación; conserva información y relaciones históricas. |
+| RF-PLA-10 | El registro de contratos solo muestra planes activos y revalida su estado bajo bloqueo al guardar. |
+| RF-PLA-11 | Búsqueda por número de plan (coincidencia parcial literal), combinable con estado. |
+
+El número de plan es único, incluso para planes inactivos. El precio mensual debe ser positivo, con máximo dos decimales; la velocidad es opcional y, si se indica, debe ser un entero positivo. Descripción y condiciones son opcionales.
+
+Para RF-PLA-10 se incluye **Contratos → Registrar contrato**, disponible para administración, gerencia y oficina. Requiere cliente, plan, zona y empleado responsable activos, código único, fecha de inicio, duración y dirección de servicio. Guarda estado PENDIENTE, calcula la fecha final como inicio + duración en meses (sin desbordamiento de mes) − un día y toma el precio vigente del plan en el servidor. Los cambios posteriores del plan no modifican el precio ya contratado. No genera ventas, cobros ni documentos; esas acciones quedan para sus historias específicas. Si faltan planes, clientes, zonas o empleados activos, el formulario lo indica.
+
+No hay nuevas migraciones ni cambios al SQL para esta historia. Actualiza con `git pull origin main` y `php artisan optimize:clear`. `PlanManagementTest` comprueba registro, validación, errores visibles, duplicados, ficha, edición, conservación histórica, estados, búsqueda, paginación, permisos y selección/rechazo de planes inactivos en contratos. Las pruebas y la revisión visual usan datos sintéticos en bases aisladas.
+

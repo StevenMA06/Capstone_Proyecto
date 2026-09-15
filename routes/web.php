@@ -3,8 +3,10 @@
 use App\Http\Controllers\AccessHistoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ContractController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OperationController;
+use App\Http\Controllers\PlanController;
 use App\Http\Controllers\SessionStatusController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\TwoFactorController;
@@ -42,9 +44,18 @@ Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
 });
 
 Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+    Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
+    Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
     Route::get('/contracts', [OperationController::class, 'contracts'])->name('contracts.index');
     Route::get('/payments', [OperationController::class, 'payments'])->name('payments.index');
-    Route::get('/plans', [OperationController::class, 'plans'])->name('plans.index');
+});
+
+Route::middleware(['auth', 'can:manage-plans'])->group(function (): void {
+    Route::patch('/plans/{plan}/status', [PlanController::class, 'status'])->name('plans.status');
+    Route::resource('plans', PlanController::class)->only(['create', 'store', 'edit', 'update']);
+});
+Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+    Route::resource('plans', PlanController::class)->only(['index', 'show']);
 });
 
 Route::middleware(['auth', 'can:view-technician'])->group(function (): void {

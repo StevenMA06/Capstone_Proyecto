@@ -8,11 +8,6 @@ use Illuminate\View\View;
 
 class OperationController extends Controller
 {
-    public function plans(): View
-    {
-        return view('operations.plans', ['records' => DB::table('planes_servicio')->orderBy('nombre')->paginate(20)]);
-    }
-
     public function contracts(): View
     {
         return view('operations.index', [
