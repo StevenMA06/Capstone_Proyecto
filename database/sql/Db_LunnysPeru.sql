@@ -55,7 +55,6 @@ CREATE TABLE empleados (
     correo              VARCHAR(150) NULL,
     telefono            VARCHAR(25) NULL,
     cargo               VARCHAR(80) NOT NULL,
-    es_tecnico_campo    BOOLEAN NOT NULL DEFAULT FALSE,
     fecha_ingreso       DATE NULL,
     fecha_cese          DATE NULL,
     estado              ENUM('ACTIVO','INACTIVO') NOT NULL DEFAULT 'ACTIVO',
