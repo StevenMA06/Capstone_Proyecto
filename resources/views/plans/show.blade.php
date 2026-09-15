@@ -13,5 +13,5 @@
 <div class="status-box"><div><h3>{{ $plan->estado === 'ACTIVO' ? 'Inhabilitar plan' : 'Activar plan' }}</h3><p>Los planes inactivos se conservan para consulta y no se pueden seleccionar en contratos nuevos. Los contratos existentes mantienen su precio contratado.</p></div>
 <form method="POST" action="{{ route('plans.status', $plan) }}">@csrf @method('PATCH')<input type="hidden" name="is_active" value="{{ $plan->estado === 'ACTIVO' ? '0' : '1' }}"><button type="submit" class="secondary">{{ $plan->estado === 'ACTIVO' ? 'Inhabilitar' : 'Activar' }}</button></form></div>
 @endcan
-<a href="{{ route('plans.index') }}">Volver al listado de planes</a>
+<a class="secondary" href="{{ route('plans.index') }}">Volver al listado de planes</a>
 @endsection
