@@ -1,0 +1,39 @@
+.plans-module { width: 100%; max-width: none; }
+.plans-workspace { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 26px; align-items: start; }
+.plans-filter-panel { background: #f5f8f6; border: 1px solid #dfe9e2; border-radius: 14px; padding: 22px; }
+.plans-filter-panel h2 { font-size: 18px; }
+.plans-filter-panel > p, .plans-total { color: #63776a; font-size: 13px; line-height: 1.6; }
+.plans-filters { display: grid; gap: 23px; margin-top: 25px; }
+.plans-filters .action-link { width: 100%; }
+.plans-filters .clear-link { text-align: center; padding: 0; }
+.plans-filter-note { border-top: 1px solid #dfe9e2; margin-top: 25px; padding-top: 18px; font-size: 12px; line-height: 1.7; color: #63776a; }
+.plans-results { min-width: 0; }
+.plans-results .management-toolbar { margin: 0 0 22px; align-items: flex-start; flex-wrap: wrap; }
+.plans-results h2 { font-size: 21px; }
+.plans-total { margin: 7px 0 0; }
+.plans-results .table-scroll { border: 1px solid #e0e9e3; border-radius: 12px; }
+.plans-table { min-width: 640px; }
+.plans-table td { padding: 19px 14px; }
+.plans-table tbody tr:hover { background: #f8fbf9; }
+.plans-table tbody tr:last-child td { border-bottom: 0; }
+.plan-number, .plan-service { display: block; margin-top: 6px; font-size: 12px; color: #63776a; }
+.plan-number { color: #167345; font-weight: 600; }
+.plan-price { white-space: nowrap; font-weight: 600; }
+.plans-table .row-actions { flex-wrap: wrap; gap: 8px; }
+.plans-table .row-actions a { display: inline-flex; padding: 7px 10px; border: 1px solid #ccdfd1; border-radius: 7px; text-decoration: none; white-space: nowrap; font-size: 12px; }
+.plans-table .row-actions a:hover { background: #e7f3ec; }
+.plans-module a:focus-visible, .plans-module button:focus-visible, .plans-module .table-scroll:focus-visible { outline: 2px solid #087846; outline-offset: 3px; }
+@media (max-width: 1150px) {
+    .plans-workspace { grid-template-columns: 200px minmax(0, 1fr); gap: 18px; }
+    .plans-filter-panel { padding: 17px; }
+}
+@media (max-width: 850px) {
+    .plans-workspace { grid-template-columns: 1fr; }
+    .plans-filters { grid-template-columns: 1fr 1fr; align-items: end; gap: 16px; }
+    .plans-filter-note { margin-top: 18px; }
+}
+@media (max-width: 480px) {
+    .plans-filters { grid-template-columns: 1fr; }
+    .plans-results .management-toolbar > .action-link { width: 100%; }
+    .plans-module h1 { font-size: 25px; }
+}
