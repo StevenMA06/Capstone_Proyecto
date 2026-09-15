@@ -99,4 +99,4 @@
     .workspace-shell .account-form { padding: 20px; }
     .client-list-panel .pagination { padding: 16px; }
 }
-.workspace-brand .brand-logo{width:58px;height:58px;object-fit:contain;flex-shrink:0}@media(max-width:640px){.workspace-brand .brand-logo{width:44px;height:44px}}
+.workspace-brand .brand-logo{width:58px;height:58px;object-fit:contain;flex-shrink:0;border-radius:100%}@media(max-width:640px){.workspace-brand .brand-logo{width:44px;height:44px}}
