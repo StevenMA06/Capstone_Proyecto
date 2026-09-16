@@ -22,8 +22,8 @@ class TwoFactorService
 
     public function issue(User $user, ?array $pending = null): array
     {
-        if (! app()->environment('testing') && config('mail.default') !== 'smtp') {
-            throw ValidationException::withMessages(['email' => 'El envío de códigos requiere configurar el correo SMTP del sistema.']);
+        if (! app()->environment('testing') && ! in_array(config('mail.default'), ['smtp', 'brevo'], true)) {
+            throw ValidationException::withMessages(['email' => 'El envío de códigos requiere configurar SMTP o la API de Brevo.']);
         }
         $issued = DB::transaction(function () use ($user, $pending): array {
             $user = User::with(['role', 'employee'])->lockForUpdate()->findOrFail($user->getKey());
