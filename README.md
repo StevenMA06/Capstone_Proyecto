@@ -109,7 +109,7 @@ El código dura **5 minutos** (`ACCESS_CODE_MINUTES`, entre 1 y 10). Se permiten
 
 ### Configurar el envío de códigos
 
-Para activar en el futuro el segundo factor, configura un servidor SMTP real en tu `.env` y cambia `ACCESS_TWO_FACTOR_ENABLED=true`:
+Para activar en el futuro el segundo factor, configura SMTP o la API de Brevo en tu `.env` y cambia `ACCESS_TWO_FACTOR_ENABLED=true`:
 
 ```dotenv
 MAIL_MAILER=smtp
@@ -125,7 +125,7 @@ ACCESS_CODE_MINUTES=5
 
 Usa el host, puerto, esquema y autenticación indicados por tu proveedor (por ejemplo, `smtps` para TLS directo si lo requiere). Ejecuta `php artisan config:clear` después de modificar `.env`. El correo registrado del usuario debe ser un buzón al que pueda acceder. No subas `.env` ni credenciales a GitHub.
 
-Con el segundo factor habilitado, fuera de pruebas, los transportes `log` y `array` se rechazan para evitar un acceso que dependa de leer códigos de registros internos. Si SMTP no está configurado o falla, aparece una advertencia y no se inicia la sesión. La suite simula el correo para comprobar destinatario y código; la entrega a un buzón real requiere verificar la configuración SMTP del entorno. No se necesita modificar el SQL ni instalar dependencias nuevas.
+Con el segundo factor habilitado, fuera de pruebas, los transportes `log` y `array` se rechazan para evitar un acceso que dependa de leer códigos de registros internos. Si el proveedor de correo no está configurado o falla, aparece una advertencia y no se inicia la sesión. La suite simula el correo para comprobar destinatario y código; la entrega a un buzón real requiere verificar la configuración SMTP del entorno. No se necesita modificar el SQL ni instalar dependencias nuevas.
 
 ## Gestión de clientes: RF-CLI-01 a RF-CLI-13
 
@@ -283,3 +283,36 @@ En un servidor configura el programador del sistema para ejecutar `php artisan s
 Como respaldo, cada petición web también procesa los ceses vencidos, y el control de acceso comprueba directamente la vigencia del empleado. Sin el programador, se actualizan los estados en la siguiente petición; para procesarlos aunque nadie use el sistema, el programador y la base deben permanecer disponibles.
 
 `EmployeeManagementTest` verifica registro, validaciones, permisos, búsquedas, edición, conservación, cese al finalizar el día en Perú, cierre de sesiones, rechazo de login, exclusión de empleados no elegibles, intentos de asignación manual y reactivación explícita. La verificación se realiza con datos sintéticos en una base aislada.
+
+## Envío de códigos por API HTTPS de Brevo
+
+El transporte `brevo` utiliza `https://api.brevo.com/v3/smtp/email` por HTTPS (puerto 443), sin conexiones SMTP ni paquetes adicionales. Mantiene la validación TLS; no desactives la verificación de certificados. La generación, expiración, reenvío e invalidación de códigos siguen usando el flujo existente.
+
+1. En Brevo abre **Configuración > SMTP y API > API Keys & MCP** y genera una **clave API**, diferente de la clave SMTP. Verifica el remitente y, si está activado el control de IP para API, autoriza la IP pública del servidor o equipo que enviará. No compartas la clave ni la subas a GitHub.
+2. Actualiza el proyecto con `git pull origin main`. Copia las variables de `.env.brevo.example` a tu `.env` existente; conserva la base de datos, APP_KEY y demás valores. No reemplaces todo tu `.env`.
+
+```dotenv
+MAIL_MAILER=brevo
+BREVO_API_KEY="TU_CLAVE_API"
+MAIL_FROM_ADDRESS=tu-remitente-verificado@example.com
+MAIL_FROM_NAME="Lunnys Perú"
+ACCESS_TWO_FACTOR_ENABLED=false
+ACCESS_CODE_MINUTES=5
+```
+
+Las variables SMTP (`MAIL_HOST`, `MAIL_PORT`, `MAIL_SCHEME`, `MAIL_USERNAME`, `MAIL_PASSWORD`) no se utilizan con `MAIL_MAILER=brevo`.
+
+3. Limpia la configuración y prueba con una dirección real tuya (sin barras antes del @):
+
+```powershell
+php artisan optimize:clear
+php artisan app:mail-test destinatario@example.com
+```
+
+El comando confirma aceptación por el proveedor, no llegada a la bandeja. Comprueba el correo y spam, y consulta los registros transaccionales de Brevo si no llega. El comando rechaza `log`/`array`, destinatarios inválidos y clave ausente. Muestra errores seguros sin revelar la clave o el cuerpo del mensaje.
+
+4. Solo después de recibir la prueba, cambia `ACCESS_TWO_FACTOR_ENABLED=true`, ejecuta `php artisan optimize:clear` y reinicia `artisan serve` si está abierto. Inicia sesión con una cuenta cuyo correo registrado puedas consultar: se requiere el código antes de acceder. No se necesitan migraciones.
+
+Errores API: HTTP 401 indica revisar la clave API; 403, permisos/IP autorizada/estado de cuenta; 429, límites de envío. Los fallos de conexión HTTPS requieren revisar la red y el almacén de certificados de PHP; no se solventan desactivando TLS. No hay reintentos automáticos de envío para evitar duplicados. Ante un fallo se invalida el código generado y el acceso queda bloqueado.
+
+La integración está probada con respuestas HTTP simuladas, incluyendo destinatario, cuerpo, autenticación de API, errores y acceso con segundo factor. La entrega real requiere la clave y el remitente de tu cuenta y debe verificarse en tu entorno.
