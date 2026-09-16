@@ -22,7 +22,11 @@ class UserService
     /** @param array<string, mixed> $data */
     public function create(array $data): User
     {
-        return $this->users->create($this->attributes($data) + ['estado' => 'ACTIVO']);
+        return DB::transaction(function () use ($data) {
+            $this->eligibleEmployee($data['empleado_id'] ?? null);
+
+            return $this->users->create($this->attributes($data) + ['estado' => 'ACTIVO']);
+        }, 3);
     }
 
     /** @param array<string, mixed> $data */
@@ -35,7 +39,7 @@ class UserService
             if ($locked->role?->nombre === Role::ADMIN && $role->nombre !== Role::ADMIN) {
                 throw ValidationException::withMessages(['rol_id' => 'El rol Administrador no se puede cambiar.']);
             }
-            $employee = ! empty($data['empleado_id']) ? Employee::findOrFail($data['empleado_id']) : null;
+            $employee = $this->eligibleEmployee($data['empleado_id'] ?? null, $locked->estado !== 'ACTIVO' && (string) ($data['empleado_id'] ?? '') === (string) $locked->empleado_id);
             $willManage = $locked->estado === 'ACTIVO' && $role->estado === 'ACTIVO' && $role->isManagement()
                 && (! $employee || $employee->estado === 'ACTIVO');
             $this->protectLastManager($locked, $willManage, $managers->filter(fn ($u) => $u->isManager())->count());
@@ -45,7 +49,7 @@ class UserService
             }
 
             return $updated;
-        });
+        }, 3);
     }
 
     public function setActive(User $user, bool $active): User
@@ -53,6 +57,9 @@ class UserService
         return DB::transaction(function () use ($user, $active): User {
             $managers = $this->users->lockManagers();
             $locked = $this->users->lock($user->getKey());
+            if ($active) {
+                $this->eligibleEmployee($locked->empleado_id);
+            }
             if ($locked->role?->nombre === Role::ADMIN && ! $active) {
                 throw ValidationException::withMessages(['rol_id' => 'La cuenta Administrador no se puede inhabilitar.']);
             }
@@ -63,7 +70,20 @@ class UserService
             }
 
             return $updated;
-        });
+        }, 3);
+    }
+
+    private function eligibleEmployee($id, bool $preserveExisting = false): ?Employee
+    {
+        if (! $id) {
+            return null;
+        }
+        $employee = Employee::lockForUpdate()->find($id);
+        if (! $employee || (! $preserveExisting && ! $employee->isEligible())) {
+            throw ValidationException::withMessages(['empleado_id' => 'Selecciona un empleado activo con vínculo laboral vigente.']);
+        }
+
+        return $employee;
     }
 
     private function protectLastManager(User $user, bool $willManage, int $managers): void

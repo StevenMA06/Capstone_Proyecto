@@ -81,7 +81,7 @@ Las pantallas de usuarios comparten el menú vertical de la plataforma, con Usua
 
 Estas operaciones requieren autorización de Administrador y Gerente también al acceder directamente por URL o enviar una petición al servidor. `UserManagementTest` verifica los nueve requisitos, validaciones, permisos y protección de la última cuenta activa de Administrador y Gerente.
 
-Se usan los campos originales de `usuarios`: `usuario_id`, `nombre_usuario`, `correo`, `password_hash`, `rol_id`, `empleado_id` y `estado`. Los roles se consultan desde `roles`; la asociación a un empleado activo es opcional. El nombre completo se obtiene del empleado vinculado, cuando existe. La administración de empleados y la creación de nuevos roles no forman parte de este módulo.
+Se usan los campos originales de `usuarios`: `usuario_id`, `nombre_usuario`, `correo`, `password_hash`, `rol_id`, `empleado_id` y `estado`. Los roles se consultan desde `roles`; la asociación a un empleado activo es opcional. El nombre completo se obtiene del empleado vinculado, cuando existe. La administración del personal está disponible en el módulo Empleados. La creación de nuevos roles no forma parte de Gestión de usuarios.
 
 Las cuentas inactivas o bloqueadas, los roles inactivos y los empleados vinculados inactivos no pueden entrar. Se protege la última cuenta administrativa activa y se revocan las sesiones al cambiar permisos, estado o contraseña. Las operaciones se autorizan también en el servidor.
 
@@ -195,7 +195,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **99 pruebas, 1057 aserciones**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **107 pruebas**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 
@@ -252,3 +252,34 @@ Para RF-PLA-10 se incluye **Contratos → Registrar contrato**, disponible para 
 
 No hay nuevas migraciones ni cambios al SQL para esta historia. Actualiza con `git pull origin main` y `php artisan optimize:clear`. `PlanManagementTest` comprueba registro, validación, errores visibles, duplicados, ficha, edición, conservación histórica, estados, búsqueda, paginación, permisos y selección/rechazo de planes inactivos en contratos. Las pruebas y la revisión visual usan datos sintéticos en bases aisladas.
 
+## Gestión de empleados y cese automático
+
+Administrador y Gerente pueden registrar, buscar por nombre/documento, filtrar por estado, consultar la ficha, editar y habilitar/inhabilitar empleados desde el menú **Empleados**. No se eliminan registros ni asociaciones históricas. Gerente no puede editar ni inhabilitar manualmente al empleado vinculado a una cuenta Administrador.
+
+El formulario exige tipo y número de documento (DNI de 8 dígitos), nombres, apellidos, cargo, fecha de inicio (`fecha_ingreso`) y fecha de cese (`fecha_cese`). Correo y teléfono son opcionales. Se rechazan documentos/correos duplicados y fechas de cese anteriores al inicio. Las fechas ya existen en el esquema: no se necesita importar el SQL ni agregar migraciones.
+
+La fecha de cese es el último día de trabajo completo en **America/Lima**. Desde las 00:00 del día siguiente se inhabilitan el empleado y sus cuentas, se cierran sus sesiones y se invalidan sus códigos temporales. La regla de cese también alcanza a una cuenta Administrador vinculada al empleado; no elimina la cuenta ni desactiva el rol compartido. Los roles del resto del personal permanecen disponibles.
+
+Solo se ofrecen empleados activos con vínculo vigente y sin otra cuenta asignada al crear usuarios. Se verifica otra vez al guardar y al habilitar cuentas. Los empleados con inicio futuro tampoco son elegibles. Los registros antiguos sin fechas se conservan; se exigen ambas fechas al editarlos. Una cuenta inactiva conserva su asociación histórica con el empleado cesado al editarla.
+
+Cambiar las fechas no reactiva al empleado o su cuenta automáticamente: después de renovar las fechas, habilita al empleado desde su ficha y luego habilita la cuenta desde Usuarios.
+
+Actualización:
+
+```powershell
+git pull origin main
+php artisan optimize:clear
+php artisan employees:expire
+```
+
+El último comando procesa ceses ya vencidos. Para ejecutar el proceso automáticamente cada minuto en desarrollo, abre otra terminal en el proyecto y mantenla abierta:
+
+```powershell
+php artisan schedule:work
+```
+
+En un servidor configura el programador del sistema para ejecutar `php artisan schedule:run` cada minuto, con el directorio de trabajo del proyecto y la ruta de PHP de ese servidor. No es necesario ejecutar ambos mecanismos simultáneamente. `php artisan schedule:list` permite verificar que `employees:expire` está registrado.
+
+Como respaldo, cada petición web también procesa los ceses vencidos, y el control de acceso comprueba directamente la vigencia del empleado. Sin el programador, se actualizan los estados en la siguiente petición; para procesarlos aunque nadie use el sistema, el programador y la base deben permanecer disponibles.
+
+`EmployeeManagementTest` verifica registro, validaciones, permisos, búsquedas, edición, conservación, cese al finalizar el día en Perú, cierre de sesiones, rechazo de login, exclusión de empleados no elegibles, intentos de asignación manual y reactivación explícita. La verificación se realiza con datos sintéticos en una base aislada.
