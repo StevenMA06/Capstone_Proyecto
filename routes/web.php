@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\OperationController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\SessionStatusController;
@@ -35,6 +36,11 @@ Route::middleware('auth')->group(function (): void {
 Route::middleware(['auth', 'can:manage-users'])->group(function (): void {
     Route::patch('/users/{user}/status', [UserController::class, 'status'])->name('users.status');
     Route::resource('users', UserController::class)->except('destroy');
+});
+
+Route::middleware(['auth', 'can:manage-employees'])->group(function (): void {
+    Route::patch('/employees/{employee}/status', [EmployeeController::class, 'status'])->name('employees.status');
+    Route::resource('employees', EmployeeController::class)->except('destroy');
 });
 
 Route::middleware(['auth', 'can:view-operations'])->group(function (): void {

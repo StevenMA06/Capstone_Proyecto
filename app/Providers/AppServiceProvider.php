@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Auth\RepositoryUserProvider;
+use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::define('manage-users', fn (User $user): bool => $user->isManager());
+        Gate::define('manage-employees', fn (User $user): bool => $user->isManager());
+        Gate::define('edit-employee', fn (User $user, Employee $employee): bool => $user->isManager()
+            && ($user->isAdministrator() || ! $employee->accounts()->whereHas('role', fn ($q) => $q->where('nombre', Role::ADMIN))->exists()));
         Gate::define('manage-plans', fn (User $user): bool => $user->isManager());
         Gate::define('view-operations', fn (User $user): bool => $user->isManager());
         Gate::define('view-office', fn (User $user): bool => $user->isManager() || $user->isOffice());

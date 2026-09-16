@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Employee;
 use App\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -28,12 +29,16 @@ class SaveUserRequest extends FormRequest
     public function rules(): array
     {
         $user = $this->route('user');
+        $employeeRule = Rule::exists('empleados', 'empleado_id');
+        if (! ($user && $user->estado !== 'ACTIVO' && (string) $this->input('empleado_id') === (string) $user->empleado_id)) {
+            $employeeRule->where('estado', 'ACTIVO')->where(fn ($q) => $q->where(fn ($q) => $q->whereNull('fecha_cese')->orWhere('fecha_cese', '>=', Employee::today()))->where(fn ($q) => $q->whereNull('fecha_ingreso')->orWhere('fecha_ingreso', '<=', Employee::today())));
+        }
 
         return [
             'nombre_usuario' => ['required', 'string', 'min:3', 'max:60', 'regex:/^[a-z0-9_.-]+$/', Rule::unique('usuarios', 'nombre_usuario')->ignore($user)],
             'correo' => ['required', 'email', 'max:150', Rule::unique('usuarios', 'correo')->ignore($user)],
             'rol_id' => ['required', 'integer', Rule::exists('roles', 'rol_id')->where('estado', 'ACTIVO')->whereIn('nombre', $this->user()->isAdministrator() ? Role::NAMES : [Role::MANAGER, Role::OFFICE, Role::TECHNICIAN])],
-            'empleado_id' => ['nullable', 'integer', Rule::exists('empleados', 'empleado_id')->where('estado', 'ACTIVO'), Rule::unique('usuarios', 'empleado_id')->ignore($user)],
+            'empleado_id' => ['nullable', 'integer', $employeeRule, Rule::unique('usuarios', 'empleado_id')->ignore($user)],
             'password' => [$user ? 'nullable' : 'required', 'string', 'max:128', 'confirmed', Password::min(12)->letters()->numbers()],
         ];
     }

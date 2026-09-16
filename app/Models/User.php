@@ -58,7 +58,7 @@ class User extends Authenticatable
     public function canAccess(): bool
     {
         return $this->estado === 'ACTIVO' && $this->role?->estado === 'ACTIVO' && in_array($this->role->nombre, Role::NAMES, true)
-            && ($this->empleado_id === null || $this->employee?->estado === 'ACTIVO');
+            && ($this->empleado_id === null || ($this->employee?->isEligible() ?? false));
     }
 
     public function isManager(): bool

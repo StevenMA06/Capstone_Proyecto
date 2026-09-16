@@ -23,7 +23,7 @@ class UserRepository
 
     public function employees(?User $account = null): Collection
     {
-        return Employee::query()->where('estado', 'ACTIVO')->where(function ($q) use ($account): void {
+        return Employee::eligible()->where(function ($q) use ($account): void {
             $q->whereNotIn('empleado_id', User::whereNotNull('empleado_id')->select('empleado_id'));
             if ($account?->empleado_id) {
                 $q->orWhere('empleado_id', $account->empleado_id);
