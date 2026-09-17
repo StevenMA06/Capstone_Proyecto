@@ -50,9 +50,14 @@ Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
 });
 
 Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+    Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
     Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
     Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
-    Route::get('/contracts', [OperationController::class, 'contracts'])->name('contracts.index');
+    Route::get('/contracts/{contract}', [ContractController::class, 'show'])->whereNumber('contract')->name('contracts.show');
+    Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->whereNumber('contract')->name('contracts.edit');
+    Route::put('/contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
+    Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->whereNumber('contract')->name('contracts.pdf');
+    Route::get('/contracts/{contract}/draft', [ContractController::class, 'draft'])->whereNumber('contract')->name('contracts.draft');
     Route::get('/payments', [OperationController::class, 'payments'])->name('payments.index');
 });
 

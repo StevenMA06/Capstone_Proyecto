@@ -3,35 +3,91 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreContractRequest;
-use App\Repositories\PlanRepository;
+use App\Services\ContractPdf;
 use App\Services\ContractService;
-use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ContractController extends Controller
 {
-    public function create(PlanRepository $plans)
+    private const STATES = ['PENDIENTE', 'ACTIVO', 'FINALIZADO', 'CANCELADO'];
+
+    public function __construct(private ContractService $contracts) {}
+
+    public function index(Request $request)
     {
-        return view('contracts.create', [
-            'plans' => $plans->active(),
-            'clients' => DB::table('clientes')->where('estado', 'ACTIVO')->orderBy('nombres_razon_social')->get(),
-            'zones' => DB::table('zonas_cobertura')->where('estado', 'ACTIVA')->orderBy('nombre')->get(),
-            'employees' => DB::table('empleados')->where('estado', 'ACTIVO')->orderBy('nombres')->get(),
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:180'],
+            'plan_id' => ['nullable', 'integer', 'exists:planes_servicio,plan_id'],
+            'estado' => ['nullable', Rule::in(self::STATES)],
+            'desde' => ['nullable', 'date_format:Y-m-d'],
+            'hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:desde'],
+            'orden' => ['nullable', Rule::in(['recientes', 'plan_desc', 'estado_desc'])],
+            'page' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        return view('contracts.index', [
+            'records' => $this->contracts->search($filters),
+            'plans' => $this->contracts->allPlans(),
+            'states' => self::STATES,
         ]);
     }
 
-    public function store(StoreContractRequest $request, ContractService $contracts)
+    public function create()
     {
-        try {
-            $contracts->create($request->validated());
-        } catch (UniqueConstraintViolationException $error) {
-            if (! str_contains($error->getMessage(), 'uq_contrato_codigo')) {
-                throw $error;
-            }
-            throw ValidationException::withMessages(['codigo' => 'Este código de contrato ya está registrado.']);
+        return view('contracts.form', $this->contracts->formData());
+    }
+
+    public function store(StoreContractRequest $request)
+    {
+        $id = $this->contracts->create($request->validated());
+
+        return redirect()->route('contracts.show', $id)->with('status', 'Contrato registrado correctamente. Código generado automáticamente.');
+    }
+
+    public function show(int $contract)
+    {
+        return view('contracts.show', ['contract' => $this->contracts->detail($contract)]);
+    }
+
+    public function edit(int $contract)
+    {
+        return view('contracts.form', $this->contracts->formData($contract));
+    }
+
+    public function update(StoreContractRequest $request, int $contract)
+    {
+        $feedback = $this->contracts->update($contract, $request->validated());
+
+        return redirect()->route('contracts.show', $contract)
+            ->with('status', $feedback['message'])
+            ->with('status_kind', $feedback['kind']);
+    }
+
+    public function pdf(int $contract, ContractPdf $pdf)
+    {
+        $record = $this->contracts->detail($contract);
+        $filename = 'contrato-'.preg_replace('/[^A-Za-z0-9._-]/', '_', $record->codigo).'.pdf';
+        if ($record->pdf_contrato_ruta && Storage::disk('local')->exists($record->pdf_contrato_ruta)) {
+            return Storage::disk('local')->download($record->pdf_contrato_ruta, $filename);
         }
 
-        return redirect()->route('contracts.index')->with('status', 'Contrato registrado correctamente.');
+        return response($pdf->render($record), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
+    public function draft(int $contract, ContractPdf $pdf)
+    {
+        $record = $this->contracts->detail($contract);
+        $record->estado = 'PENDIENTE';
+        $filename = 'borrador-'.preg_replace('/[^A-Za-z0-9._-]/', '_', $record->codigo).'.pdf';
+
+        return response($pdf->render($record), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
     }
 }

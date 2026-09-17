@@ -141,9 +141,11 @@ class PlanManagementTest extends TestCase
         $this->signIn($actor)->get('/contracts/create')->assertOk()->assertSee($active->nombre)->assertDontSee('Plan oculto')->assertViewHas('plans', fn ($p) => $p->pluck('plan_id')->all() === [$active->getKey()]);
         $this->post('/contracts', array_merge($data, ['plan_id' => $inactive->getKey()]))->assertSessionHasErrors('plan_id');
         $this->post('/contracts', array_merge($data, ['plan_id' => 999999]))->assertSessionHasErrors('plan_id');
-        $this->post('/contracts', $data)->assertSessionHasNoErrors()->assertRedirect('/contracts');
-        $this->assertDatabaseHas('contratos', ['codigo' => 'CONTRATO-NUEVO', 'plan_id' => $active->getKey(), 'precio_contratado' => '90.00', 'estado' => 'PENDIENTE', 'fecha_fin' => '2027-08-31']);
-        $this->post('/contracts', $data)->assertSessionHasErrors('codigo');
+        $this->post('/contracts', $data)->assertSessionHasNoErrors()->assertRedirect();
+        $saved = DB::table('contratos')->where('contrato_id', '!=', $existing->contrato_id)->first();
+        $this->assertMatchesRegularExpression('/^CON-[0-9]{8}-[A-Z0-9]{8}$/', $saved->codigo);
+        $this->assertDatabaseMissing('contratos', ['codigo' => 'CONTRATO-NUEVO']);
+        $this->assertDatabaseHas('contratos', ['contrato_id' => $saved->contrato_id, 'plan_id' => $active->getKey(), 'precio_contratado' => '90.00', 'estado' => 'PENDIENTE', 'fecha_fin' => '2027-08-31']);
         $active->update(['estado' => 'INACTIVO']);
         $this->get('/contracts/create')->assertOk()->assertSee('No hay planes activos');
         try {
