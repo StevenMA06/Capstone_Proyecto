@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Gestión de clientes') · Lunnys Perú</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=4">
-    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=4">
     @include('layouts.session-monitor')
     @stack('styles')
 </head>
@@ -21,8 +21,8 @@
 </header>
 <div class="workspace-body">
     <aside class="workspace-sidebar" aria-label="Menú de módulos">
-        <details class="module-menu" open>
-            <summary>Módulos del sistema</summary>
+        <div class="module-menu">
+            <p class="module-menu-title">Módulos del sistema</p>
             <nav aria-label="Navegación principal">
                 @unless(auth()->user()->isTechnician())<a class="{{ request()->routeIs('dashboard') ? 'nav-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif href="{{ route('dashboard') }}">@include('layouts.module-icon', ['icon' => 'home'])<span>Dashboard</span></a>@endunless
                 @can('manage-employees')<a class="{{ request()->routeIs('employees.*') ? 'nav-active' : '' }}" @if(request()->routeIs('employees.*')) aria-current="page" @endif href="{{ route('employees.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Empleados</span></a>@endcan
@@ -45,7 +45,7 @@
                 @endforeach
                 @endcan
             </nav>
-        </details>
+        </div>
         <div class="sidebar-note"><span class="online-dot" aria-hidden="true"></span> Lunnys Perú R.2.D.</div>
     </aside>
     <main class="workspace-main" id="module-content" tabindex="-1">@yield('workspace-content')</main>

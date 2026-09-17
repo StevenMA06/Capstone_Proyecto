@@ -45,6 +45,7 @@ return [
         ],
 
         'mysql' => [
+            'timezone' => '-05:00',
             'driver' => 'mysql',
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
@@ -65,6 +66,7 @@ return [
         ],
 
         'mariadb' => [
+            'timezone' => '-05:00',
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
