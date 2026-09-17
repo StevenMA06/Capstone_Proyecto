@@ -30,9 +30,9 @@ class StoreClientRequest extends FormRequest
                 $document,
             ],
             'nombres_razon_social' => ['required', 'string', 'max:180'],
-            'apellidos' => ['nullable', 'string', 'max:120'],
+            'apellidos' => ['required', 'string', 'max:120'],
             'correo' => ['nullable', 'string', 'email', 'max:150'],
-            'telefono' => ['nullable', 'string', 'max:25'],
+            'telefono' => ['required', 'string', 'max:25'],
             'direccion' => ['required', 'string', 'max:255'],
             'referencia_direccion' => ['nullable', 'string', 'max:255'],
             'distrito' => ['nullable', 'string', 'max:100'],
@@ -49,6 +49,7 @@ class StoreClientRequest extends FormRequest
             'tipo_documento' => 'tipo de documento', 'numero_documento' => 'número de documento',
             'nombres_razon_social' => 'nombres o razón social', 'direccion' => 'dirección',
             'referencia_direccion' => 'referencia de dirección',
+            'telefono' => 'teléfono',
         ];
     }
 

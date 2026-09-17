@@ -29,7 +29,7 @@ class ClientManagementTest extends TestCase
         return array_merge([
             'tipo_documento' => 'DNI', 'numero_documento' => '00123456',
             'nombres_razon_social' => 'Ana María', 'apellidos' => 'Pérez Gómez',
-            'direccion' => 'Av. España 123',
+            'direccion' => 'Av. España 123', 'telefono' => '900111222',
         ], $overrides);
     }
 
@@ -172,14 +172,13 @@ class ClientManagementTest extends TestCase
         $created = $client->fresh()->creado_en->toDateTimeString();
         $data = $this->data([
             'tipo_documento' => 'RUC', 'numero_documento' => '00123456789', 'nombres_razon_social' => 'Empresa SAC',
-            'apellidos' => '', 'direccion' => 'Nueva dirección', 'correo' => 'empresa@example.com',
+            'apellidos' => 'Gómez', 'direccion' => 'Nueva dirección', 'correo' => 'empresa@example.com',
             'telefono' => '900111222', 'referencia_direccion' => 'Parque', 'distrito' => 'Centro',
             'provincia' => 'Trujillo', 'departamento' => 'La Libertad', 'latitud' => '-8.0000000', 'longitud' => '-79.0000000',
         ]);
         $this->signIn($editor)->put('/clients/'.$client->getKey(), $data + [
             'estado' => 'ACTIVO', 'creado_por' => $editor->getKey(), 'cliente_id' => 999999, 'creado_en' => '2000-01-01',
         ])->assertRedirect('/clients/'.$client->getKey())->assertSessionHasNoErrors();
-        $data['apellidos'] = null;
         $this->assertDatabaseHas('clientes', $data + [
             'cliente_id' => $client->getKey(), 'estado' => 'INACTIVO', 'creado_por' => $creator->getKey(), 'creado_en' => $created,
         ]);

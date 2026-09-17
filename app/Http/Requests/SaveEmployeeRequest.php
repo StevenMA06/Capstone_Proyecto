@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Employee;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +21,7 @@ class SaveEmployeeRequest extends FormRequest
             'numero_documento' => ['required', 'string', 'max:20', $this->input('tipo_documento') === 'DNI' ? 'regex:/^[0-9]{8}$/' : 'regex:/^[a-zA-Z0-9-]+$/', Rule::unique('empleados')->where('tipo_documento', $this->input('tipo_documento'))->ignore($this->route('employee'))],
             'nombres' => ['required', 'string', 'max:100'],
             'apellidos' => ['required', 'string', 'max:120'],
-            'cargo' => ['required', 'string', 'max:80'],
+            'cargo' => ['required', 'string', Rule::in(Employee::POSITIONS)],
             'correo' => ['nullable', 'email', 'max:150', Rule::unique('empleados')->ignore($this->route('employee'))],
             'telefono' => ['nullable', 'string', 'max:25', 'regex:/^[0-9+() -]+$/'],
             'fecha_ingreso' => ['required', 'date_format:Y-m-d', 'after_or_equal:1000-01-01'],

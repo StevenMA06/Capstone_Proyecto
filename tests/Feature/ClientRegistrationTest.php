@@ -25,6 +25,7 @@ class ClientRegistrationTest extends TestCase
             'tipo_documento' => 'DNI',
             'numero_documento' => '00123456',
             'nombres_razon_social' => 'Ana María',
+            'apellidos' => 'Pérez Gómez', 'telefono' => '900111222',
             'direccion' => 'Av. España 123',
         ], $overrides);
     }
@@ -32,20 +33,21 @@ class ClientRegistrationTest extends TestCase
     public function test_manager_registers_client_with_only_required_information(): void
     {
         $creator = $this->userWithRole('Gerente');
-        $this->signIn($creator)->post('/clients', $this->data())
-            ->assertRedirect('/clients/create')->assertSessionHasNoErrors()
+        $response = $this->signIn($creator)->post('/clients', $this->data())
+            ->assertSessionHasNoErrors()
             ->assertSessionHas('status');
         $this->assertDatabaseCount('clientes', 1);
         $this->assertDatabaseHas('clientes', $this->data() + [
             'creado_por' => $creator->getKey(), 'estado' => 'ACTIVO',
-            'apellidos' => null, 'correo' => null, 'telefono' => null,
+            'correo' => null,
             'latitud' => null, 'longitud' => null,
         ]);
         $client = Client::firstOrFail();
+        $response->assertRedirect('/clients/'.$client->getKey());
         $this->assertNotNull($client->creado_en);
         $this->assertNotNull($client->actualizado_en);
-        $this->get('/clients/create')->assertOk()
-            ->assertSee('Cliente #'.$client->getKey().' registrado correctamente.');
+        $this->get('/clients/'.$client->getKey())->assertOk()
+            ->assertSee('Cliente #'.$client->getKey().' registrado correctamente.')->assertSee('data-toast', false);
         $this->get('/clients/create')->assertOk();
         $this->assertDatabaseCount('clientes', 1);
     }
@@ -59,11 +61,11 @@ class ClientRegistrationTest extends TestCase
             'latitud' => '-8.1116000', 'longitud' => '-79.0287000',
         ]);
         $this->signIn($this->userWithRole('Usuario de oficina'))->post('/clients', $data)
-            ->assertRedirect('/clients/create')->assertSessionHasNoErrors();
+            ->assertRedirect('/clients/'.Client::firstOrFail()->getKey())->assertSessionHasNoErrors();
         $this->assertDatabaseHas('clientes', $data);
     }
 
-    public function test_all_document_types_and_company_without_surname_are_supported(): void
+    public function test_all_document_types_with_required_contact_information_are_supported(): void
     {
         $this->signIn($this->userWithRole('Gerente'));
         foreach (['DNI', 'CE', 'RUC', 'OTRO'] as $type) {
@@ -71,11 +73,11 @@ class ClientRegistrationTest extends TestCase
             $data = $this->data([
                 'tipo_documento' => $type, 'numero_documento' => $number,
                 'nombres_razon_social' => $type === 'RUC' ? 'Empresa de prueba SAC' : 'Cliente de prueba',
-                'apellidos' => '',
+                'apellidos' => 'Pérez',
             ]);
-            $this->post('/clients', $data)->assertSessionHasNoErrors()->assertRedirect('/clients/create');
+            $this->post('/clients', $data)->assertSessionHasNoErrors()->assertRedirect('/clients/'.Client::where('tipo_documento', $type)->firstOrFail()->getKey());
             $this->assertDatabaseHas('clientes', [
-                'tipo_documento' => $type, 'numero_documento' => $number, 'apellidos' => null,
+                'tipo_documento' => $type, 'numero_documento' => $number, 'apellidos' => 'Pérez',
             ]);
         }
         $this->assertDatabaseCount('clientes', 4);
@@ -94,6 +96,16 @@ class ClientRegistrationTest extends TestCase
         $this->assertSame('ACTIVO', $client->estado);
         $this->assertNotEquals(999999, $client->getKey());
         $this->assertNotEquals('2000-01-01 00:00:00', $client->creado_en->format('Y-m-d H:i:s'));
+    }
+
+    public function test_surname_and_phone_cannot_be_missing_or_blank(): void
+    {
+        $this->signIn($this->userWithRole('Gerente'));
+        foreach ([null, '', '   '] as $blank) {
+            $this->post('/clients', $this->data(['apellidos' => $blank, 'telefono' => $blank]))
+                ->assertSessionHasErrors(['apellidos', 'telefono']);
+        }
+        $this->assertDatabaseCount('clientes', 0);
     }
 
     public function test_form_is_reachable_from_dashboard_for_both_roles(): void

@@ -31,7 +31,7 @@ class EmployeeManagementTest extends TestCase
 
     private function data(array $changes = []): array
     {
-        return array_merge(['tipo_documento' => 'DNI', 'numero_documento' => '12345678', 'nombres' => 'Ana', 'apellidos' => 'Pérez', 'cargo' => 'Instaladora', 'correo' => 'ana@example.test', 'telefono' => '987654321', 'fecha_ingreso' => '2026-09-01', 'fecha_cese' => '2026-09-30'], $changes);
+        return array_merge(['tipo_documento' => 'DNI', 'numero_documento' => '12345678', 'nombres' => 'Ana', 'apellidos' => 'Pérez', 'cargo' => 'Técnico de Campo', 'correo' => 'ana@example.test', 'telefono' => '987654321', 'fecha_ingreso' => '2026-09-01', 'fecha_cese' => '2026-09-30'], $changes);
     }
 
     public function test_managers_register_consult_search_and_edit_without_deleting_history(): void
@@ -43,7 +43,7 @@ class EmployeeManagementTest extends TestCase
         $this->get('/employees?search=12345678')->assertOk()->assertSee('Ana')->assertSee('2026-09-30');
         $this->get('/employees?search=Pérez')->assertSee('Ana');
         $this->get('/employees?search=NO-EXISTE')->assertSee('No se encontraron empleados');
-        $this->get('/employees/'.$employee->getKey())->assertOk()->assertSee('Instaladora');
+        $this->get('/employees/'.$employee->getKey())->assertOk()->assertSee('Técnico de Campo');
         $this->put('/employees/'.$employee->getKey(), $this->data(['nombres' => '<script>prueba</script>']))->assertSessionHasNoErrors();
         $this->get('/employees/'.$employee->getKey())->assertSee('&lt;script&gt;prueba&lt;/script&gt;', false)->assertDontSee('<script>prueba</script>', false);
         $this->delete('/employees/'.$employee->getKey())->assertStatus(405);
@@ -59,6 +59,18 @@ class EmployeeManagementTest extends TestCase
         Employee::create($this->data());
         $this->post('/employees', $this->data())->assertSessionHasErrors(['numero_documento', 'correo']);
         $this->assertDatabaseCount('empleados', 1);
+    }
+
+    public function test_position_is_selected_from_the_two_allowed_options(): void
+    {
+        $this->signIn($this->actor())->get('/employees/create')->assertOk()
+            ->assertSee('<select id="cargo"', false)->assertSee('Técnico de Campo')->assertSee('Asistente de ventas');
+        $this->post('/employees', $this->data(['cargo' => 'Gerente']))->assertSessionHasErrors('cargo');
+        $this->post('/employees', $this->data(['cargo' => 'Asistente de ventas']))->assertSessionHasNoErrors();
+        $employee = Employee::firstOrFail();
+        $this->assertSame('Asistente de ventas', $employee->cargo);
+        $this->put('/employees/'.$employee->getKey(), $this->data(['cargo' => 'Otro']))->assertSessionHasErrors('cargo');
+        $this->assertSame('Asistente de ventas', $employee->fresh()->cargo);
     }
 
     public function test_expired_creation_is_inactive_and_office_and_technician_cannot_manage(): void
