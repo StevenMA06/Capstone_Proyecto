@@ -13,7 +13,7 @@
 .workspace-account .secondary { font-size: 12px; padding: 10px 13px; }
 .workspace-body { display: flex; flex: 1; min-width: 0; }
 .workspace-sidebar { width: 218px; flex-shrink: 0; padding: 26px 14px 18px; background: #fff; border-right: 1px solid #e2eae5; display: flex; flex-direction: column; }
-.module-menu summary { font-size: 10px; font-weight: bold; color: #84958b; letter-spacing: 1.1px; text-transform: uppercase; margin: 0 12px 17px; cursor: pointer; }
+.module-menu-title { font-size: 10px; font-weight: bold; color: #84958b; letter-spacing: 1.1px; text-transform: uppercase; margin: 0 12px 17px; }
 .module-menu nav { display: grid; gap: 3px; }
 .module-menu nav>a, .nav-pending { min-height: 40px; padding: 9px 12px; border-radius: 8px; display: flex; align-items: center; gap: 11px; color: #4c6456; text-decoration: none; font-size: 13px; }
 .module-menu svg { width: 18px; height: 18px; stroke-width: 1.6; }
@@ -87,7 +87,7 @@
     .user-label { max-width: 170px; }
     .workspace-body { flex-direction: column; }
     .workspace-sidebar { width: 100%; border-right: 0; border-bottom: 1px solid #e2eae5; padding: 14px 18px; }
-    .module-menu summary { margin: 0; padding: 8px 0; }
+    .module-menu-title { margin: 0; padding: 8px 0; }
     .module-menu nav { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 12px; }
     .nav-section { grid-column: 1/-1; }
     .sidebar-note { display: none; }

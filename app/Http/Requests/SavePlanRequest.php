@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class SavePlanRequest extends FormRequest
 {
@@ -15,7 +14,6 @@ class SavePlanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'numero_plan' => ['required', 'string', 'max:30', Rule::unique('planes_servicio', 'numero_plan')->ignore($this->route('plan'))],
             'nombre' => ['required', 'string', 'max:120'],
             'tipo_servicio' => ['required', 'string', 'max:80'],
             'velocidad_mbps' => ['nullable', 'integer', 'between:1,4294967295'],

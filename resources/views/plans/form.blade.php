@@ -3,8 +3,9 @@
 <h2>{{ $plan->exists ? 'Editar plan' : 'Registrar plan' }}</h2><p class="muted">Los campos marcados con * son obligatorios.</p>
 <form method="POST" action="{{ $plan->exists ? route('plans.update', $plan) : route('plans.store') }}" class="account-form">
     @csrf @if($plan->exists) @method('PUT') @endif
+    <div><label for="plan-number">Número de plan</label><input id="plan-number" value="{{ $plan->exists ? $plan->numero_plan : 'Se genera al guardar' }}" readonly aria-describedby="plan-number-help"><small id="plan-number-help">Asignado automáticamente por el sistema. No se puede modificar.</small></div>
     @foreach([
-        ['numero_plan', 'Número de plan', true, 30], ['nombre', 'Nombre del plan', true, 120], ['tipo_servicio', 'Tipo de servicio', true, 80],
+        ['nombre', 'Nombre del plan', true, 120], ['tipo_servicio', 'Tipo de servicio', true, 80],
         ['velocidad_mbps', 'Velocidad (Mbps)', false, null], ['precio_mensual', 'Precio mensual (S/)', true, null],
         ['descripcion', 'Descripción', false, 500], ['condiciones', 'Condiciones', false, 10000],
     ] as [$field, $label, $required, $length])

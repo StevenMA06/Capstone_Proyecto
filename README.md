@@ -105,7 +105,7 @@ Administrador y Gerente acceden a todos los módulos implementados. Usuario de o
 
 El código dura **5 minutos** (`ACCESS_CODE_MINUTES`, entre 1 y 10). Se permiten **5 intentos por código**, un reenvío cada **60 segundos** y un máximo de **5 envíos por usuario en 15 minutos**. La solicitud de acceso dura como máximo 15 minutos; después se vuelven a pedir las credenciales. Un error del transporte invalida el código emitido y mantiene bloqueado el acceso. Los códigos no se guardan en texto plano ni se muestran en la pantalla o en logs.
 
-`SESSION_LIFETIME=120` establece 120 minutos sin solicitudes autenticadas. La comprobación automática del navegador no renueva ese plazo. El servidor rechaza la sesión vencida aunque JavaScript esté deshabilitado; al volver a una pestaña visible se comprueba el estado y se regresa al login si corresponde. Las fechas y los filtros del historial usan la zona horaria de la aplicación, actualmente UTC, indicada en pantalla.
+`SESSION_LIFETIME=120` establece 120 minutos sin solicitudes autenticadas. La comprobación automática del navegador no renueva ese plazo. El servidor rechaza la sesión vencida aunque JavaScript esté deshabilitado; al volver a una pestaña visible se comprueba el estado y se regresa al login si corresponde. Las fechas y los filtros del historial usan la zona horaria de la aplicación, America/Lima (UTC−5), indicada en pantalla.
 
 ### Configurar el envío de códigos
 
@@ -195,7 +195,7 @@ php artisan config:clear
 php artisan test --compact
 ```
 
-`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **107 pruebas**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
+`phpunit.xml` selecciona `Db_LunnysPeru_test`; el arranque de las pruebas exige entorno `testing` y un nombre de base terminado en `_test`. Se verificaron **115 pruebas**, con PHP 8.2.12 y MariaDB 10.4.32 incluidos en XAMPP. Cubren autenticación, sesiones, auditoría, autorización, los nueve requisitos de usuarios y las restricciones de la base suministrada. ClientRegistrationTest y ClientManagementTest suman 29 pruebas para RF-CLI-01 a RF-CLI-13. Verifican persistencia, validación por campo, documentos duplicados y carreras de escritura, búsqueda y paginación, edición, inhabilitación, conservación exacta de los historiales y aislamiento entre clientes, estados vacíos, permisos, CSRF y escape HTML. Las pruebas de historial crean datos sintéticos en la base de pruebas; no agregan datos de demostración a la aplicación.
 
 ## Repositorio
 
@@ -239,18 +239,32 @@ Administrador y Gerente registran, editan, activan e inhabilitan planes desde **
 | Requisito | Comportamiento |
 | --- | --- |
 | RF-PLA-01 | Registro en `planes_servicio`, con estado activo y usuario creador. |
-| RF-PLA-02 y RF-PLA-03 | Número, nombre, tipo de servicio y precio obligatorios; errores en español junto a los campos y resumen accesible. |
+| RF-PLA-02 y RF-PLA-03 | Nombre, tipo de servicio y precio obligatorios; errores en español junto a los campos y resumen accesible. El número se genera al guardar. |
 | RF-PLA-04 y RF-PLA-05 | Listado paginado y ficha completa, incluyendo descripción, condiciones, estado, creador y fechas. |
 | RF-PLA-06 | Edición sin alterar el creador, el estado ni los contratos existentes. |
 | RF-PLA-07 a RF-PLA-09 | Activación e inhabilitación sin eliminación; conserva información y relaciones históricas. |
 | RF-PLA-10 | El registro de contratos solo muestra planes activos y revalida su estado bajo bloqueo al guardar. |
 | RF-PLA-11 | Búsqueda por número de plan (coincidencia parcial literal), combinable con estado. |
 
-El número de plan es único, incluso para planes inactivos. El precio mensual debe ser positivo, con máximo dos decimales; la velocidad es opcional y, si se indica, debe ser un entero positivo. Descripción y condiciones son opcionales.
+El número de plan se genera automáticamente con formato `PLAN-000001` y no se puede editar. Un contador transaccional evita duplicados entre registros simultáneos y omite números ya existentes. Se conservan los números anteriores y los de planes inactivos. El precio mensual debe ser positivo, con máximo dos decimales; la velocidad es opcional y, si se indica, debe ser un entero positivo. Descripción y condiciones son opcionales, con ancho limitado a su columna y redimensionamiento solo vertical.
 
 Para RF-PLA-10 se incluye **Contratos → Registrar contrato**, disponible para administración, gerencia y oficina. Requiere cliente, plan, zona y empleado responsable activos, código único, fecha de inicio, duración y dirección de servicio. Guarda estado PENDIENTE, calcula la fecha final como inicio + duración en meses (sin desbordamiento de mes) − un día y toma el precio vigente del plan en el servidor. Los cambios posteriores del plan no modifican el precio ya contratado. No genera ventas, cobros ni documentos; esas acciones quedan para sus historias específicas. Si faltan planes, clientes, zonas o empleados activos, el formulario lo indica.
 
-No hay nuevas migraciones ni cambios al SQL para esta historia. Actualiza con `git pull origin main` y `php artisan optimize:clear`. `PlanManagementTest` comprueba registro, validación, errores visibles, duplicados, ficha, edición, conservación histórica, estados, búsqueda, paginación, permisos y selección/rechazo de planes inactivos en contratos. Las pruebas y la revisión visual usan datos sintéticos en bases aisladas.
+La numeración automática requiere ejecutar `php artisan migrate` para crear e inicializar `secuencias_sistema`. `PlanManagementTest` y `PlanNumberAndTimezoneTest` comprueban registro, validación, numeración, ficha, edición, conservación histórica, estados, búsqueda, paginación, permisos y selección/rechazo de planes inactivos en contratos. Las pruebas y la revisión visual usan datos sintéticos en bases aisladas.
+
+### Menú fijo y horario de Perú
+
+El menú lateral permanece desplegado y conserva los permisos de cada rol. Laravel usa `America/Lima` y sus conexiones MySQL/MariaDB usan `-05:00`, incluyendo los valores predeterminados de fecha de la base. Los nuevos registros y filtros usan la hora de Perú. Los valores históricos no se desplazan automáticamente porque pueden proceder de distintas configuraciones horarias.
+
+Para actualizar:
+
+```powershell
+git pull origin main
+php artisan optimize:clear
+php artisan migrate
+```
+
+Reinicia `artisan serve` y `schedule:work` si están ejecutándose. La migración cierra las sesiones activas e invalida los códigos pendientes una sola vez, para evitar extender su vencimiento al cambiar de UTC a Lima. Después vuelve a iniciar sesión. La verificación de esta actualización completó 115 pruebas con 1232 aserciones.
 
 ## Gestión de empleados y cese automático
 

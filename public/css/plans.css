@@ -1,4 +1,8 @@
 .plans-module { width: 100%; max-width: none; }
+.plans-module .account-form > div { min-width: 0; }
+.plans-module textarea { display: block; box-sizing: border-box; width: 100%; max-width: 100%; min-height: 120px; resize: vertical; border: 1px solid #c8d6cc; border-radius: 7px; padding: 12px; font: inherit; font-size: 14px; color: #233d2b; }
+.plans-module textarea:focus { outline: 2px solid #55ad7b; outline-offset: 2px; }
+.plans-module textarea[aria-invalid=true] { border-color: #b6473d; }
 .plans-workspace { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 26px; align-items: start; }
 .plans-filter-panel { background: #f5f8f6; border: 1px solid #dfe9e2; border-radius: 14px; padding: 22px; }
 .plans-filter-panel h2 { font-size: 18px; }

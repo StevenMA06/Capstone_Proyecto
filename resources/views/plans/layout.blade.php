@@ -1,7 +1,7 @@
 @extends('layouts.management')
 @section('title', 'Planes de servicio')
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/plans.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('css/plans.css') }}?v=2">
 @endpush
 @section('workspace-content')
 <section class="management plans-module">

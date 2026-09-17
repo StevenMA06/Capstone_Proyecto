@@ -37,24 +37,24 @@ class PlanManagementTest extends TestCase
         foreach ([Role::ADMIN, Role::MANAGER] as $i => $role) {
             $actor = $this->actor($role);
             $this->signIn($actor)->post('/plans', $this->data(['numero_plan' => 'PLAN-'.$i, 'estado' => 'INACTIVO', 'creado_por' => 9999]))->assertRedirect()->assertSessionHasNoErrors();
-            $this->assertDatabaseHas('planes_servicio', ['numero_plan' => 'PLAN-'.$i, 'estado' => 'ACTIVO', 'precio_mensual' => '89.90', 'creado_por' => $actor->getKey()]);
+            $this->assertDatabaseHas('planes_servicio', ['numero_plan' => sprintf('PLAN-%06d', $i + 1), 'estado' => 'ACTIVO', 'precio_mensual' => '89.90', 'creado_por' => $actor->getKey()]);
         }
     }
 
     public function test_required_fields_are_rejected_and_identified_in_the_form(): void
     {
         $this->signIn($this->actor())->from('/plans/create')->post('/plans', ['numero_plan' => '   ', 'nombre' => '', 'tipo_servicio' => '', 'precio_mensual' => ''])
-            ->assertRedirect('/plans/create')->assertSessionHasErrors(['numero_plan', 'nombre', 'tipo_servicio', 'precio_mensual']);
+            ->assertRedirect('/plans/create')->assertSessionHasErrors(['nombre', 'tipo_servicio', 'precio_mensual']);
         $this->withViewErrors(session('errors')->getMessages())->view('plans.form', ['plan' => new ServicePlan])
-            ->assertSee('aria-invalid="true"', false)->assertSee('numero_plan-error')->assertSee('nombre-error')->assertSee('tipo_servicio-error')->assertSee('precio_mensual-error');
+            ->assertSee('aria-invalid="true"', false)->assertSee('nombre-error')->assertSee('tipo_servicio-error')->assertSee('precio_mensual-error');
         $this->assertDatabaseCount('planes_servicio', 0);
     }
 
-    public function test_invalid_prices_speed_and_duplicate_numbers_cannot_be_saved(): void
+    public function test_invalid_prices_and_speed_cannot_be_saved(): void
     {
         $actor = $this->actor();
         $plan = $this->plan($actor);
-        $this->signIn($actor)->post('/plans', $this->data())->assertSessionHasErrors('numero_plan');
+        $this->signIn($actor);
         foreach (['0', '-1', '1.001', '10000000000', '1e3', 'texto'] as $price) {
             $this->post('/plans', $this->data(['numero_plan' => 'OTRO', 'precio_mensual' => $price]))->assertSessionHasErrors('precio_mensual');
         }
