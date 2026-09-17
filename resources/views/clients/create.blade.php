@@ -25,7 +25,7 @@
             ['apellidos', 'Apellidos', 120, true, 'text'],
             ['direccion', 'Dirección', 255, true, 'text'],
             ['referencia_direccion', 'Referencia de dirección', 255, false, 'text'],
-            ['correo', 'Correo electrónico', 150, false, 'email'],
+            ['correo', 'Correo electrónico', 150, true, 'email'],
             ['telefono', 'Teléfono', 25, true, 'tel'],
             ['departamento', 'Departamento', 100, false, 'text'],
             ['provincia', 'Provincia', 100, false, 'text'],

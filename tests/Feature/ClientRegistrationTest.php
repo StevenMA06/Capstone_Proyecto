@@ -26,6 +26,7 @@ class ClientRegistrationTest extends TestCase
             'numero_documento' => '00123456',
             'nombres_razon_social' => 'Ana María',
             'apellidos' => 'Pérez Gómez', 'telefono' => '900111222',
+            'correo' => 'ana@example.test',
             'direccion' => 'Av. España 123',
         ], $overrides);
     }
@@ -39,7 +40,6 @@ class ClientRegistrationTest extends TestCase
         $this->assertDatabaseCount('clientes', 1);
         $this->assertDatabaseHas('clientes', $this->data() + [
             'creado_por' => $creator->getKey(), 'estado' => 'ACTIVO',
-            'correo' => null,
             'latitud' => null, 'longitud' => null,
         ]);
         $client = Client::firstOrFail();
@@ -106,6 +106,21 @@ class ClientRegistrationTest extends TestCase
                 ->assertSessionHasErrors(['apellidos', 'telefono']);
         }
         $this->assertDatabaseCount('clientes', 0);
+    }
+
+    public function test_email_is_required_when_creating_and_updating_a_client(): void
+    {
+        $this->signIn($this->userWithRole('Gerente'));
+        $this->post('/clients', $this->data())->assertSessionHasNoErrors();
+        $client = Client::firstOrFail();
+        foreach ([null, '', '   ', 'correo-invalido'] as $invalid) {
+            $this->post('/clients', $this->data(['numero_documento' => '99887766', 'correo' => $invalid]))
+                ->assertSessionHasErrors('correo');
+            $this->put('/clients/'.$client->getKey(), $this->data(['correo' => $invalid]))
+                ->assertSessionHasErrors('correo');
+        }
+        $this->assertDatabaseCount('clientes', 1);
+        $this->assertSame('ana@example.test', $client->fresh()->correo);
     }
 
     public function test_form_is_reachable_from_dashboard_for_both_roles(): void

@@ -30,6 +30,7 @@ class ClientManagementTest extends TestCase
             'tipo_documento' => 'DNI', 'numero_documento' => '00123456',
             'nombres_razon_social' => 'Ana María', 'apellidos' => 'Pérez Gómez',
             'direccion' => 'Av. España 123', 'telefono' => '900111222',
+            'correo' => 'ana@example.test',
         ], $overrides);
     }
 

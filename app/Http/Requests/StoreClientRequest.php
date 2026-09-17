@@ -31,7 +31,7 @@ class StoreClientRequest extends FormRequest
             ],
             'nombres_razon_social' => ['required', 'string', 'max:180'],
             'apellidos' => ['required', 'string', 'max:120'],
-            'correo' => ['nullable', 'string', 'email', 'max:150'],
+            'correo' => ['required', 'string', 'email', 'max:150'],
             'telefono' => ['required', 'string', 'max:25'],
             'direccion' => ['required', 'string', 'max:255'],
             'referencia_direccion' => ['nullable', 'string', 'max:255'],
