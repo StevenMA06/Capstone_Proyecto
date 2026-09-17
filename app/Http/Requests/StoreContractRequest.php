@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 
 class StoreContractRequest extends FormRequest
@@ -14,31 +15,46 @@ class StoreContractRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'codigo' => ['required', 'string', 'max:40', Rule::unique('contratos', 'codigo')],
-            'plan_id' => ['required', 'integer', Rule::exists('planes_servicio', 'plan_id')->where('estado', 'ACTIVO')],
-            'cliente_id' => ['required', 'integer', Rule::exists('clientes', 'cliente_id')->where('estado', 'ACTIVO')],
-            'zona_id' => ['required', 'integer', Rule::exists('zonas_cobertura', 'zona_id')->where('estado', 'ACTIVA')],
-            'responsable_id' => ['required', 'integer', Rule::exists('empleados', 'empleado_id')->where('estado', 'ACTIVO')],
+        $rules = [
+            'plan_id' => ['required', 'integer', Rule::exists('planes_servicio', 'plan_id')],
+            'cliente_id' => ['required', 'integer', Rule::exists('clientes', 'cliente_id')],
+            'zona_id' => ['required', 'integer', Rule::exists('zonas_cobertura', 'zona_id')],
+            'responsable_id' => ['required', 'integer', Rule::exists('empleados', 'empleado_id')],
             'fecha_inicio' => ['required', 'date_format:Y-m-d', 'after_or_equal:0001-01-01'],
             'duracion_meses' => ['required', 'integer', 'between:1,65535'],
-            'direccion_servicio' => ['required', 'string', 'max:255'],
             'observaciones' => ['nullable', 'string', 'max:10000'],
+            'documento_pdf' => $this->routeIs('contracts.store') ? ['prohibited'] : [
+                'bail', 'nullable', 'file',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($value instanceof UploadedFile && $value->getSize() === 0) {
+                        $fail('El archivo seleccionado está vacío (0 bytes). Vuelve a exportar el PDF firmado e inténtalo de nuevo.');
+                    }
+                },
+                'mimes:pdf', 'max:10240',
+            ],
         ];
+
+        if ($this->routeIs('contracts.update')) {
+            $rules['estado'] = ['nullable', Rule::in(['ACTIVO', 'CANCELADO', 'FINALIZADO'])];
+        }
+
+        return $rules;
     }
 
     public function attributes(): array
     {
-        return ['codigo' => 'código', 'plan_id' => 'plan', 'cliente_id' => 'cliente', 'zona_id' => 'zona', 'responsable_id' => 'responsable', 'fecha_inicio' => 'fecha de inicio', 'duracion_meses' => 'duración en meses', 'direccion_servicio' => 'dirección de servicio'];
+        return ['plan_id' => 'plan', 'cliente_id' => 'cliente', 'zona_id' => 'zona', 'responsable_id' => 'responsable', 'fecha_inicio' => 'fecha de inicio', 'duracion_meses' => 'duración en meses'];
     }
 
     public function messages(): array
     {
         return [
-            'required' => 'El campo :attribute es obligatorio.', 'exists' => 'Selecciona un :attribute activo y válido.',
-            'integer' => 'El campo :attribute debe ser un número entero.', 'unique' => 'Este código de contrato ya está registrado.',
+            'required' => 'El campo :attribute es obligatorio.', 'exists' => 'Selecciona un :attribute válido.',
+            'integer' => 'El campo :attribute debe ser un número entero.',
             'date_format' => 'Ingresa una fecha válida (año-mes-día).', 'between' => 'La duración debe estar entre 1 y 65535 meses.',
             'string' => 'El campo :attribute debe ser texto.', 'max' => 'El campo :attribute supera el máximo permitido (:max).',
+            'prohibited' => 'El contrato firmado se adjunta después de registrar el contrato.',
+            'mimes' => 'El archivo seleccionado debe ser un PDF válido.',
         ];
     }
 }

@@ -8,15 +8,6 @@ use Illuminate\View\View;
 
 class OperationController extends Controller
 {
-    public function contracts(): View
-    {
-        return view('operations.index', [
-            'title' => 'Contratos', 'kind' => 'contracts',
-            'records' => DB::table('contratos')->join('clientes', 'clientes.cliente_id', '=', 'contratos.cliente_id')
-                ->select('contratos.*', 'clientes.nombres_razon_social', 'clientes.apellidos')->orderByDesc('contrato_id')->paginate(20),
-        ]);
-    }
-
     public function payments(): View
     {
         return view('operations.index', [
