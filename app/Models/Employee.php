@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Employee extends Model
 {
+    public const POSITIONS = ['Técnico de Campo', 'Asistente de ventas'];
+
     protected $table = 'empleados';
 
     protected $primaryKey = 'empleado_id';

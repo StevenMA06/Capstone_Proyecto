@@ -22,11 +22,11 @@
         $fields = [
             ['numero_documento', 'Número de documento', 20, true, 'text'],
             ['nombres_razon_social', 'Nombres o razón social', 180, true, 'text'],
-            ['apellidos', 'Apellidos', 120, false, 'text'],
+            ['apellidos', 'Apellidos', 120, true, 'text'],
             ['direccion', 'Dirección', 255, true, 'text'],
             ['referencia_direccion', 'Referencia de dirección', 255, false, 'text'],
             ['correo', 'Correo electrónico', 150, false, 'email'],
-            ['telefono', 'Teléfono', 25, false, 'tel'],
+            ['telefono', 'Teléfono', 25, true, 'tel'],
             ['departamento', 'Departamento', 100, false, 'text'],
             ['provincia', 'Provincia', 100, false, 'text'],
             ['distrito', 'Distrito', 100, false, 'text'],

@@ -46,7 +46,7 @@ class ClientController extends Controller
             ]);
         }
 
-        return redirect()->route('clients.create')
+        return redirect()->route('clients.show', $client)
             ->with('status', 'Cliente #'.$client->getKey().' registrado correctamente.');
     }
 
