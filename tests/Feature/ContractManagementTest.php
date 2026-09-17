@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
+use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,8 +26,11 @@ class ContractManagementTest extends TestCase
             'direccion' => 'Calle Uno', 'distrito' => 'Trujillo', 'creado_por' => $actor->getKey(),
         ]);
         ClientHistoryFixtures::attach($client, $actor, 'RF-CON', 1);
+        $contract = DB::table('contratos')->where('codigo', 'RF-CON-C-0')->first();
+        DB::table('empleados')->where('empleado_id', $contract->responsable_id)
+            ->update(['cargo' => 'Asistente de Ventas']);
 
-        return [$actor, $client, DB::table('contratos')->where('codigo', 'RF-CON-C-0')->first()];
+        return [$actor, $client, $contract];
     }
 
     public function test_contracts_can_be_searched_filtered_updated_and_downloaded(): void
@@ -72,6 +76,43 @@ class ContractManagementTest extends TestCase
         DB::table('plan_zona_cobertura')->insert(['plan_id' => $contract->plan_id, 'zona_id' => $contract->zona_id, 'estado' => 'INACTIVO']);
         $this->post('/contracts', $data)->assertSessionHasErrors('zona_id');
         $this->assertDatabaseMissing('contratos', ['codigo' => 'NEW-COVERAGE']);
+    }
+
+    public function test_responsible_options_only_include_active_sales_assistants_and_server_rechecks_them(): void
+    {
+        [$actor, $client, $contract] = $this->records();
+        $technician = Employee::create([
+            'tipo_documento' => 'OTRO', 'numero_documento' => 'TECH-CON',
+            'nombres' => 'Técnico', 'apellidos' => 'Instalador', 'cargo' => 'Instalador',
+        ]);
+        $inactive = Employee::create([
+            'tipo_documento' => 'OTRO', 'numero_documento' => 'INACT-CON',
+            'nombres' => 'Asistente', 'apellidos' => 'Inactivo',
+            'cargo' => 'Asistente de Ventas', 'estado' => 'INACTIVO',
+        ]);
+        $this->signIn($actor)->get('/contracts/create')->assertOk()
+            ->assertViewHas('employees', fn ($employees) => $employees->pluck('empleado_id')->all() === [$contract->responsable_id])
+            ->assertSee('value="'.$contract->responsable_id.'"', false)
+            ->assertDontSee('value="'.$technician->getKey().'"', false)
+            ->assertDontSee('value="'.$inactive->getKey().'"', false);
+
+        $data = [
+            'cliente_id' => $client->getKey(), 'plan_id' => $contract->plan_id,
+            'zona_id' => $contract->zona_id, 'fecha_inicio' => '2026-10-01',
+            'duracion_meses' => 12,
+        ];
+        $this->post('/contracts', $data + ['responsable_id' => $technician->getKey()])
+            ->assertSessionHasErrors('responsable_id');
+        $this->post('/contracts', $data + ['responsable_id' => $inactive->getKey()])
+            ->assertSessionHasErrors('responsable_id');
+        $this->put('/contracts/'.$contract->contrato_id, $data + ['responsable_id' => $technician->getKey()])
+            ->assertSessionHasErrors('responsable_id');
+        DB::table('empleados')->where('empleado_id', $contract->responsable_id)->update(['cargo' => 'Instalador']);
+        $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertOk()
+            ->assertViewHas('employees', fn ($employees) => $employees->isEmpty());
+        $this->put('/contracts/'.$contract->contrato_id, $data + ['responsable_id' => $contract->responsable_id])
+            ->assertSessionHasErrors('responsable_id');
+        $this->assertDatabaseCount('contratos', 1);
     }
 
     public function test_code_is_generated_and_unsigned_contract_cannot_leave_pending(): void

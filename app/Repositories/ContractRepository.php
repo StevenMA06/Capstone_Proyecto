@@ -4,10 +4,13 @@ namespace App\Repositories;
 
 use App\Models\Contract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class ContractRepository
 {
+    public const SALES_ASSISTANT_CARGO = 'Asistente de Ventas';
+
     public function search(array $filters): LengthAwarePaginator
     {
         $search = trim($filters['search'] ?? '');
@@ -64,7 +67,7 @@ class ContractRepository
 
     public function activeEmployee(int $id): ?object
     {
-        return DB::table('empleados')->where('empleado_id', $id)->lockForUpdate()->first();
+        return $this->salesAssistants()->where('empleado_id', $id)->lockForUpdate()->first();
     }
 
     public function hasPlanCoverage(int $planId): bool
@@ -82,7 +85,7 @@ class ContractRepository
         return [
             'clients' => DB::table('clientes')->where('estado', 'ACTIVO')->orderBy('nombres_razon_social')->get(),
             'zones' => DB::table('zonas_cobertura')->where('estado', 'ACTIVA')->orderBy('nombre')->get(),
-            'employees' => DB::table('empleados')->where('estado', 'ACTIVO')->orderBy('nombres')->get(),
+            'employees' => $this->salesAssistants()->orderBy('nombres')->orderBy('apellidos')->get(),
             'coverage' => DB::table('plan_zona_cobertura')->get(['plan_id', 'zona_id', 'estado']),
         ];
     }
@@ -94,14 +97,23 @@ class ContractRepository
 
     public function option(string $collection, int $id): ?object
     {
+        if ($collection === 'employees') {
+            return $this->salesAssistants()->where('empleado_id', $id)->first();
+        }
+
         [$table, $key] = match ($collection) {
             'plans' => ['planes_servicio', 'plan_id'],
             'clients' => ['clientes', 'cliente_id'],
             'zones' => ['zonas_cobertura', 'zona_id'],
-            'employees' => ['empleados', 'empleado_id'],
         };
 
         return DB::table($table)->where($key, $id)->first();
+    }
+
+    private function salesAssistants(): Builder
+    {
+        return DB::table('empleados')->where('estado', 'ACTIVO')
+            ->whereRaw('LOWER(TRIM(cargo)) = ?', [mb_strtolower(self::SALES_ASSISTANT_CARGO)]);
     }
 
     private function details()

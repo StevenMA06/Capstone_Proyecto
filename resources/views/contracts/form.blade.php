@@ -9,7 +9,7 @@
         <p class="notice">No hay planes activos. Solicita a Gerencia que registre o active un plan.</p>
     @endif
     @if ($clients->isEmpty() || $zones->isEmpty() || $employees->isEmpty())
-        <p class="notice">Se necesita al menos un cliente, una zona y un empleado responsable activos.</p>
+        <p class="notice">Se necesita al menos un cliente, una zona y un Asistente de Ventas activos.</p>
     @endif
     @php($selectedClient = $clients->firstWhere('cliente_id', (int) old('cliente_id', $contract->cliente_id ?? 0)))
     <form method="POST" @if ($contract) enctype="multipart/form-data" @endif
@@ -71,7 +71,7 @@
                         id="direccion_servicio" value="{{ $selectedClient?->direccion ?? '' }}"
                         placeholder="Selecciona un cliente" readonly><small>Se toma de la dirección registrada del cliente.</small>
                 </div>
-                <div class="contract-field"><label for="responsable_id">Responsable *</label><select id="responsable_id"
+                <div class="contract-field"><label for="responsable_id">Responsable (Asistente de Ventas) *</label><select id="responsable_id"
                         name="responsable_id" required
                         @error('responsable_id') aria-invalid="true" aria-describedby="responsable_id-error" @enderror>
                         <option value="">Seleccionar responsable</option>
