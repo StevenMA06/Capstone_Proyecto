@@ -3,7 +3,6 @@
 @section('workspace-content')
 <section class="management clients-management">
     <header class="module-heading"><span class="eyebrow">GERENCIA · CONTROL DE ACCESO</span><h1>Historial de accesos</h1><p>Consulta quién intentó ingresar al sistema, cuándo y con qué resultado.</p></header>
-    <p>Zona horaria de los registros: {{ config('app.timezone') }}.</p>
     @if($errors->any())<div class="notice error-summary" role="alert">{{ $errors->first() }}</div>@endif
     <form class="filters" method="GET" action="{{ route('access.index') }}">
         <div><label for="search">Nombre de usuario</label><input id="search" name="search" value="{{ request('search') }}" maxlength="60"></div>

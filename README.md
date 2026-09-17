@@ -105,7 +105,7 @@ Administrador y Gerente acceden a todos los módulos implementados. Usuario de o
 
 El código dura **5 minutos** (`ACCESS_CODE_MINUTES`, entre 1 y 10). Se permiten **5 intentos por código**, un reenvío cada **60 segundos** y un máximo de **5 envíos por usuario en 15 minutos**. La solicitud de acceso dura como máximo 15 minutos; después se vuelven a pedir las credenciales. Un error del transporte invalida el código emitido y mantiene bloqueado el acceso. Los códigos no se guardan en texto plano ni se muestran en la pantalla o en logs.
 
-`SESSION_LIFETIME=120` establece 120 minutos sin solicitudes autenticadas. La comprobación automática del navegador no renueva ese plazo. El servidor rechaza la sesión vencida aunque JavaScript esté deshabilitado; al volver a una pestaña visible se comprueba el estado y se regresa al login si corresponde. Las fechas y los filtros del historial usan la zona horaria de la aplicación, America/Lima (UTC−5), indicada en pantalla.
+`SESSION_LIFETIME=120` establece 120 minutos sin solicitudes autenticadas. La comprobación automática del navegador no renueva ese plazo. El servidor rechaza la sesión vencida aunque JavaScript esté deshabilitado; al volver a una pestaña visible se comprueba el estado y se regresa al login si corresponde. Las fechas y los filtros del historial usan la zona horaria de la aplicación, America/Lima (UTC−5).
 
 ### Configurar el envío de códigos
 

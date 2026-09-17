@@ -30,7 +30,7 @@ class PlanNumberAndTimezoneTest extends TestCase
     {
         $actor = $this->manager();
         ServicePlan::create($this->data() + ['numero_plan' => 'PLAN-000001', 'creado_por' => $actor->getKey()]);
-        $this->signIn($actor)->get('/plans/create')->assertOk()->assertSee('Se genera al guardar')->assertDontSee('name="numero_plan"', false)->assertDontSee('<details class="module-menu"', false);
+        $this->signIn($actor)->get('/plans/create')->assertOk()->assertDontSee('id="plan-number"', false)->assertDontSee('name="numero_plan"', false)->assertDontSee('<details class="module-menu"', false);
         $this->post('/plans', $this->data())->assertSessionHasNoErrors();
         $plan = ServicePlan::where('numero_plan', 'PLAN-000002')->firstOrFail();
         $this->put('/plans/'.$plan->getKey(), $this->data() + ['numero_plan' => 'MANIPULADO'])->assertSessionHasNoErrors();
