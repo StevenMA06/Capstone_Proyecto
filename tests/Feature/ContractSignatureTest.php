@@ -40,6 +40,7 @@ class ContractSignatureTest extends TestCase
             'direccion' => 'Calle Uno', 'distrito' => 'Trujillo', 'creado_por' => $actor->getKey(),
         ]);
         ClientHistoryFixtures::attach($client, $actor, 'RF-SIGN', 1);
+        DB::table('empleados')->update(['cargo' => 'Asistente de Ventas']);
         $plan = DB::table('planes_servicio')->where('estado', 'ACTIVO')->first();
         $zone = DB::table('zonas_cobertura')->where('estado', 'ACTIVA')->first();
         $employee = DB::table('empleados')->where('estado', 'ACTIVO')->first();

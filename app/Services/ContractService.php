@@ -51,7 +51,10 @@ class ContractService
                 ['employees', 'empleado_id', $data['contract']->responsable_id],
             ] as [$collection, $key, $value]) {
                 if (! $data[$collection]->contains($key, $value)) {
-                    $data[$collection]->push($this->contracts->option($collection, $value));
+                    $option = $this->contracts->option($collection, $value);
+                    if ($option) {
+                        $data[$collection]->push($option);
+                    }
                 }
             }
         }
@@ -189,11 +192,13 @@ class ContractService
         foreach ([
             ['cliente_id', $client, 'ACTIVO'],
             ['zona_id', $zone, 'ACTIVA'],
-            ['responsable_id', $employee, 'ACTIVO'],
         ] as [$field, $record, $active]) {
             if (! $record || ($record->estado !== $active && (! $current || (int) $current->$field !== (int) $data[$field]))) {
                 throw ValidationException::withMessages([$field => 'Selecciona un registro activo.']);
             }
+        }
+        if (! $employee) {
+            throw ValidationException::withMessages(['responsable_id' => 'Selecciona un Asistente de Ventas activo como responsable.']);
         }
         if ($client?->distrito && $zone && mb_strtolower(trim($client->distrito)) !== mb_strtolower(trim($zone->distrito))) {
             throw ValidationException::withMessages(['zona_id' => 'La zona seleccionada no cubre el distrito del cliente.']);

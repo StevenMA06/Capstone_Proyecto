@@ -134,6 +134,7 @@ class PlanManagementTest extends TestCase
         $actor = $this->actor(Role::OFFICE);
         $client = Client::create(['tipo_documento' => 'DNI', 'numero_documento' => '00000002', 'nombres_razon_social' => 'Cliente', 'direccion' => 'Dirección', 'creado_por' => $actor->getKey()]);
         ClientHistoryFixtures::attach($client, $actor, 'SELECT', 1);
+        DB::table('empleados')->update(['cargo' => 'Asistente de Ventas']);
         $active = ServicePlan::firstOrFail();
         $inactive = $this->plan($actor, ['estado' => 'INACTIVO', 'nombre' => 'Plan oculto']);
         $existing = DB::table('contratos')->first();
