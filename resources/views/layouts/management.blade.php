@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Gestión de clientes') · Lunnys Perú</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=4">
-    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=4">
+    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=5">
     @include('layouts.session-monitor')
     @stack('styles')
 </head>
@@ -36,7 +36,7 @@
                 @endcan
                 @can('view-technician')<a class="{{ request()->routeIs('technician.*') ? 'nav-active' : '' }}" @if(request()->routeIs('technician.*')) aria-current="page" @endif href="{{ route('technician.index') }}">@include('layouts.module-icon', ['icon' => 'tool'])<span>Panel técnico</span></a>@endcan
                 @can('view-operations')
-                @foreach(['installations' => ['Instalaciones', 'tool'], 'equipment' => ['Equipos', 'box'], 'materials' => ['Materiales', 'box']] as $key => [$module, $icon])
+                @foreach(['installations' => ['Instalaciones', 'tool'], 'equipment' => ['Equipos', 'router'], 'materials' => ['Materiales', 'box']] as $key => [$module, $icon])
                     <a class="{{ request()->routeIs($key.'.*') ? 'nav-active' : '' }}" @if(request()->routeIs($key.'.*')) aria-current="page" @endif href="{{ route($key.'.index') }}">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></a>
                 @endforeach
                 <p class="nav-section">PRÓXIMOS MÓDULOS</p>

@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', 'Dashboard')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v=2"><script src="{{ asset('js/dashboard.js') }}?v=1" defer></script>@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v=3"><script src="{{ asset('js/dashboard.js') }}?v=1" defer></script>@endpush
 @section('workspace-content')
 <section class="overview">
     <header class="overview-heading">
@@ -10,7 +10,7 @@
     </header>
     <div class="overview-metrics">
         @if($clientCount !== null)
-        <a class="metric-card" href="{{ route('clients.index') }}"><div class="metric-top"><h2>Clientes registrados</h2>@include('layouts.module-icon', ['icon' => 'users'])</div><p class="metric-value">{{ number_format($clientCount) }}</p><p class="metric-note">Activos e inactivos · Ver clientes →</p></a>
+        <a class="metric-card" href="{{ route('clients.index') }}"><div class="metric-top"><h2>Clientes registrados</h2>@include('layouts.module-icon', ['icon' => 'users'])</div><p class="metric-value">{{ number_format($clientCount) }}</p><p class="metric-note">Ver clientes →</p></a>
         @endif
         @if($summary !== null)
         @foreach([
@@ -23,7 +23,7 @@
         @foreach(['equipment' => 'Equipos', 'materials' => 'Materiales'] as $key => $label)
         <button type="button" class="metric-card inventory-trigger {{ $summary[$key.'Low'] ? 'metric-alert' : '' }}" data-inventory-open="{{ $key }}-dialog" aria-haspopup="dialog" aria-controls="{{ $key }}-dialog">
             <span class="inventory-title">{{ $label }}</span>
-            @include('layouts.module-icon', ['icon' => 'box'])
+            @include('layouts.module-icon', ['icon' => $key === 'equipment' ? 'router' : 'box'])
             <span class="metric-note">Haz clic para ver stock</span>
             @if($summary[$key.'Low'])<span class="stock-warning">⚠ Stock mínimo</span>@endif
         </button>
