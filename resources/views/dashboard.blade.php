@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', 'Dashboard')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v=3"><script src="{{ asset('js/dashboard.js') }}?v=1" defer></script>@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v=4"><script src="{{ asset('js/dashboard.js') }}?v=1" defer></script>@endpush
 @section('workspace-content')
 <section class="overview">
     <header class="overview-heading">
@@ -10,7 +10,7 @@
     </header>
     <div class="overview-metrics">
         @if($clientCount !== null)
-        <a class="metric-card" href="{{ route('clients.index') }}"><div class="metric-top"><h2>Clientes registrados</h2>@include('layouts.module-icon', ['icon' => 'users'])</div><p class="metric-value">{{ number_format($clientCount) }}</p><p class="metric-note">Ver clientes →</p></a>
+        <a class="metric-card client-metric" href="{{ route('clients.index') }}"><h2>Clientes registrados</h2><p class="metric-value">{{ number_format($clientCount) }}</p>@include('layouts.module-icon', ['icon' => 'users'])</a>
         @endif
         @if($summary !== null)
         @foreach([
