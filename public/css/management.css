@@ -17,9 +17,9 @@
 .module-menu nav>a, .module-menu .nav-pending { min-height: 46px; padding: 12px 20px; border-radius: 0; display: flex; align-items: center; gap: 12px; color: #eef2f5; text-decoration: none; font-size: 14px; line-height: 1.4; }
 .module-icon { display: block; flex-shrink: 0; stroke-width: 2; }
 .module-menu .module-icon { width: 20px; height: 20px; flex: 0 0 20px; stroke-width: 2; color: #dce6ed; }
-.module-menu nav>a:hover { background: #354b5b; color: #fff; }
-.module-menu nav>a:focus-visible { outline: 2px solid #c9e6ff; outline-offset: -2px; }
-.module-menu nav>a.nav-active { background: #2779b8; color: #fff; font-weight: 600; box-shadow: none; }
+.module-menu nav>a:hover { background: #314d40; color: #fff; }
+.module-menu nav>a:focus-visible { outline: 2px solid #c8ead7; outline-offset: -2px; }
+.module-menu nav>a.nav-active { background: #087846; color: #fff; font-weight: 600; box-shadow: none; }
 .module-menu nav>a.nav-active .module-icon { color: inherit; }
 .nav-section { margin: 18px 20px 6px; color: #bfccd5; font-size: 11px; font-weight: 600; }
 .nav-section-future { border-top: 1px solid #50616d; padding-top: 16px; }

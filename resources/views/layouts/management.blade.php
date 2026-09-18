@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Gestión de clientes') · Lunnys Perú</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=4">
-    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=8">
+    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=9">
     @include('layouts.session-monitor')
     @stack('styles')
 </head>
