@@ -14,3 +14,12 @@
 .summary-metric h2 { max-width: 110px; font-size: 13px; line-height: 1.5; font-weight: 500; color: #526a5e; }
 .summary-metric .metric-value { margin: 12px 0; }
 .summary-metric .module-icon { width: 34px; height: 34px; }
+
+.plan-ranking { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 20px; }
+.plan-ranking li { display: grid; grid-template-columns: minmax(130px, 220px) minmax(0, 1fr) 85px; align-items: center; gap: 18px; }
+.plan-ranking-label { min-width: 0; overflow-wrap: anywhere; font-size: 13px; }
+.plan-ranking-label span { display: block; margin-top: 5px; font-size: 11px; color: #607165; }
+.plan-ranking-track { height: 22px; background: #edf2ee; border-radius: 3px; overflow: hidden; }
+.plan-ranking-track span { display: block; height: 100%; background: #287143; border-radius: 3px; }
+.plan-ranking-count { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+@media(max-width: 640px) { .plan-ranking li { grid-template-columns: minmax(0, 1fr) 75px; gap: 8px 12px; } .plan-ranking-label { grid-column: 1/-1; } }

@@ -127,7 +127,7 @@ class ClientRegistrationTest extends TestCase
     {
         foreach (['Gerente', 'Usuario de oficina'] as $role) {
             $this->signIn($this->userWithRole($role))->get('/dashboard')->assertOk()
-                ->assertSee('Gestionar clientes')->assertDontSee('Registrar cliente');
+                ->assertSee('Clientes registrados')->assertDontSee('Registrar cliente');
             $this->get('/clients')->assertOk()->assertSee('Registrar cliente');
             $this->get('/clients/create')->assertOk()->assertSee('Nombres o razón social')
                 ->assertSee('name="_token"', false)->assertSee('name="direccion"', false);
