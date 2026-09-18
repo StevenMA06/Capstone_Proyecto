@@ -28,6 +28,13 @@ class DashboardRepository
 
         $equipment = $this->inventory->equipment()->get();
         $materials = $this->inventory->materials()->get();
+        $topPlans = DB::table('ventas as v')
+            ->join('contratos as c', 'c.contrato_id', '=', 'v.contrato_id')
+            ->join('planes_servicio as p', 'p.plan_id', '=', 'c.plan_id')
+            ->where('v.estado', 'CONFIRMADA')->whereBetween('v.fecha_venta', [$start, $now])
+            ->select('p.plan_id', 'p.numero_plan', 'p.nombre')->selectRaw('COUNT(*) as total')
+            ->groupBy('p.plan_id', 'p.numero_plan', 'p.nombre')
+            ->orderByDesc('total')->orderBy('p.plan_id')->limit(5)->get();
 
         return [
             'contracts' => DB::table('contratos')->where('estado', 'ACTIVO')->count(),
@@ -38,6 +45,8 @@ class DashboardRepository
             'equipmentLow' => $equipment->filter(fn ($item) => $item->stock_actual <= $item->stock_minimo)->count(),
             'materialsLow' => $materials->filter(fn ($item) => $item->stock_actual <= $item->stock_minimo)->count(),
             'months' => $months,
+            'topPlans' => $topPlans,
+            'topPlansMax' => max(1, (int) $topPlans->max('total')),
             'salesTotal' => array_sum(array_column($months, 'total')),
             'salesMax' => max(1, ...array_column($months, 'total')),
         ];

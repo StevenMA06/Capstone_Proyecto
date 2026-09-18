@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', 'Dashboard')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v=5"><script src="{{ asset('js/dashboard.js') }}?v=1" defer></script>@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v=6"><script src="{{ asset('js/dashboard.js') }}?v=1" defer></script>@endpush
 @section('workspace-content')
 <section class="overview">
     <header class="overview-heading">
@@ -42,18 +42,25 @@
         <p class="chart-note">Indicadores calculados con los registros existentes.</p>
     </section>
     @endif
-    <section class="overview-shortcuts" aria-labelledby="shortcuts-heading"><h2 id="shortcuts-heading">Accesos rápidos</h2>
-        <div class="shortcut-grid">
-            @can('register-clients')<a class="shortcut" href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<div><strong>Gestionar clientes</strong><span>Consulta y administra su información</span></div><span aria-hidden="true">→</span></a>@endcan
-            @can('manage-users')<a class="shortcut" href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<div><strong>Gestionar usuarios</strong><span>Administra cuentas, roles y estados</span></div><span aria-hidden="true">→</span></a>@endcan
-            @can('view-office')
-            @foreach(['plans' => 'Planes de servicio', 'contracts' => 'Contratos', 'payments' => 'Pagos'] as $module => $label)
-            <a class="shortcut" href="{{ route($module.'.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<div><strong>{{ $label }}</strong><span>Consultar {{ mb_strtolower($label) }}</span></div><span aria-hidden="true">→</span></a>
+    @if($summary !== null)
+    <section class="overview-chart" aria-labelledby="top-plans-heading">
+        <header class="chart-heading"><div><h2 id="top-plans-heading">Planes más vendidos</h2><p>Top 5 · Ventas confirmadas en los últimos 6 meses · Cantidad de ventas</p></div></header>
+        @if($summary['topPlans']->isEmpty())
+        <p class="chart-empty">Aún no hay ventas confirmadas de planes en este período.</p>
+        @else
+        <ol class="plan-ranking" aria-label="Planes ordenados por cantidad de ventas">
+            @foreach($summary['topPlans'] as $plan)
+            <li>
+                <div class="plan-ranking-label"><strong>{{ $plan->nombre }}</strong><span>{{ $plan->numero_plan }}</span></div>
+                <div class="plan-ranking-track" aria-hidden="true"><span style="width: {{ round($plan->total / $summary['topPlansMax'] * 100, 2) }}%"></span></div>
+                <span class="plan-ranking-count">{{ number_format($plan->total) }} {{ $plan->total == 1 ? 'venta' : 'ventas' }}</span>
+            </li>
             @endforeach
-            @endcan
-            @can('view-access-history')<a class="shortcut" href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<div><strong>Historial de accesos</strong><span>Consulta los ingresos al sistema</span></div><span aria-hidden="true">→</span></a>@endcan
-            @if($clientCount === null && $summary === null)<p>No tienes módulos habilitados por el momento. Consulta con Gerencia.</p>@endif
-        </div>
+        </ol>
+        @endif
+    </section>
+    @endif
+    <section class="overview-shortcuts">
         @if($summary !== null)<div class="future-grid">
             <div class="future-shortcut" aria-disabled="true">@include('layouts.module-icon', ['icon' => 'chart'])<div><strong>Business Intelligence</strong><span>Análisis e indicadores avanzados</span></div><span class="coming-soon">Próximamente</span></div>
             <div class="future-shortcut" aria-disabled="true">@include('layouts.module-icon', ['icon' => 'chat'])<div><strong>Chatbot IA</strong><span>Asistencia para tu operación</span></div><span class="coming-soon">Próximamente</span></div>

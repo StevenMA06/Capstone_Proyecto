@@ -4,7 +4,7 @@
 .plans-module textarea:focus { outline: 2px solid #55ad7b; outline-offset: 2px; }
 .plans-module textarea[aria-invalid=true] { border-color: #b6473d; }
 .plans-workspace { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 26px; align-items: start; }
-.plans-filter-panel { background: #f5f8f6; border: 1px solid #dfe9e2; border-radius: 14px; padding: 22px; }
+.plans-filter-panel { background: #fff; border: 1px solid #dfe9e2; border-radius: 14px; padding: 22px; }
 .plans-filter-panel h2 { font-size: 18px; }
 .plans-filter-panel > p, .plans-total { color: #63776a; font-size: 13px; line-height: 1.6; }
 .plans-filters { display: grid; gap: 23px; margin-top: 25px; }
@@ -15,7 +15,7 @@
 .plans-results .management-toolbar { margin: 0 0 22px; align-items: flex-start; flex-wrap: wrap; }
 .plans-results h2 { font-size: 21px; }
 .plans-total { margin: 7px 0 0; }
-.plans-results .table-scroll { border: 1px solid #e0e9e3; border-radius: 12px; }
+.plans-results .table-scroll { background: #fff; border: 1px solid #e0e9e3; border-radius: 12px; }
 .plans-table { min-width: 640px; }
 .plans-table td { padding: 19px 14px; }
 .plans-table tbody tr:hover { background: #f8fbf9; }
