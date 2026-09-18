@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ContractSignatureVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -180,25 +181,55 @@ class ContractManagementTest extends TestCase
         $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'pdf_contrato_ruta' => null]);
     }
 
-    public function test_verified_contract_can_be_finalized_from_edit_after_its_end_date(): void
+    public function test_active_contracts_finalize_after_the_last_day_by_request_or_scheduler(): void
     {
         [$actor, $client, $contract] = $this->records();
-        Storage::fake('local');
-        Storage::disk('local')->put('contratos/documentos/verificado.pdf', '%PDF-1.4');
-        DB::table('clientes')->where('cliente_id', $client->getKey())->update(['direccion' => 'Dirección original del contrato']);
-        DB::table('contratos')->where('contrato_id', $contract->contrato_id)->update([
-            'pdf_contrato_ruta' => 'contratos/documentos/verificado.pdf',
-            'firma_revision' => 'VERIFICADA',
-        ]);
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2027-01-01 12:00:00'));
-        $this->signIn($actor)->get('/contracts/'.$contract->contrato_id.'/edit')
-            ->assertOk()->assertSee('value="FINALIZADO"', false);
+        ClientHistoryFixtures::attach($client, $actor, 'RF-AUTO', 4);
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-12-31 23:59:59'));
+        $this->signIn($actor)->get('/contracts')->assertOk();
+        $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'ACTIVO']);
+
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2027-01-01 00:00:00'));
+        $this->get('/contracts')->assertOk();
+        $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'FINALIZADO']);
+        $this->assertDatabaseHas('contratos', ['codigo' => 'RF-AUTO-C-0', 'estado' => 'FINALIZADO']);
+        $this->assertDatabaseHas('contratos', ['codigo' => 'RF-AUTO-C-2', 'estado' => 'CANCELADO']);
+        $this->assertDatabaseHas('contratos', ['codigo' => 'RF-AUTO-C-3', 'estado' => 'PENDIENTE']);
+
+        DB::table('contratos')->where('codigo', 'RF-AUTO-C-3')->update(['estado' => 'ACTIVO']);
+        $this->artisan('contracts:finalize')->expectsOutput('Contratos finalizados por vencimiento: 1')->assertSuccessful();
+        $this->artisan('contracts:finalize')->expectsOutput('Contratos finalizados por vencimiento: 0')->assertSuccessful();
+        $this->assertDatabaseHas('contratos', ['codigo' => 'RF-AUTO-C-3', 'estado' => 'FINALIZADO']);
+        $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertOk()->assertDontSee('value="FINALIZADO"', false);
         $this->put('/contracts/'.$contract->contrato_id, [
             'cliente_id' => $client->getKey(), 'plan_id' => $contract->plan_id,
             'zona_id' => $contract->zona_id, 'responsable_id' => $contract->responsable_id,
             'fecha_inicio' => '2026-01-01', 'duracion_meses' => 12,
             'observaciones' => 'Contrato de prueba RF-CON', 'estado' => 'FINALIZADO',
+        ])->assertSessionHasErrors('estado');
+    }
+
+    public function test_late_signature_does_not_leave_an_expired_contract_active(): void
+    {
+        [$actor, $client, $existing] = $this->records();
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-09-18 12:00:00'));
+        $data = [
+            'cliente_id' => $client->getKey(), 'plan_id' => $existing->plan_id,
+            'zona_id' => $existing->zona_id, 'responsable_id' => $existing->responsable_id,
+            'fecha_inicio' => '2025-01-01', 'duracion_meses' => 12,
+        ];
+        $this->signIn($actor)->post('/contracts', $data)->assertSessionHasNoErrors();
+        $contract = DB::table('contratos')->orderByDesc('contrato_id')->first();
+        $this->assertSame('PENDIENTE', $contract->estado);
+
+        Storage::fake('local');
+        $this->mock(ContractSignatureVerifier::class, fn ($mock) => $mock->shouldReceive('verify')->once()
+            ->andReturn(['status' => 'signed']));
+        $this->put('/contracts/'.$contract->contrato_id, $data + [
+            'documento_pdf' => UploadedFile::fake()->createWithContent('firmado.pdf', "%PDF-1.4\nDocumento firmado"),
         ])->assertSessionHasNoErrors()->assertSessionHas('status_kind', 'finalized');
-        $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'FINALIZADO']);
+        $this->assertDatabaseHas('contratos', [
+            'contrato_id' => $contract->contrato_id, 'estado' => 'FINALIZADO', 'firma_revision' => 'VERIFICADA',
+        ]);
     }
 }

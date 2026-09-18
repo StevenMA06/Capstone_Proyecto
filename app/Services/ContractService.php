@@ -31,6 +31,11 @@ class ContractService
         return $this->contracts->findDetailed($id);
     }
 
+    public function finalizeExpired(): int
+    {
+        return $this->contracts->finalizeExpired(now()->toDateString());
+    }
+
     public function formData(?int $id = null): array
     {
         $data = $this->contracts->formOptions();
@@ -41,8 +46,6 @@ class ContractService
         $data['canCancel'] = $data['storedPdfAvailable']
             && $data['contract']->estado === 'ACTIVO'
             && $data['contract']->firma_revision === 'VERIFICADA';
-        $data['canFinalize'] = $data['canCancel']
-            && CarbonImmutable::parse($data['contract']->fecha_fin)->endOfDay()->isPast();
         if ($data['contract']) {
             foreach ([
                 ['plans', 'plan_id', $data['contract']->plan_id],
@@ -126,20 +129,15 @@ class ContractService
                 if (($data['estado'] ?? null) === 'ACTIVO' && ($current->estado !== 'ACTIVO' || $current->firma_revision !== 'VERIFICADA' || ! $current->pdf_contrato_ruta || ! Storage::disk('local')->exists($current->pdf_contrato_ruta))) {
                     throw ValidationException::withMessages(['estado' => 'La activación solo se realiza automáticamente al verificar la firma del cliente.']);
                 }
-                if (in_array($data['estado'] ?? null, ['CANCELADO', 'FINALIZADO'], true)) {
+                if (($data['estado'] ?? null) === 'CANCELADO') {
                     if ($current->estado !== 'ACTIVO' || $current->firma_revision !== 'VERIFICADA' || ! $current->pdf_contrato_ruta || ! Storage::disk('local')->exists($current->pdf_contrato_ruta)) {
                         throw ValidationException::withMessages(['estado' => 'Solo puedes cerrar un contrato activo con la firma del cliente verificada.']);
                     }
                     if ($termsChanged || $path) {
                         throw ValidationException::withMessages(['estado' => 'Para cerrar el contrato, conserva los datos y el PDF actual.']);
                     }
-                    if ($data['estado'] === 'FINALIZADO' && ! CarbonImmutable::parse($current->fecha_fin)->endOfDay()->isPast()) {
-                        throw ValidationException::withMessages(['estado' => 'El contrato solo puede finalizar cuando termine su vigencia. Para una baja anticipada usa Cancelado.']);
-                    }
-                    $attributes['estado'] = $data['estado'];
-                    $feedback = $data['estado'] === 'CANCELADO'
-                        ? ['message' => 'El contrato se canceló correctamente.', 'kind' => 'cancelled']
-                        : ['message' => 'El contrato se finalizó correctamente.', 'kind' => 'finalized'];
+                    $attributes['estado'] = 'CANCELADO';
+                    $feedback = ['message' => 'El contrato se canceló correctamente.', 'kind' => 'cancelled'];
                 }
                 if ($termsChanged && in_array($current->estado, ['ACTIVO', 'PENDIENTE'], true) && ($current->estado === 'ACTIVO' || $current->pdf_contrato_ruta)) {
                     $attributes += ['estado' => 'PENDIENTE', 'firma_revision' => null, 'firma_validada_en' => null];
@@ -161,14 +159,17 @@ class ContractService
                         throw ValidationException::withMessages(['documento_pdf' => $result['detail']]);
                     }
                     $signed = $result['status'] === 'signed';
+                    $expiredAtConfirmation = $signed && $attributes['fecha_fin'] < now()->toDateString();
                     $this->contracts->update($id, [
-                        'estado' => $signed ? 'ACTIVO' : 'PENDIENTE',
+                        'estado' => $expiredAtConfirmation ? 'FINALIZADO' : ($signed ? 'ACTIVO' : 'PENDIENTE'),
                         'firma_revision' => $signed ? 'VERIFICADA' : 'SIN_FIRMA',
                         'firma_validada_en' => $signed ? now() : null,
                     ]);
-                    $feedback = $signed
+                    $feedback = $expiredAtConfirmation
+                        ? ['message' => 'Se detectó la firma del cliente. El contrato quedó finalizado porque su vigencia ya terminó.', 'kind' => 'finalized']
+                        : ($signed
                         ? ['message' => 'Se detectó la firma del cliente y el contrato se activó automáticamente.', 'kind' => 'activated']
-                        : ['message' => 'Se guardó el PDF. No se detectó la firma del cliente; el contrato sigue pendiente.', 'kind' => 'pending'];
+                        : ['message' => 'Se guardó el PDF. No se detectó la firma del cliente; el contrato sigue pendiente.', 'kind' => 'pending']);
                 }
             });
         } catch (\Throwable $error) {

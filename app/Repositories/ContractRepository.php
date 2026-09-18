@@ -11,6 +11,12 @@ class ContractRepository
 {
     public const SALES_ASSISTANT_CARGO = 'Asistente de Ventas';
 
+    public function finalizeExpired(string $today): int
+    {
+        return Contract::query()->where('estado', 'ACTIVO')->where('fecha_fin', '<', $today)
+            ->update(['estado' => 'FINALIZADO']);
+    }
+
     public function search(array $filters): LengthAwarePaginator
     {
         $search = trim($filters['search'] ?? '');

@@ -330,3 +330,9 @@ El comando confirma aceptación por el proveedor, no llegada a la bandeja. Compr
 Errores API: HTTP 401 indica revisar la clave API; 403, permisos/IP autorizada/estado de cuenta; 429, límites de envío. Los fallos de conexión HTTPS requieren revisar la red y el almacén de certificados de PHP; no se solventan desactivando TLS. No hay reintentos automáticos de envío para evitar duplicados. Ante un fallo se invalida el código generado y el acceso queda bloqueado.
 
 La integración está probada con respuestas HTTP simuladas, incluyendo destinatario, cuerpo, autenticación de API, errores y acceso con segundo factor. La entrega real requiere la clave y el remitente de tu cuenta y debe verificarse en tu entorno.
+
+## Finalización automática de contratos
+
+Un contrato `ACTIVO` pasa a `FINALIZADO` desde las 00:00 del día siguiente a `fecha_fin`, según la zona horaria `America/Lima`. Los contratos `PENDIENTE` y `CANCELADO` no cambian. La finalización ya no se selecciona manualmente en el formulario; la baja anticipada continúa usando `CANCELADO`.
+
+La tarea `contracts:finalize` se ejecuta cada minuto mediante el programador de Laravel. En desarrollo, mantén `php artisan schedule:work` abierto; en un servidor, programa `php artisan schedule:run` cada minuto. Si el programador no está activo, la siguiente solicitud web también procesa los contratos vencidos. Puedes verificar la tarea con `php artisan schedule:list` o ejecutarla manualmente con `php artisan contracts:finalize`. Este cambio no requiere migración de base de datos.
