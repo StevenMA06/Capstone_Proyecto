@@ -35,7 +35,7 @@ class StoreContractRequest extends FormRequest
         ];
 
         if ($this->routeIs('contracts.update')) {
-            $rules['estado'] = ['nullable', Rule::in(['ACTIVO', 'CANCELADO', 'FINALIZADO'])];
+            $rules['estado'] = ['nullable', Rule::in(['ACTIVO', 'CANCELADO'])];
         }
 
         return $rules;

@@ -109,7 +109,6 @@
                     <div class="contract-field"><label for="estado">Estado</label><select id="estado" name="estado" @error('estado') aria-invalid="true" aria-describedby="estado-error" @enderror>
                             <option value="ACTIVO">Activo</option>
                             <option value="CANCELADO" @selected(old('estado') === 'CANCELADO')>Cancelar contrato · baja anticipada</option>
-                            @if($canFinalize)<option value="FINALIZADO" @selected(old('estado') === 'FINALIZADO')>Finalizado · terminó la vigencia</option>@endif
                         </select><small>La baja se registra al guardar. Conserva los datos y el PDF actual.</small>
                         @error('estado')<p id="estado-error" class="field-error">{{ $message }}</p>@enderror
                     </div>
