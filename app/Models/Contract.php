@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Contract extends Model
 {
@@ -17,4 +18,20 @@ class Contract extends Model
         'fecha_inicio', 'duracion_meses', 'fecha_fin', 'precio_contratado',
         'direccion_servicio', 'observaciones', 'estado', 'pdf_contrato_ruta',
     ];
+
+    /**
+     * Cliente asociado al contrato
+     */
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class, 'cliente_id', 'cliente_id');
+    }
+
+    /**
+     * Plan de servicio contratado
+     */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(ServicePlan::class, 'plan_id', 'plan_id');
+    }
 }

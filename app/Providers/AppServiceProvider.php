@@ -31,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
             && ($account->role?->nombre !== Role::ADMIN || $user->isAdministrator()));
         Gate::define('view-access-history', fn (User $user): bool => $user->isManager());
         Gate::define('register-clients', fn (User $user): bool => $user->isManager() || $user->isOffice());
+        Gate::define('manage-payments', fn (User $user): bool => $user->isManager() || $user->isOffice());
 
         Auth::provider('repository', fn ($app) => $app->make(RepositoryUserProvider::class));
     }

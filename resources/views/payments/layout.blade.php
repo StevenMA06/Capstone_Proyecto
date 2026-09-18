@@ -1,0 +1,30 @@
+@extends('layouts.management')
+@section('title', 'Gestión de pagos')
+@push('styles')<link rel="stylesheet" href="{{ asset('css/toast.css') }}?v=1">@endpush
+@section('workspace-content')
+<section class="management clients-management">
+    <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><a href="{{ route('dashboard') }}">Inicio</a><span aria-hidden="true">/</span><span>Gestión de pagos</span></nav>
+    <header class="module-heading">
+        <span class="eyebrow">ADMINISTRACIÓN FINANCIERA</span>
+        <h1>Gestión de pagos</h1>
+        <p>Registra, consulta y administra los pagos de tus contratos en un solo lugar.</p>
+    </header>
+    @if(session('status'))
+    <div class="client-toast" data-toast role="status" aria-live="polite" aria-atomic="true">
+        <span>{{ session('status') }}</span><button type="button" data-toast-close aria-label="Cerrar notificación">&times;</button>
+    </div>
+    <script src="{{ asset('js/toast.js') }}" defer></script>
+    @endif
+    @if(session('error'))
+    <div class="notice error" role="alert">
+        <strong>{{ session('error') }}</strong>
+    </div>
+    @endif
+    @if($errors->any())
+        <div class="notice error-summary" role="alert"><strong>Revisa los datos indicados:</strong>
+            <ul>@foreach($errors->messages() as $field => $messages)<li><a href="#{{ $field }}">{{ $messages[0] }}</a></li>@endforeach</ul>
+        </div>
+    @endif
+    @yield('payments-content')
+</section>
+@endsection

@@ -7,6 +7,7 @@ use App\Http\Controllers\ContractController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\OperationController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\SessionStatusController;
 use App\Http\Controllers\TechnicianController;
@@ -58,7 +59,6 @@ Route::middleware(['auth', 'can:view-office'])->group(function (): void {
     Route::put('/contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->whereNumber('contract')->name('contracts.pdf');
     Route::get('/contracts/{contract}/draft', [ContractController::class, 'draft'])->whereNumber('contract')->name('contracts.draft');
-    Route::get('/payments', [OperationController::class, 'payments'])->name('payments.index');
 });
 
 Route::middleware(['auth', 'can:manage-plans'])->group(function (): void {
@@ -79,4 +79,13 @@ Route::middleware(['auth', 'can:view-technician'])->group(function (): void {
 Route::middleware(['auth', 'can:register-clients'])->group(function (): void {
     Route::patch('/clients/{client}/deactivate', [ClientController::class, 'deactivate'])->name('clients.deactivate');
     Route::resource('clients', ClientController::class)->except('destroy');
+});
+
+Route::middleware(['auth', 'can:manage-payments'])->group(function (): void {
+    Route::patch('/payments/{payment}/cancel', [PaymentController::class, 'cancel'])->name('payments.cancel');
+    Route::patch('/payments/{payment}/complete', [PaymentController::class, 'complete'])->name('payments.complete');
+    Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->whereNumber('payment')->name('payments.receipt');
+    Route::post('/payments/{payment}/reminders', [PaymentController::class, 'createReminder'])->whereNumber('payment')->name('payments.reminders.create');
+    Route::patch('/payments/{payment}/reminders/{reminder}', [PaymentController::class, 'attendReminder'])->whereNumber(['payment', 'reminder'])->name('payments.reminders.attend');
+    Route::resource('payments', PaymentController::class)->except('destroy');
 });

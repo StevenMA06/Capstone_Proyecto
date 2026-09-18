@@ -1,0 +1,230 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StorePaymentRequest;
+use App\Http\Requests\UpdatePaymentRequest;
+use App\Models\Payment;
+use App\Services\PaymentService;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+
+class PaymentController extends Controller
+{
+    public function __construct(private PaymentService $payments) {}
+
+    /**
+     * Listado de pagos con filtros (RF-PAG-05, RF-PAG-06, RF-PAG-08)
+     */
+    public function index(Request $request): View
+    {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:180'],
+            'contract' => ['nullable', 'string', 'max:40'],
+            'status' => ['nullable', Rule::in(['PENDIENTE', 'REALIZADO', 'VENCIDO', 'ANULADO'])],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'due_soon' => ['nullable', 'boolean'],
+            'due_soon_days' => ['nullable', 'integer', 'min:1', 'max:30'],
+            'overdue' => ['nullable', 'boolean'],
+            'page' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $payments = $this->payments->search($filters);
+
+        return view('payments.index', compact('payments', 'filters'));
+    }
+
+    /**
+     * Formulario para crear un nuevo pago (RF-PAG-01)
+     */
+    public function create(): View
+    {
+        $payment = new Payment;
+        
+        // Obtener contratos activos para el select
+        $contracts = \App\Models\Contract::where('estado', 'ACTIVO')
+            ->with('client')
+            ->orderBy('codigo')
+            ->get();
+
+        return view('payments.create', compact('payment', 'contracts'));
+    }
+
+    /**
+     * Registrar un nuevo pago (RF-PAG-01, RF-PAG-02)
+     */
+    public function store(StorePaymentRequest $request): RedirectResponse
+    {
+        try {
+            $payment = $this->payments->create($request->validated(), $request->user());
+        } catch (UniqueConstraintViolationException $exception) {
+            if (! str_contains($exception->getMessage(), 'uq_pago_codigo')) {
+                throw $exception;
+            }
+
+            return back()->withInput()->withErrors([
+                'codigo' => 'Este código de pago ya está registrado.',
+            ]);
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
+        }
+
+        return redirect()->route('payments.show', $payment)
+            ->with('status', 'Pago #'.$payment->getKey().' registrado correctamente.');
+    }
+
+    /**
+     * Ver detalle de un pago (RF-PAG-07)
+     */
+    public function show(Payment $payment): View
+    {
+        // Cargar relaciones
+        $payment->load(['contract.client', 'contract.plan', 'registeredBy']);
+        
+        // Obtener recordatorios si existen (RF-PAG-12)
+        $reminders = $this->payments->getReminders($payment);
+
+        return view('payments.show', compact('payment', 'reminders'));
+    }
+
+    /**
+     * Formulario para editar un pago
+     */
+    public function edit(Payment $payment): View|RedirectResponse
+    {
+        if (! $payment->canBeEdited()) {
+            return redirect()->route('payments.show', $payment)
+                ->with('error', 'No se puede editar un pago con estado: '.ucfirst(strtolower($payment->estado)).'.');
+        }
+
+        // Obtener contratos activos para el select
+        $contracts = \App\Models\Contract::where('estado', 'ACTIVO')
+            ->with('client')
+            ->orderBy('codigo')
+            ->get();
+
+        return view('payments.edit', compact('payment', 'contracts'));
+    }
+
+    /**
+     * Actualizar un pago existente
+     */
+    public function update(UpdatePaymentRequest $request, Payment $payment): RedirectResponse
+    {
+        try {
+            $this->payments->update($payment, $request->validated());
+        } catch (UniqueConstraintViolationException $exception) {
+            if (! str_contains($exception->getMessage(), 'uq_pago_codigo')) {
+                throw $exception;
+            }
+
+            return back()->withInput()->withErrors([
+                'codigo' => 'Este código de pago ya está registrado.',
+            ]);
+        } catch (ValidationException $exception) {
+            return back()->withInput()->withErrors($exception->errors());
+        }
+
+        return redirect()->route('payments.show', $payment)
+            ->with('status', 'Datos del pago actualizados correctamente.');
+    }
+
+    /**
+     * Marcar pago como realizado
+     */
+    public function complete(Request $request, Payment $payment): RedirectResponse
+    {
+        $data = $request->validate([
+            'fecha_pago' => ['required', 'date', 'before_or_equal:today'],
+            'metodo_pago' => ['required', 'string', 'max:60'],
+            'referencia_externa' => ['nullable', 'string', 'max:120'],
+            'observaciones' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $this->payments->markAsCompleted($payment, $data);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        return redirect()->route('payments.show', $payment)
+            ->with('status', 'Pago marcado como realizado correctamente.');
+    }
+
+    /**
+     * Anular un pago (RN-49: no elimina físicamente)
+     */
+    public function cancel(Request $request, Payment $payment): RedirectResponse
+    {
+        $data = $request->validate([
+            'observaciones' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $this->payments->cancel($payment, $data['observaciones'] ?? null);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        return redirect()->route('payments.show', $payment)
+            ->with('status', 'Pago anulado. La información se conserva en el historial.');
+    }
+
+    /**
+     * Generar constancia interna de pago (RF-PAG-09)
+     */
+    public function receipt(Payment $payment): View
+    {
+        try {
+            $data = $this->payments->generateReceipt($payment);
+        } catch (ValidationException $exception) {
+            return redirect()->route('payments.show', $payment)
+                ->with('error', $exception->errors()['payment'][0] ?? 'No se pudo generar la constancia.');
+        }
+
+        return view('payments.receipt', $data);
+    }
+
+    /**
+     * Crear recordatorio para un pago (RF-PAG-12)
+     */
+    public function createReminder(Request $request, Payment $payment): RedirectResponse
+    {
+        $data = $request->validate([
+            'mensaje' => ['required', 'string', 'min:10', 'max:500'],
+        ], [
+            'mensaje.required' => 'El mensaje del recordatorio es obligatorio.',
+            'mensaje.min' => 'El mensaje debe tener al menos 10 caracteres.',
+            'mensaje.max' => 'El mensaje admite hasta 500 caracteres.',
+        ]);
+
+        try {
+            $this->payments->createReminder($payment, $data['mensaje'], $request->user());
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        return redirect()->route('payments.show', $payment)
+            ->with('status', 'Recordatorio creado correctamente.');
+    }
+
+    /**
+     * Marcar recordatorio como atendido
+     */
+    public function attendReminder(Request $request, Payment $payment, int $reminder): RedirectResponse
+    {
+        $attended = $this->payments->markReminderAsAttended($reminder);
+
+        if (! $attended) {
+            return back()->with('error', 'No se pudo marcar el recordatorio como atendido.');
+        }
+
+        return redirect()->route('payments.show', $payment)
+            ->with('status', 'Recordatorio marcado como atendido.');
+    }
+}
