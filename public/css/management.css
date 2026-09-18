@@ -26,7 +26,7 @@
 .module-menu .nav-pending { color: #768075; cursor: default; }
 .module-menu .nav-pending .module-icon { color: #859082; }
 .workspace-main { display: block; padding: 30px; min-width: 0; flex: 1; width: auto; }
-.workspace-shell .clients-management { width: 100%; max-width: 1600px; margin: 0 auto; padding: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.workspace-shell .workspace-main > .management { width: 100%; max-width: 1600px; margin: 0 auto; padding: 0; border-radius: 0; box-shadow: none; background: transparent; }
 .workspace-breadcrumb { display: flex; gap: 10px; font-size: 11px; color: #7d9083; margin-bottom: 22px; }
 .workspace-breadcrumb a { color: #60796a; text-decoration: none; }
 .module-heading { margin-bottom: 28px; }
