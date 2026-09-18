@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Gestión de clientes') · Lunnys Perú</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=4">
-    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=9">
+    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=10">
     @include('layouts.session-monitor')
     @stack('styles')
 </head>
@@ -24,18 +24,21 @@
         <div class="module-menu">
             <nav aria-label="Navegación principal">
                 @unless(auth()->user()->isTechnician())<a class="{{ request()->routeIs('dashboard') ? 'nav-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif href="{{ route('dashboard') }}">@include('layouts.module-icon', ['icon' => 'home'])<span>Dashboard</span></a>@endunless
+                @canany(['register-clients', 'view-office'])<p class="nav-section">Comercial</p>@endcanany
                 @can('register-clients')<a class="{{ request()->routeIs('clients.*') ? 'nav-active' : '' }}" @if(request()->routeIs('clients.*')) aria-current="page" @endif href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Clientes</span></a>@endcan
                 @can('view-office')
                 @foreach(['plans' => ['Planes de servicio', 'file'], 'contracts' => ['Contratos', 'file'], 'payments' => ['Pagos', 'money']] as $key => [$module, $icon])
                     <a class="{{ request()->routeIs($key.'.*') ? 'nav-active' : '' }}" @if(request()->routeIs($key.'.*')) aria-current="page" @endif href="{{ route($key.'.index') }}">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></a>
                 @endforeach
                 @endcan
+                @canany(['view-technician', 'view-operations'])<p class="nav-section">Operaciones</p>@endcanany
                 @can('view-technician')<a class="{{ request()->routeIs('technician.*') ? 'nav-active' : '' }}" @if(request()->routeIs('technician.*')) aria-current="page" @endif href="{{ route('technician.index') }}">@include('layouts.module-icon', ['icon' => 'tool'])<span>Panel técnico</span></a>@endcan
                 @can('view-operations')
                 @foreach(['installations' => ['Instalaciones', 'tool'], 'equipment' => ['Equipos', 'router'], 'materials' => ['Materiales', 'box']] as $key => [$module, $icon])
                     <a class="{{ request()->routeIs($key.'.*') ? 'nav-active' : '' }}" @if(request()->routeIs($key.'.*')) aria-current="page" @endif href="{{ route($key.'.index') }}">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></a>
                 @endforeach
                 @endcan
+                @canany(['manage-employees', 'manage-users', 'view-access-history'])<p class="nav-section">Administración</p>@endcanany
                 @can('manage-employees')<a class="{{ request()->routeIs('employees.*') ? 'nav-active' : '' }}" @if(request()->routeIs('employees.*')) aria-current="page" @endif href="{{ route('employees.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Empleados</span></a>@endcan
                 @can('manage-users')<a class="{{ request()->routeIs('users.*') ? 'nav-active' : '' }}" @if(request()->routeIs('users.*')) aria-current="page" @endif href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Usuarios</span></a>@endcan
                 @can('view-access-history')<a class="{{ request()->routeIs('access.index') ? 'nav-active' : '' }}" @if(request()->routeIs('access.index')) aria-current="page" @endif href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Historial de accesos</span></a>@endcan
