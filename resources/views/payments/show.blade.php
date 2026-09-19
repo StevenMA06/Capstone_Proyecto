@@ -98,10 +98,18 @@
 
     @if($payment->isCompleted())
         <div style="margin-bottom: 16px;">
-            <a class="action-link" href="{{ route('payments.receipt', $payment) }}" target="_blank" style="display: inline-block;">
-                Generar constancia de pago
-            </a>
-            <p class="muted" style="margin-top: 8px;">Genera una constancia interna del pago realizado (no es una factura electrónica SUNAT).</p>
+            @if($payment->constancia_ruta)
+                {{-- RF-PAG-14: Ver comprobante generado --}}
+                <a class="action-link" href="{{ asset($payment->constancia_ruta) }}" target="_blank" style="display: inline-block; margin-right: 12px;">
+                    📄 Ver comprobante de pago
+                </a>
+                <p class="muted" style="margin-top: 8px;">Comprobante generado automáticamente al registrar el pago. Puede visualizar, imprimir o descargar.</p>
+            @else
+                <a class="action-link" href="{{ route('payments.receipt', $payment) }}" target="_blank" style="display: inline-block;">
+                    📄 Generar comprobante de pago
+                </a>
+                <p class="muted" style="margin-top: 8px;">Genera un comprobante interno del pago realizado (no es una factura electrónica SUNAT).</p>
+            @endif
         </div>
     @endif
 

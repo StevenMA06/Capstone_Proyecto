@@ -131,3 +131,142 @@
 .workspace-shell .account-form > div:has(textarea) {
     grid-column: 1 / -1;
 }
+
+/* ========================================
+   Payment Method Statistics Cards (RF-PAG-16, RF-PAG-17)
+   ======================================== */
+.payment-method-stats {
+    background: #fff;
+    border: 1px solid #e1eae4;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 22px;
+}
+
+.payment-method-stats .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+}
+
+.payment-method-stats .stat-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #6b7280;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.payment-method-stats .stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.payment-method-stats .stat-card.most-used {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+    border: 2px solid #087846;
+    border-left-width: 4px;
+}
+
+.payment-method-stats .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.payment-method-stats .stat-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.payment-method-stats .stat-content h3 {
+    font-size: 11px;
+    font-weight: 600;
+    color: #4b5563;
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.payment-method-stats .stat-number {
+    font-size: 22px;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0;
+    line-height: 1;
+}
+
+.payment-method-stats .stat-label {
+    font-size: 9px;
+    color: #6b7280;
+    margin: 3px 0 0 0;
+}
+
+.payment-method-stats .badge-most-used {
+    display: inline-block;
+    background: #087846;
+    color: #fff;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-top: 6px;
+    letter-spacing: 0.3px;
+}
+
+.payment-method-stats .stats-empty {
+    text-align: center;
+    color: #6b7280;
+    font-size: 13px;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+/* Responsive adjustments for payment stats */
+@media (max-width: 1400px) {
+    .payment-method-stats .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+}
+
+@media (max-width: 1000px) {
+    .payment-method-stats .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .payment-method-stats .stat-card {
+        padding: 14px;
+        gap: 10px;
+    }
+    
+    .payment-method-stats .stat-icon {
+        width: 42px;
+        height: 42px;
+    }
+}
+
+@media (max-width: 680px) {
+    .payment-method-stats {
+        padding: 16px;
+    }
+    
+    .payment-method-stats .stats-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+    
+    .payment-method-stats .stat-card {
+        padding: 12px;
+    }
+}

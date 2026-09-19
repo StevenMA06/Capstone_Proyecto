@@ -293,6 +293,22 @@ class PaymentService
     }
 
     /**
+     * Obtener estadísticas por método de pago (RF-PAG-16, RF-PAG-17)
+     * @return array<string, mixed>
+     */
+    public function getPaymentMethodStats(): array
+    {
+        $counts = $this->payments->countByPaymentMethod();
+        $mostUsed = $this->payments->getMostUsedPaymentMethod();
+
+        return [
+            'counts' => $counts,
+            'most_used' => $mostUsed,
+            'total' => array_sum($counts),
+        ];
+    }
+
+    /**
      * Filtrar atributos permitidos para mass assignment
      * @param array<string, mixed> $data
      * @return array<string, mixed>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\UpdatePaymentRequest;
 use App\Models\Payment;
+use App\Services\PaymentReceiptPdf;
 use App\Services\PaymentService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +16,10 @@ use Illuminate\View\View;
 
 class PaymentController extends Controller
 {
-    public function __construct(private PaymentService $payments) {}
+    public function __construct(
+        private PaymentService $payments,
+        private PaymentReceiptPdf $receiptPdf
+    ) {}
 
     /**
      * Listado de pagos con filtros (RF-PAG-05, RF-PAG-06, RF-PAG-08)
@@ -35,8 +39,11 @@ class PaymentController extends Controller
         ]);
 
         $payments = $this->payments->search($filters);
+        
+        // RF-PAG-16, RF-PAG-17: Estadísticas por método de pago
+        $paymentMethodStats = $this->payments->getPaymentMethodStats();
 
-        return view('payments.index', compact('payments', 'filters'));
+        return view('payments.index', compact('payments', 'filters', 'paymentMethodStats'));
     }
 
     /**
@@ -148,12 +155,20 @@ class PaymentController extends Controller
 
         try {
             $this->payments->markAsCompleted($payment, $data);
+            
+            // RF-PAG-09: Generar comprobante PDF automáticamente
+            $receiptPath = $this->receiptPdf->generate($payment);
+            
+            // RF-PAG-13: Guardar ruta del comprobante
+            $payment->constancia_ruta = $receiptPath;
+            $payment->save();
+            
         } catch (ValidationException $exception) {
             return back()->withErrors($exception->errors());
         }
 
         return redirect()->route('payments.show', $payment)
-            ->with('status', 'Pago marcado como realizado correctamente.');
+            ->with('status', 'Pago marcado como realizado y comprobante generado correctamente.');
     }
 
     /**
@@ -178,8 +193,14 @@ class PaymentController extends Controller
     /**
      * Generar constancia interna de pago (RF-PAG-09)
      */
-    public function receipt(Payment $payment): View
+    public function receipt(Payment $payment): View|RedirectResponse
     {
+        // RF-PAG-14: Verificar si ya existe comprobante generado
+        if ($payment->constancia_ruta && $this->receiptPdf->exists($payment->constancia_ruta)) {
+            // Redirigir a la ruta del PDF para visualizarlo
+            return redirect($payment->constancia_ruta);
+        }
+
         try {
             $data = $this->payments->generateReceipt($payment);
         } catch (ValidationException $exception) {
@@ -226,5 +247,23 @@ class PaymentController extends Controller
 
         return redirect()->route('payments.show', $payment)
             ->with('status', 'Recordatorio marcado como atendido.');
+    }
+
+    /**
+     * API: Obtener precio contratado de un contrato (RF-PAG-04)
+     */
+    public function getContractAmount(Request $request, int $contractId)
+    {
+        $contract = \App\Models\Contract::find($contractId);
+
+        if (! $contract) {
+            return response()->json(['error' => 'Contrato no encontrado'], 404);
+        }
+
+        return response()->json([
+            'precio_contratado' => $contract->precio_contratado,
+            'codigo' => $contract->codigo,
+            'estado' => $contract->estado,
+        ]);
     }
 }

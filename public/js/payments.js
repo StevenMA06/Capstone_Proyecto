@@ -8,25 +8,55 @@ const fechaVencimientoInput = document.getElementById('fecha_vencimiento');
 const fechaPagoInput = document.getElementById('fecha_pago');
 const metodoPagoSelect = document.getElementById('metodo_pago');
 
-// Mostrar información del contrato seleccionado
+// Mostrar información del contrato seleccionado y autocompletar monto (RF-PAG-04)
 if (contractSelect && contractInfo) {
-    contractSelect.addEventListener('change', function() {
+    contractSelect.addEventListener('change', async function() {
         const selectedOption = this.options[this.selectedIndex];
         
         if (this.value && selectedOption.dataset.client) {
+            const contractId = this.value;
             const clientName = selectedOption.dataset.client;
             const planName = selectedOption.dataset.plan;
-            const monthlyPrice = parseFloat(selectedOption.dataset.monthly) || 0;
             
-            document.getElementById('info-client').textContent = `Cliente: ${clientName}`;
-            document.getElementById('info-plan').textContent = `Plan: ${planName}`;
-            document.getElementById('info-monthly').textContent = `Precio mensual: S/ ${monthlyPrice.toFixed(2)}`;
-            
-            contractInfo.style.display = 'block';
-            
-            // Sugerir monto si está vacío
-            if (montoInput && !montoInput.value && monthlyPrice > 0) {
-                montoInput.value = monthlyPrice.toFixed(2);
+            // RF-PAG-04: Obtener precio contratado desde el servidor
+            try {
+                const response = await fetch(`/api/contracts/${contractId}/amount`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const precioContratado = parseFloat(data.precio_contratado) || 0;
+                    
+                    document.getElementById('info-client').textContent = `Cliente: ${clientName}`;
+                    document.getElementById('info-plan').textContent = `Plan: ${planName}`;
+                    document.getElementById('info-monthly').textContent = `Precio contratado: S/ ${precioContratado.toFixed(2)}`;
+                    
+                    contractInfo.style.display = 'block';
+                    
+                    // Autocompletar monto con precio_contratado si está vacío
+                    if (montoInput && !montoInput.value && precioContratado > 0) {
+                        montoInput.value = precioContratado.toFixed(2);
+                        montoInput.focus();
+                    }
+                } else {
+                    // Fallback al precio mensual del plan
+                    const monthlyPrice = parseFloat(selectedOption.dataset.monthly) || 0;
+                    document.getElementById('info-client').textContent = `Cliente: ${clientName}`;
+                    document.getElementById('info-plan').textContent = `Plan: ${planName}`;
+                    document.getElementById('info-monthly').textContent = `Precio mensual: S/ ${monthlyPrice.toFixed(2)}`;
+                    
+                    contractInfo.style.display = 'block';
+                    
+                    if (montoInput && !montoInput.value && monthlyPrice > 0) {
+                        montoInput.value = monthlyPrice.toFixed(2);
+                    }
+                }
+            } catch (error) {
+                console.error('Error al obtener precio contratado:', error);
+                // Usar datos del select como fallback
+                const monthlyPrice = parseFloat(selectedOption.dataset.monthly) || 0;
+                document.getElementById('info-client').textContent = `Cliente: ${clientName}`;
+                document.getElementById('info-plan').textContent = `Plan: ${planName}`;
+                document.getElementById('info-monthly').textContent = `Precio mensual: S/ ${monthlyPrice.toFixed(2)}`;
+                contractInfo.style.display = 'block';
             }
             
             // Sugerir período si está vacío

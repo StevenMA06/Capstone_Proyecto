@@ -239,4 +239,50 @@ class PaymentRepository
 
         return $code;
     }
+
+    /**
+     * Contar pagos por método de pago (RF-PAG-16)
+     * @return array<string, int>
+     */
+    public function countByPaymentMethod(): array
+    {
+        $counts = DB::table('pagos')
+            ->select('metodo_pago', DB::raw('COUNT(*) as total'))
+            ->where('estado', 'REALIZADO')
+            ->whereNotNull('metodo_pago')
+            ->groupBy('metodo_pago')
+            ->pluck('total', 'metodo_pago')
+            ->toArray();
+
+        // Asegurar que todos los métodos aparezcan
+        $methods = ['EFECTIVO', 'TRANSFERENCIA', 'YAPE', 'PLIN', 'TARJETA', 'OTRO'];
+        $result = [];
+        
+        foreach ($methods as $method) {
+            $result[$method] = $counts[$method] ?? 0;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Obtener el método de pago más utilizado (RF-PAG-17)
+     * @return array{method: string|null, count: int}
+     */
+    public function getMostUsedPaymentMethod(): array
+    {
+        $counts = $this->countByPaymentMethod();
+        
+        if (empty($counts)) {
+            return ['method' => null, 'count' => 0];
+        }
+
+        $maxCount = max($counts);
+        $mostUsed = array_search($maxCount, $counts, true);
+
+        return [
+            'method' => $mostUsed ?: null,
+            'count' => $maxCount,
+        ];
+    }
 }

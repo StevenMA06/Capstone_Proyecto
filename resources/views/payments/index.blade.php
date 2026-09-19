@@ -1,5 +1,49 @@
 @extends('payments.layout')
 @section('payments-content')
+
+{{-- RF-PAG-16, RF-PAG-17: Indicadores por método de pago --}}
+<div class="payment-method-stats">
+    <div class="stats-grid">
+        @foreach($paymentMethodStats['counts'] as $method => $count)
+            @php
+                $isMostUsed = $paymentMethodStats['most_used']['method'] === $method;
+                $icons = [
+                    'EFECTIVO' => '💵',
+                    'TRANSFERENCIA' => '🏦',
+                    'YAPE' => '📱',
+                    'PLIN' => '💳',
+                    'TARJETA' => '💳',
+                    'OTRO' => '📋'
+                ];
+                $colors = [
+                    'EFECTIVO' => '#10b981',
+                    'TRANSFERENCIA' => '#3b82f6',
+                    'YAPE' => '#8b5cf6',
+                    'PLIN' => '#ec4899',
+                    'TARJETA' => '#f59e0b',
+                    'OTRO' => '#6b7280'
+                ];
+            @endphp
+            <div class="stat-card {{ $isMostUsed ? 'most-used' : '' }}" style="border-left-color: {{ $colors[$method] }};">
+                <div class="stat-icon" style="background: {{ $colors[$method] }}20;">
+                    <span style="font-size: 2rem;">{{ $icons[$method] }}</span>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ ucfirst(strtolower($method)) }}</h3>
+                    <p class="stat-number">{{ $count }}</p>
+                    <p class="stat-label">{{ $count === 1 ? 'pago realizado' : 'pagos realizados' }}</p>
+                    @if($isMostUsed && $count > 0)
+                        <span class="badge-most-used">⭐ Más usado</span>
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    </div>
+    @if($paymentMethodStats['total'] === 0)
+        <p class="stats-empty">No hay pagos realizados aún para mostrar estadísticas.</p>
+    @endif
+</div>
+
 <div class="clients-grid">
 <aside class="client-filter-panel" aria-labelledby="filter-title">
     <h2 id="filter-title">Filtros y buscador</h2>

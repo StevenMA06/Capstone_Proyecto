@@ -87,5 +87,6 @@ Route::middleware(['auth', 'can:manage-payments'])->group(function (): void {
     Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->whereNumber('payment')->name('payments.receipt');
     Route::post('/payments/{payment}/reminders', [PaymentController::class, 'createReminder'])->whereNumber('payment')->name('payments.reminders.create');
     Route::patch('/payments/{payment}/reminders/{reminder}', [PaymentController::class, 'attendReminder'])->whereNumber(['payment', 'reminder'])->name('payments.reminders.attend');
+    Route::get('/api/contracts/{contract}/amount', [PaymentController::class, 'getContractAmount'])->whereNumber('contract')->name('api.contracts.amount');
     Route::resource('payments', PaymentController::class)->except('destroy');
 });
