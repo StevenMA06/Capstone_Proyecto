@@ -1,46 +1,97 @@
 @extends('payments.layout')
 @section('payments-content')
 
-{{-- RF-PAG-16, RF-PAG-17: Indicadores por método de pago --}}
-<div class="payment-method-stats">
+{{-- RF-PAG-16, RF-PAG-17: Indicadores por estado de pago --}}
+<div class="payment-status-stats">
+    <div class="stats-header">
+        <h2>Estadísticas de Pagos</h2>
+        <form method="GET" action="{{ route('payments.index') }}" class="month-filter-form">
+            <label for="month-filter">Mes:</label>
+            <input 
+                type="month" 
+                id="month-filter" 
+                name="month" 
+                value="{{ $selectedMonth }}"
+                max="{{ now()->format('Y-m') }}"
+                onchange="this.form.submit()"
+            >
+            @if(request('month'))
+                <a href="{{ route('payments.index') }}" class="clear-month-filter" title="Ver todos los meses">✕</a>
+            @endif
+        </form>
+    </div>
+    
     <div class="stats-grid">
-        @foreach($paymentMethodStats['counts'] as $method => $count)
+        @php
+            $statusConfig = [
+                'PENDIENTE' => [
+                    'icon' => '⏳',
+                    'color' => '#f59e0b',
+                    'label' => 'Pendientes',
+                    'description' => 'Por cobrar'
+                ],
+                'VENCIDO' => [
+                    'icon' => '⚠️',
+                    'color' => '#ef4444',
+                    'label' => 'Vencidos',
+                    'description' => 'Requieren atención'
+                ],
+                'ANULADO' => [
+                    'icon' => '❌',
+                    'color' => '#6b7280',
+                    'label' => 'Anulados',
+                    'description' => 'Sin efecto'
+                ],
+                'REALIZADO' => [
+                    'icon' => '✅',
+                    'color' => '#10b981',
+                    'label' => 'Realizados',
+                    'description' => 'Pagados'
+                ]
+            ];
+            $totalPayments = array_sum($statistics);
+        @endphp
+        
+        @foreach($statusConfig as $status => $config)
             @php
-                $isMostUsed = $paymentMethodStats['most_used']['method'] === $method;
-                $icons = [
-                    'EFECTIVO' => '💵',
-                    'TRANSFERENCIA' => '🏦',
-                    'YAPE' => '📱',
-                    'PLIN' => '💳',
-                    'TARJETA' => '💳',
-                    'OTRO' => '📋'
-                ];
-                $colors = [
-                    'EFECTIVO' => '#10b981',
-                    'TRANSFERENCIA' => '#3b82f6',
-                    'YAPE' => '#8b5cf6',
-                    'PLIN' => '#ec4899',
-                    'TARJETA' => '#f59e0b',
-                    'OTRO' => '#6b7280'
-                ];
+                $count = $statistics[$status] ?? 0;
+                $percentage = $totalPayments > 0 ? round(($count / $totalPayments) * 100) : 0;
+                $isFiltered = request('status') === $status;
             @endphp
-            <div class="stat-card {{ $isMostUsed ? 'most-used' : '' }}" style="border-left-color: {{ $colors[$method] }};">
-                <div class="stat-icon" style="background: {{ $colors[$method] }}20;">
-                    <span style="font-size: 2rem;">{{ $icons[$method] }}</span>
+            <a 
+                href="{{ route('payments.index', array_merge(request()->except('status'), ['status' => $status])) }}" 
+                class="stat-card clickable {{ $isFiltered ? 'filtered' : '' }} {{ $status === 'PENDIENTE' || $status === 'VENCIDO' ? 'urgent' : '' }}"
+                style="border-left-color: {{ $config['color'] }};"
+                title="Filtrar por {{ $config['label'] }}"
+            >
+                <div class="stat-icon" style="background: {{ $config['color'] }}20;">
+                    <span style="font-size: 2rem;">{{ $config['icon'] }}</span>
                 </div>
                 <div class="stat-content">
-                    <h3>{{ ucfirst(strtolower($method)) }}</h3>
+                    <h3>{{ $config['label'] }}</h3>
                     <p class="stat-number">{{ $count }}</p>
-                    <p class="stat-label">{{ $count === 1 ? 'pago realizado' : 'pagos realizados' }}</p>
-                    @if($isMostUsed && $count > 0)
-                        <span class="badge-most-used">⭐ Más usado</span>
+                    <p class="stat-label">{{ $config['description'] }}</p>
+                    @if($totalPayments > 0)
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar" style="width: {{ $percentage }}%; background: {{ $config['color'] }};"></div>
+                        </div>
+                        <p class="stat-percentage">{{ $percentage }}% del total</p>
                     @endif
                 </div>
-            </div>
+                @if($isFiltered)
+                    <span class="badge-filtered">🔍 Filtrado</span>
+                @endif
+            </a>
         @endforeach
     </div>
-    @if($paymentMethodStats['total'] === 0)
-        <p class="stats-empty">No hay pagos realizados aún para mostrar estadísticas.</p>
+    
+    @if($totalPayments === 0)
+        <p class="stats-empty">No hay pagos en {{ \Carbon\Carbon::parse($selectedMonth)->locale('es')->isoFormat('MMMM [de] YYYY') }}.</p>
+    @else
+        <p class="stats-summary">
+            Total de pagos en {{ \Carbon\Carbon::parse($selectedMonth)->locale('es')->isoFormat('MMMM [de] YYYY') }}: 
+            <strong>{{ $totalPayments }}</strong>
+        </p>
     @endif
 </div>
 

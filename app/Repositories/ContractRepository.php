@@ -131,4 +131,25 @@ class ContractRepository
             ->join('empleados', 'empleados.empleado_id', '=', 'contratos.responsable_id')
             ->select('contratos.*', 'clientes.numero_documento', 'clientes.tipo_documento', 'clientes.nombres_razon_social', 'clientes.apellidos', 'clientes.distrito as cliente_distrito', 'planes_servicio.nombre as plan_nombre', 'planes_servicio.numero_plan', 'zonas_cobertura.nombre as zona_nombre', 'empleados.nombres as responsable_nombres', 'empleados.apellidos as responsable_apellidos');
     }
+
+    /**
+     * Obtener contratos cancelados que pueden ser reactivados
+     */
+    public function getCancelledContracts(): LengthAwarePaginator
+    {
+        return Contract::with(['client', 'plan'])
+            ->where('estado', 'CANCELADO')
+            ->orderByDesc('actualizado_en')
+            ->paginate(15);
+    }
+
+    /**
+     * Verificar si un contrato puede ser reactivado
+     */
+    public function canBeReactivated(int $id): bool
+    {
+        $contract = $this->find($id);
+
+        return $contract->estado === 'CANCELADO';
+    }
 }

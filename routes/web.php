@@ -59,6 +59,11 @@ Route::middleware(['auth', 'can:view-office'])->group(function (): void {
     Route::put('/contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->whereNumber('contract')->name('contracts.pdf');
     Route::get('/contracts/{contract}/draft', [ContractController::class, 'draft'])->whereNumber('contract')->name('contracts.draft');
+    
+    // RF-CON-04: Reactivación de contratos cancelados
+    Route::get('/contracts-cancelled', [ContractController::class, 'cancelled'])->name('contracts.cancelled');
+    Route::get('/contracts/{contract}/reactivate', [ContractController::class, 'reactivateForm'])->whereNumber('contract')->name('contracts.reactivate.form');
+    Route::post('/contracts/{contract}/reactivate', [ContractController::class, 'reactivate'])->whereNumber('contract')->name('contracts.reactivate');
 });
 
 Route::middleware(['auth', 'can:manage-plans'])->group(function (): void {

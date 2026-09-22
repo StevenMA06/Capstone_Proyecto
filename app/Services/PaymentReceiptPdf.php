@@ -3,13 +3,16 @@
 namespace App\Services;
 
 use App\Models\Payment;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 
 class PaymentReceiptPdf
 {
     /**
-     * Generar comprobante de pago como HTML (RF-PAG-09)
-     * Nota: Para generar PDF real, instalar: composer require barryvdh/laravel-dompdf
+     * Generar comprobante de pago como PDF (RF-PAG-09, RF-PAG-13)
+     * 
+     * Requiere: composer require barryvdh/laravel-dompdf
+     * Configuración en config/dompdf.php (generado por el paquete)
      */
     public function generate(Payment $payment): string
     {
@@ -17,7 +20,7 @@ class PaymentReceiptPdf
         $payment->load(['contract.client', 'contract.plan', 'registeredBy']);
 
         // Generar nombre único para el archivo
-        $filename = 'comprobante_pago_' . $payment->codigo . '_' . now()->format('YmdHis') . '.html';
+        $filename = 'comprobante_pago_' . $payment->codigo . '_' . now()->format('YmdHis') . '.pdf';
         
         // Datos para la vista
         $data = [
@@ -26,18 +29,68 @@ class PaymentReceiptPdf
             'client' => $payment->contract->client,
             'plan' => $payment->contract->plan,
             'generated_at' => now(),
-            'logo_path' => asset('images/lunnys-peru.png'),
+            'generated_by' => auth()->user()?->nombre_usuario ?? 'Sistema',
         ];
 
-        // Generar HTML
-        $html = view('payments.receipt-pdf', $data)->render();
+        // Verificar si dompdf está disponible
+        if (class_exists(Pdf::class)) {
+            // Generar PDF real con dompdf
+            $pdf = Pdf::loadView('payments.receipt-pdf', $data)
+                ->setPaper('a4', 'portrait')
+                ->setOption('defaultFont', 'Arial');
 
-        // Guardar en storage
-        $path = 'comprobantes/' . $filename;
-        Storage::disk('public')->put($path, $html);
+            // Guardar en storage
+            $path = 'comprobantes/' . $filename;
+            Storage::disk('public')->put($path, $pdf->output());
+        } else {
+            // Fallback: Generar HTML si dompdf no está instalado
+            $html = view('payments.receipt-pdf', $data)->render();
+            $filename = str_replace('.pdf', '.html', $filename);
+            $path = 'comprobantes/' . $filename;
+            Storage::disk('public')->put($path, $html);
+        }
 
         // Retornar ruta relativa
         return 'storage/' . $path;
+    }
+
+    /**
+     * Generar PDF y retornar directamente para descarga
+     * Sin guardar en storage
+     */
+    public function download(Payment $payment): \Illuminate\Http\Response
+    {
+        // Cargar relaciones necesarias
+        $payment->load(['contract.client', 'contract.plan', 'registeredBy']);
+
+        $filename = 'comprobante_pago_' . $payment->codigo . '.pdf';
+        
+        // Datos para la vista
+        $data = [
+            'payment' => $payment,
+            'contract' => $payment->contract,
+            'client' => $payment->contract->client,
+            'plan' => $payment->contract->plan,
+            'generated_at' => now(),
+            'generated_by' => auth()->user()?->nombre_usuario ?? 'Sistema',
+        ];
+
+        // Verificar si dompdf está disponible
+        if (class_exists(Pdf::class)) {
+            $pdf = Pdf::loadView('payments.receipt-pdf', $data)
+                ->setPaper('a4', 'portrait')
+                ->setOption('defaultFont', 'Arial');
+
+            return $pdf->download($filename);
+        } else {
+            // Fallback: Retornar HTML
+            $html = view('payments.receipt-pdf', $data)->render();
+            
+            return response($html, 200, [
+                'Content-Type' => 'text/html',
+                'Content-Disposition' => 'inline; filename="' . str_replace('.pdf', '.html', $filename) . '"',
+            ]);
+        }
     }
 
     /**

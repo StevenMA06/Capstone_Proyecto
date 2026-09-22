@@ -20,6 +20,30 @@ Artisan::command('contracts:finalize', function () {
 
 Schedule::command('contracts:finalize')->everyMinute()->withoutOverlapping();
 
+// ============================================================================
+// AUTOMATIZACIÓN DE PAGOS Y CONTRATOS (RF-PAG-10, RF-PAG-11, RF-PAG-12)
+// ============================================================================
+
+// Actualizar estados de pagos: PENDIENTE → VENCIDO → ANULADO
+Schedule::command('payments:update-overdue')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Cancelar contratos por falta de pago (cuando tienen pagos ANULADOS)
+Schedule::command('contracts:cancel-for-non-payment')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Enviar recordatorios de pago por correo (3 tipos: previo, vencido, cancelación)
+Schedule::command('payments:send-reminders')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// ============================================================================
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

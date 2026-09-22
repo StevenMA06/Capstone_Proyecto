@@ -293,6 +293,21 @@ class PaymentService
     }
 
     /**
+     * Obtener estadísticas de pagos para un mes específico
+     * @param string $month Formato YYYY-MM
+     * @return array<string, mixed>
+     */
+    public function getStatisticsForMonth(string $month): array
+    {
+        $byStatus = $this->payments->countByStatusForMonth($month);
+
+        return array_merge($byStatus, [
+            'total' => array_sum($byStatus),
+            'month' => $month,
+        ]);
+    }
+
+    /**
      * Obtener estadísticas por método de pago (RF-PAG-16, RF-PAG-17)
      * @return array<string, mixed>
      */

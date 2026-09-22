@@ -30,6 +30,7 @@ class PaymentController extends Controller
             'search' => ['nullable', 'string', 'max:180'],
             'contract' => ['nullable', 'string', 'max:40'],
             'status' => ['nullable', Rule::in(['PENDIENTE', 'REALIZADO', 'VENCIDO', 'ANULADO'])],
+            'month' => ['nullable', 'date_format:Y-m'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'due_soon' => ['nullable', 'boolean'],
@@ -40,10 +41,13 @@ class PaymentController extends Controller
 
         $payments = $this->payments->search($filters);
         
-        // RF-PAG-16, RF-PAG-17: Estadísticas por método de pago
-        $paymentMethodStats = $this->payments->getPaymentMethodStats();
+        // Obtener el mes para las estadísticas (del filtro o mes actual)
+        $selectedMonth = $filters['month'] ?? now()->format('Y-m');
+        
+        // Obtener estadísticas del mes seleccionado
+        $statistics = $this->payments->getStatisticsForMonth($selectedMonth);
 
-        return view('payments.index', compact('payments', 'filters', 'paymentMethodStats'));
+        return view('payments.index', compact('payments', 'filters', 'statistics', 'selectedMonth'));
     }
 
     /**

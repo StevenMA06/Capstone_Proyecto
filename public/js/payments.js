@@ -1,272 +1,87 @@
-// Validaciones y funcionalidades del módulo de pagos
-const paymentForm = document.querySelector('.account-form');
-const contractSelect = document.getElementById('contrato_id');
-const contractInfo = document.getElementById('contract-info');
-const montoInput = document.getElementById('monto');
-const periodoInput = document.getElementById('periodo_servicio');
-const fechaVencimientoInput = document.getElementById('fecha_vencimiento');
-const fechaPagoInput = document.getElementById('fecha_pago');
-const metodoPagoSelect = document.getElementById('metodo_pago');
+/**
+ * Autocompletado de monto desde contrato (RF-PAG-08)
+ * Cuando se selecciona un contrato, autocompleta el monto con el precio_contratado
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const contractSelect = document.getElementById('contrato_id');
+    const montoInput = document.getElementById('monto');
+    const contractInfo = document.getElementById('contract-info');
+    const infoClient = document.getElementById('info-client');
+    const infoPlan = document.getElementById('info-plan');
+    const infoMonthly = document.getElementById('info-monthly');
 
-// Mostrar información del contrato seleccionado y autocompletar monto (RF-PAG-04)
-if (contractSelect && contractInfo) {
+    if (!contractSelect || !montoInput) {
+        return; // No estamos en el formulario de pagos
+    }
+
+    // Autocompletar monto al seleccionar contrato
     contractSelect.addEventListener('change', async function() {
-        const selectedOption = this.options[this.selectedIndex];
+        const contractId = this.value;
         
-        if (this.value && selectedOption.dataset.client) {
-            const contractId = this.value;
-            const clientName = selectedOption.dataset.client;
-            const planName = selectedOption.dataset.plan;
-            
-            // RF-PAG-04: Obtener precio contratado desde el servidor
-            try {
-                const response = await fetch(`/api/contracts/${contractId}/amount`);
-                if (response.ok) {
-                    const data = await response.json();
-                    const precioContratado = parseFloat(data.precio_contratado) || 0;
-                    
-                    document.getElementById('info-client').textContent = `Cliente: ${clientName}`;
-                    document.getElementById('info-plan').textContent = `Plan: ${planName}`;
-                    document.getElementById('info-monthly').textContent = `Precio contratado: S/ ${precioContratado.toFixed(2)}`;
-                    
-                    contractInfo.style.display = 'block';
-                    
-                    // Autocompletar monto con precio_contratado si está vacío
-                    if (montoInput && !montoInput.value && precioContratado > 0) {
-                        montoInput.value = precioContratado.toFixed(2);
-                        montoInput.focus();
-                    }
-                } else {
-                    // Fallback al precio mensual del plan
-                    const monthlyPrice = parseFloat(selectedOption.dataset.monthly) || 0;
-                    document.getElementById('info-client').textContent = `Cliente: ${clientName}`;
-                    document.getElementById('info-plan').textContent = `Plan: ${planName}`;
-                    document.getElementById('info-monthly').textContent = `Precio mensual: S/ ${monthlyPrice.toFixed(2)}`;
-                    
-                    contractInfo.style.display = 'block';
-                    
-                    if (montoInput && !montoInput.value && monthlyPrice > 0) {
-                        montoInput.value = monthlyPrice.toFixed(2);
-                    }
+        // Limpiar información previa
+        contractInfo.style.display = 'none';
+        infoClient.textContent = '';
+        infoPlan.textContent = '';
+        infoMonthly.textContent = '';
+
+        if (!contractId) {
+            montoInput.value = '';
+            return;
+        }
+
+        // Mostrar información básica del option seleccionado
+        const selectedOption = this.options[this.selectedIndex];
+        const clientName = selectedOption.dataset.client || 'N/A';
+        const planName = selectedOption.dataset.plan || 'N/A';
+        const monthlyPrice = selectedOption.dataset.monthly || '0';
+
+        infoClient.textContent = `Cliente: ${clientName}`;
+        infoPlan.textContent = `Plan: ${planName}`;
+        infoMonthly.textContent = `Precio mensual: S/ ${parseFloat(monthlyPrice).toFixed(2)}`;
+        contractInfo.style.display = 'block';
+
+        try {
+            // Llamar al API para obtener el monto exacto del contrato
+            const response = await fetch(`/api/contracts/${contractId}/amount`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
-            } catch (error) {
-                console.error('Error al obtener precio contratado:', error);
-                // Usar datos del select como fallback
-                const monthlyPrice = parseFloat(selectedOption.dataset.monthly) || 0;
-                document.getElementById('info-client').textContent = `Cliente: ${clientName}`;
-                document.getElementById('info-plan').textContent = `Plan: ${planName}`;
-                document.getElementById('info-monthly').textContent = `Precio mensual: S/ ${monthlyPrice.toFixed(2)}`;
-                contractInfo.style.display = 'block';
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
+
+            const data = await response.json();
+
+            // Autocompletar el monto con el precio_contratado
+            if (data.precio_contratado) {
+                montoInput.value = parseFloat(data.precio_contratado).toFixed(2);
+                
+                // Destacar visualmente el monto autocompletado
+                montoInput.style.background = '#e8f5e9';
+                setTimeout(() => {
+                    montoInput.style.background = '';
+                }, 2000);
+            }
+
+            // Actualizar información con datos del API
+            infoMonthly.textContent = `Precio del contrato: S/ ${parseFloat(data.precio_contratado).toFixed(2)}`;
             
-            // Sugerir período si está vacío
-            if (periodoInput && !periodoInput.value) {
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                periodoInput.value = `${year}-${month}`;
+        } catch (error) {
+            console.error('Error al obtener monto del contrato:', error);
+            
+            // Fallback: usar el precio mensual del plan si el API falla
+            if (monthlyPrice && parseFloat(monthlyPrice) > 0) {
+                montoInput.value = parseFloat(monthlyPrice).toFixed(2);
             }
-        } else {
-            contractInfo.style.display = 'none';
         }
     });
-    
-    // Trigger change si ya hay un contrato seleccionado al cargar
-    if (contractSelect.value) {
+
+    // Trigger inicial si hay un contrato preseleccionado (modo edición)
+    if (contractSelect.value && !montoInput.value) {
         contractSelect.dispatchEvent(new Event('change'));
     }
-}
-
-// Validación de período de servicio (formato YYYY-MM)
-if (periodoInput) {
-    const periodoPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
-    const periodoError = document.getElementById('periodo_servicio-error');
-    
-    periodoInput.addEventListener('blur', function() {
-        const value = this.value.trim();
-        
-        if (value && !periodoPattern.test(value)) {
-            if (periodoError) {
-                periodoError.textContent = 'El formato debe ser YYYY-MM (Ej: 2026-09).';
-                periodoError.hidden = false;
-                this.setAttribute('aria-invalid', 'true');
-                this.setAttribute('aria-describedby', 'periodo_servicio-error');
-            }
-        } else if (periodoError) {
-            periodoError.hidden = true;
-            this.removeAttribute('aria-invalid');
-            this.removeAttribute('aria-describedby');
-        }
-    });
-}
-
-// Validación: si fecha_pago existe, requiere metodo_pago
-if (fechaPagoInput && metodoPagoSelect && paymentForm) {
-    const validatePaymentMethod = () => {
-        const fechaPagoValue = fechaPagoInput.value.trim();
-        const metodoPagoValue = metodoPagoSelect.value.trim();
-        
-        if (fechaPagoValue && !metodoPagoValue) {
-            const metodoPagoError = document.getElementById('metodo_pago-error');
-            if (metodoPagoError) {
-                metodoPagoError.textContent = 'El método de pago es requerido si indicaste fecha de pago.';
-                metodoPagoError.hidden = false;
-                metodoPagoSelect.setAttribute('aria-invalid', 'true');
-                metodoPagoSelect.setAttribute('aria-describedby', 'metodo_pago-error');
-            }
-            return false;
-        }
-        return true;
-    };
-    
-    fechaPagoInput.addEventListener('change', () => {
-        const metodoPagoError = document.getElementById('metodo_pago-error');
-        if (fechaPagoInput.value && !metodoPagoSelect.value) {
-            metodoPagoSelect.focus();
-        }
-        if (metodoPagoError && metodoPagoSelect.value) {
-            metodoPagoError.hidden = true;
-            metodoPagoSelect.removeAttribute('aria-invalid');
-            metodoPagoSelect.removeAttribute('aria-describedby');
-        }
-    });
-    
-    metodoPagoSelect.addEventListener('change', () => {
-        const metodoPagoError = document.getElementById('metodo_pago-error');
-        if (metodoPagoError && metodoPagoSelect.value) {
-            metodoPagoError.hidden = true;
-            metodoPagoSelect.removeAttribute('aria-invalid');
-            metodoPagoSelect.removeAttribute('aria-describedby');
-        }
-    });
-    
-    paymentForm.addEventListener('submit', (event) => {
-        if (!validatePaymentMethod()) {
-            event.preventDefault();
-            metodoPagoSelect.focus();
-        }
-    });
-}
-
-// Validación: monto debe ser mayor que 0
-if (montoInput && paymentForm) {
-    montoInput.addEventListener('blur', function() {
-        const value = parseFloat(this.value);
-        const montoError = document.getElementById('monto-error');
-        
-        if (this.value && (isNaN(value) || value <= 0)) {
-            if (montoError) {
-                montoError.textContent = 'El monto debe ser mayor que 0.';
-                montoError.hidden = false;
-                this.setAttribute('aria-invalid', 'true');
-                this.setAttribute('aria-describedby', 'monto-error');
-            }
-        } else if (montoError) {
-            montoError.hidden = true;
-            this.removeAttribute('aria-invalid');
-            this.removeAttribute('aria-describedby');
-        }
-    });
-}
-
-// Validación: fecha_vencimiento no puede ser anterior a hoy (solo en create)
-if (fechaVencimientoInput && fechaVencimientoInput.hasAttribute('min')) {
-    fechaVencimientoInput.addEventListener('change', function() {
-        const selectedDate = new Date(this.value);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const fechaVencimientoError = document.getElementById('fecha_vencimiento-error');
-        
-        if (this.value && selectedDate < today) {
-            if (fechaVencimientoError) {
-                fechaVencimientoError.textContent = 'La fecha de vencimiento no puede ser anterior a hoy.';
-                fechaVencimientoError.hidden = false;
-                this.setAttribute('aria-invalid', 'true');
-                this.setAttribute('aria-describedby', 'fecha_vencimiento-error');
-            }
-        } else if (fechaVencimientoError) {
-            fechaVencimientoError.hidden = true;
-            this.removeAttribute('aria-invalid');
-            this.removeAttribute('aria-describedby');
-        }
-    });
-}
-
-// Validación: fecha_pago no puede ser posterior a hoy
-if (fechaPagoInput) {
-    fechaPagoInput.addEventListener('change', function() {
-        const selectedDate = new Date(this.value);
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
-        
-        const fechaPagoError = document.getElementById('fecha_pago-error');
-        
-        if (this.value && selectedDate > today) {
-            if (fechaPagoError) {
-                fechaPagoError.textContent = 'La fecha de pago no puede ser posterior a hoy.';
-                fechaPagoError.hidden = false;
-                this.setAttribute('aria-invalid', 'true');
-                this.setAttribute('aria-describedby', 'fecha_pago-error');
-            }
-        } else if (fechaPagoError) {
-            fechaPagoError.hidden = true;
-            this.removeAttribute('aria-invalid');
-            this.removeAttribute('aria-describedby');
-        }
-    });
-}
-
-// Validación: fecha_pago no puede ser anterior a fecha_vencimiento
-if (fechaPagoInput && fechaVencimientoInput && paymentForm) {
-    const validatePaymentDate = () => {
-        const fechaPago = fechaPagoInput.value;
-        const fechaVencimiento = fechaVencimientoInput.value;
-        
-        if (fechaPago && fechaVencimiento) {
-            const datePago = new Date(fechaPago);
-            const dateVencimiento = new Date(fechaVencimiento);
-            
-            if (datePago < dateVencimiento) {
-                const fechaPagoError = document.getElementById('fecha_pago-error');
-                if (fechaPagoError) {
-                    fechaPagoError.textContent = 'La fecha de pago no puede ser anterior a la fecha de vencimiento.';
-                    fechaPagoError.hidden = false;
-                    fechaPagoInput.setAttribute('aria-invalid', 'true');
-                    fechaPagoInput.setAttribute('aria-describedby', 'fecha_pago-error');
-                }
-                return false;
-            }
-        }
-        return true;
-    };
-    
-    fechaPagoInput.addEventListener('change', validatePaymentDate);
-    fechaVencimientoInput.addEventListener('change', validatePaymentDate);
-    
-    paymentForm.addEventListener('submit', (event) => {
-        if (!validatePaymentDate()) {
-            event.preventDefault();
-            fechaPagoInput.focus();
-        }
-    });
-}
-
-// Auto-formatear período al escribir
-if (periodoInput) {
-    periodoInput.addEventListener('input', function(e) {
-        let value = this.value.replace(/[^0-9-]/g, '');
-        
-        // Auto-agregar guión después de 4 dígitos
-        if (value.length === 4 && !value.includes('-')) {
-            value += '-';
-        }
-        
-        // Limitar longitud
-        if (value.length > 7) {
-            value = value.substring(0, 7);
-        }
-        
-        this.value = value;
-    });
-}
+});

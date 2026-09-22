@@ -20,6 +20,8 @@ class Payment extends Model
         'contrato_id', 'codigo', 'periodo_servicio', 'fecha_vencimiento',
         'fecha_pago', 'monto', 'metodo_pago', 'referencia_externa',
         'estado', 'registrado_por', 'constancia_ruta', 'observaciones',
+        'recordatorio_previo_enviado_en', 'recordatorio_vencido_enviado_en',
+        'notificacion_anulacion_enviada_en',
     ];
 
     protected function casts(): array
@@ -28,6 +30,9 @@ class Payment extends Model
             'fecha_vencimiento' => 'date',
             'fecha_pago' => 'datetime',
             'monto' => 'decimal:2',
+            'recordatorio_previo_enviado_en' => 'datetime',
+            'recordatorio_vencido_enviado_en' => 'datetime',
+            'notificacion_anulacion_enviada_en' => 'datetime',
         ];
     }
 
@@ -140,5 +145,87 @@ class Payment extends Model
     public function canBeCancelled(): bool
     {
         return ! $this->isCancelled();
+    }
+
+    /**
+     * Verifica si debe enviarse el recordatorio previo (7 días antes)
+     */
+    public function shouldSendUpcomingReminder(): bool
+    {
+        if (! $this->isPending()) {
+            return false;
+        }
+
+        // No enviar si ya se envió
+        if ($this->recordatorio_previo_enviado_en !== null) {
+            return false;
+        }
+
+        // Verificar si estamos a 7 días o menos del vencimiento
+        $daysUntilDue = now()->startOfDay()->diffInDays($this->fecha_vencimiento, false);
+
+        return $daysUntilDue >= 0 && $daysUntilDue <= 7;
+    }
+
+    /**
+     * Verifica si debe enviarse el recordatorio de vencido (5 días después)
+     */
+    public function shouldSendOverdueReminder(): bool
+    {
+        if (! $this->isOverdue()) {
+            return false;
+        }
+
+        // No enviar si ya se envió
+        if ($this->recordatorio_vencido_enviado_en !== null) {
+            return false;
+        }
+
+        // Verificar si han pasado 5 días desde el vencimiento
+        $daysSinceDue = $this->fecha_vencimiento->diffInDays(now()->startOfDay(), false);
+
+        return $daysSinceDue >= 5;
+    }
+
+    /**
+     * Verifica si debe anularse por falta de pago (7 días después del vencimiento)
+     */
+    public function shouldBeCancelledForNonPayment(): bool
+    {
+        if (! $this->isOverdue()) {
+            return false;
+        }
+
+        // Verificar si han pasado 7 días desde el vencimiento
+        $daysSinceDue = $this->fecha_vencimiento->diffInDays(now()->startOfDay(), false);
+
+        return $daysSinceDue >= 7;
+    }
+
+    /**
+     * Marca que se envió el recordatorio previo
+     */
+    public function markUpcomingReminderSent(): void
+    {
+        $this->recordatorio_previo_enviado_en = now();
+        $this->save();
+    }
+
+    /**
+     * Marca que se envió el recordatorio de vencido
+     */
+    public function markOverdueReminderSent(): void
+    {
+        $this->recordatorio_vencido_enviado_en = now();
+        $this->save();
+    }
+
+    /**
+     * Marca que se envió la notificación de anulación
+     */
+    public function markCancellationNotificationSent(): void
+    {
+        $this->notificacion_anulacion_enviada_en = now();
+        $this->save();
     }
 }

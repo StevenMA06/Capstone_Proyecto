@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReactivateContractRequest;
 use App\Http\Requests\StoreContractRequest;
 use App\Services\ContractPdf;
 use App\Services\ContractService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ContractController extends Controller
 {
@@ -89,5 +91,52 @@ class ContractController extends Controller
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
+    }
+
+    /**
+     * Mostrar listado de contratos cancelados disponibles para reactivación
+     */
+    public function cancelled()
+    {
+        return view('contracts.cancelled', [
+            'contracts' => $this->contracts->getCancelledContracts(),
+        ]);
+    }
+
+    /**
+     * Mostrar formulario de reactivación de contrato
+     */
+    public function reactivateForm(int $contract)
+    {
+        try {
+            $data = $this->contracts->reactivationFormData($contract);
+
+            return view('contracts.reactivate', $data);
+        } catch (ValidationException $exception) {
+            return redirect()->route('contracts.show', $contract)
+                ->with('error', $exception->errors()['contrato'][0] ?? 'No se puede reactivar este contrato.');
+        }
+    }
+
+    /**
+     * Reactivar un contrato cancelado
+     */
+    public function reactivate(ReactivateContractRequest $request, int $contract)
+    {
+        try {
+            $feedback = $this->contracts->reactivate(
+                $contract,
+                $request->validated(),
+                $request->user()->getKey()
+            );
+
+            return redirect()->route('contracts.show', $contract)
+                ->with('status', $feedback['message'])
+                ->with('status_kind', $feedback['kind']);
+        } catch (ValidationException $exception) {
+            return back()
+                ->withInput()
+                ->withErrors($exception->errors());
+        }
     }
 }

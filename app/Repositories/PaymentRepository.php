@@ -46,6 +46,15 @@ class PaymentRepository
             $query->where('estado', $filters['status']);
         }
 
+        // Filtro por mes (RF-PAG - nuevo)
+        if (! empty($filters['month'])) {
+            $month = $filters['month'];
+            $firstDay = \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+            $lastDay = $firstDay->copy()->endOfMonth();
+            
+            $query->whereBetween('fecha_vencimiento', [$firstDay, $lastDay]);
+        }
+
         // Filtro por rango de fechas
         if (! empty($filters['from'])) {
             $query->where('fecha_vencimiento', '>=', $filters['from']);
@@ -71,10 +80,21 @@ class PaymentRepository
                 ->where('fecha_vencimiento', '<', now()->startOfDay());
         }
 
-        return $query->orderByDesc('creado_en')
-            ->orderByDesc('pago_id')
-            ->paginate(15)
-            ->withQueryString();
+        // Ordenamiento mejorado: primero por estado (prioridad), luego por fecha de vencimiento
+        // Orden de prioridad de estados: PENDIENTE, VENCIDO, ANULADO, REALIZADO
+        $query->orderByRaw("
+            CASE estado 
+                WHEN 'PENDIENTE' THEN 1
+                WHEN 'VENCIDO' THEN 2
+                WHEN 'ANULADO' THEN 3
+                WHEN 'REALIZADO' THEN 4
+                ELSE 5
+            END
+        ")
+        ->orderBy('fecha_vencimiento', 'asc')
+        ->orderByDesc('pago_id');
+
+        return $query->paginate(15)->withQueryString();
     }
 
     /** @param array<string, mixed> $attributes */
@@ -187,6 +207,32 @@ class PaymentRepository
     }
 
     /**
+     * Contar pagos por estado para un mes específico
+     * @param string $month Formato YYYY-MM
+     * @return array<string, int>
+     */
+    public function countByStatusForMonth(string $month): array
+    {
+        // Obtener primer y último día del mes
+        $firstDay = \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $lastDay = $firstDay->copy()->endOfMonth();
+
+        $counts = DB::table('pagos')
+            ->select('estado', DB::raw('COUNT(*) as total'))
+            ->whereBetween('fecha_vencimiento', [$firstDay, $lastDay])
+            ->groupBy('estado')
+            ->pluck('total', 'estado')
+            ->toArray();
+
+        return [
+            'pendiente' => $counts['PENDIENTE'] ?? 0,
+            'realizado' => $counts['REALIZADO'] ?? 0,
+            'vencido' => $counts['VENCIDO'] ?? 0,
+            'anulado' => $counts['ANULADO'] ?? 0,
+        ];
+    }
+
+    /**
      * Contar pagos pendientes y vencidos para alertas
      */
     public function countCritical(): array
@@ -238,6 +284,133 @@ class PaymentRepository
         } while ($exists);
 
         return $code;
+    }
+
+    /**
+     * Generar pagos mensuales automáticamente para un contrato
+     * Basado en fecha_inicio y duracion_meses del contrato
+     * 
+     * @param Contract $contract
+     * @param int $registradoPor ID del usuario que genera los pagos (sistema o usuario)
+     * @return array Array de Payment creados
+     */
+    public function generateMonthlyPayments(Contract $contract, int $registradoPor): array
+    {
+        $payments = [];
+        $fechaInicio = \Carbon\Carbon::parse($contract->fecha_inicio);
+        $duracionMeses = (int) $contract->duracion_meses;
+        $montoPorPeriodo = $contract->precio_contratado;
+
+        for ($mes = 0; $mes < $duracionMeses; $mes++) {
+            // Calcular fecha de vencimiento: día del inicio + mes actual
+            $fechaVencimiento = $fechaInicio->copy()->addMonthsNoOverflow($mes);
+            
+            // Formato del periodo: YYYY-MM
+            $periodoServicio = $fechaVencimiento->format('Y-m');
+
+            // Verificar si ya existe un pago para este período
+            $existingPayment = Payment::where('contrato_id', $contract->getKey())
+                ->where('periodo_servicio', $periodoServicio)
+                ->first();
+
+            if ($existingPayment) {
+                // Ya existe, saltarlo
+                continue;
+            }
+
+            // Crear el pago
+            $payment = $this->create([
+                'contrato_id' => $contract->getKey(),
+                'codigo' => $this->generateCode(),
+                'periodo_servicio' => $periodoServicio,
+                'fecha_vencimiento' => $fechaVencimiento->format('Y-m-d'),
+                'monto' => $montoPorPeriodo,
+                'estado' => 'PENDIENTE',
+                'registrado_por' => $registradoPor,
+                'observaciones' => 'Pago generado automáticamente para período '.$periodoServicio,
+            ]);
+
+            $payments[] = $payment;
+        }
+
+        return $payments;
+    }
+
+    /**
+     * Generar el siguiente pago mensual para un contrato activo
+     * Útil cuando el sistema genera pagos uno a uno cada mes
+     * 
+     * @param Contract $contract
+     * @param int $registradoPor
+     * @return Payment|null
+     */
+    public function generateNextMonthlyPayment(Contract $contract, int $registradoPor): ?Payment
+    {
+        // Obtener el último periodo de servicio registrado
+        $lastPayment = Payment::where('contrato_id', $contract->getKey())
+            ->whereNotNull('periodo_servicio')
+            ->orderByDesc('periodo_servicio')
+            ->first();
+
+        $fechaInicio = \Carbon\Carbon::parse($contract->fecha_inicio);
+        $fechaFin = \Carbon\Carbon::parse($contract->fecha_fin);
+
+        // Determinar el próximo período
+        if ($lastPayment) {
+            // Calcular el siguiente mes
+            $ultimoPeriodo = \Carbon\Carbon::createFromFormat('Y-m', $lastPayment->periodo_servicio);
+            $proximoPeriodo = $ultimoPeriodo->copy()->addMonth();
+        } else {
+            // Primer pago
+            $proximoPeriodo = $fechaInicio->copy();
+        }
+
+        // Verificar que no supere la fecha fin del contrato
+        if ($proximoPeriodo->greaterThan($fechaFin)) {
+            return null; // Ya se generaron todos los pagos
+        }
+
+        $periodoServicio = $proximoPeriodo->format('Y-m');
+
+        // Verificar que no exista ya
+        $existing = Payment::where('contrato_id', $contract->getKey())
+            ->where('periodo_servicio', $periodoServicio)
+            ->first();
+
+        if ($existing) {
+            return null;
+        }
+
+        // Crear el pago
+        return $this->create([
+            'contrato_id' => $contract->getKey(),
+            'codigo' => $this->generateCode(),
+            'periodo_servicio' => $periodoServicio,
+            'fecha_vencimiento' => $proximoPeriodo->format('Y-m-d'),
+            'monto' => $contract->precio_contratado,
+            'estado' => 'PENDIENTE',
+            'registrado_por' => $registradoPor,
+            'observaciones' => 'Pago generado automáticamente para período '.$periodoServicio,
+        ]);
+    }
+
+    /**
+     * Contar cuántos pagos se han generado para un contrato
+     */
+    public function countPaymentsByContract(Contract $contract): int
+    {
+        return Payment::where('contrato_id', $contract->getKey())->count();
+    }
+
+    /**
+     * Verificar si todos los pagos del contrato fueron generados
+     */
+    public function allPaymentsGenerated(Contract $contract): bool
+    {
+        $totalEsperado = (int) $contract->duracion_meses;
+        $totalGenerado = $this->countPaymentsByContract($contract);
+
+        return $totalGenerado >= $totalEsperado;
     }
 
     /**

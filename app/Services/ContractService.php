@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Repositories\ContractPeriodRepository;
 use App\Repositories\ContractRepository;
+use App\Repositories\PaymentRepository;
 use App\Repositories\PlanRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -14,7 +16,13 @@ use Illuminate\Validation\ValidationException;
 
 class ContractService
 {
-    public function __construct(private ContractRepository $contracts, private PlanRepository $plans, private ContractSignatureVerifier $signatures) {}
+    public function __construct(
+        private ContractRepository $contracts,
+        private PlanRepository $plans,
+        private ContractSignatureVerifier $signatures,
+        private ContractPeriodRepository $periods,
+        private PaymentRepository $payments
+    ) {}
 
     public function search(array $filters)
     {
@@ -160,15 +168,23 @@ class ContractService
                     }
                     $signed = $result['status'] === 'signed';
                     $expiredAtConfirmation = $signed && $attributes['fecha_fin'] < now()->toDateString();
+                    $newState = $expiredAtConfirmation ? 'FINALIZADO' : ($signed ? 'ACTIVO' : 'PENDIENTE');
+                    
                     $this->contracts->update($id, [
-                        'estado' => $expiredAtConfirmation ? 'FINALIZADO' : ($signed ? 'ACTIVO' : 'PENDIENTE'),
+                        'estado' => $newState,
                         'firma_revision' => $signed ? 'VERIFICADA' : 'SIN_FIRMA',
                         'firma_validada_en' => $signed ? now() : null,
                     ]);
+
+                    // Si el contrato pasa a ACTIVO, crear período inicial y generar pagos
+                    if ($newState === 'ACTIVO' && $current->estado !== 'ACTIVO') {
+                        $this->activateContractWithPayments($id, auth()->id() ?? 1);
+                    }
+                    
                     $feedback = $expiredAtConfirmation
                         ? ['message' => 'Se detectó la firma del cliente. El contrato quedó finalizado porque su vigencia ya terminó.', 'kind' => 'finalized']
                         : ($signed
-                        ? ['message' => 'Se detectó la firma del cliente y el contrato se activó automáticamente.', 'kind' => 'activated']
+                        ? ['message' => 'Se detectó la firma del cliente y el contrato se activó automáticamente. Se generaron los pagos mensuales correspondientes.', 'kind' => 'activated']
                         : ['message' => 'Se guardó el PDF. No se detectó la firma del cliente; el contrato sigue pendiente.', 'kind' => 'pending']);
                 }
             });
@@ -237,5 +253,217 @@ class ContractService
         }
 
         return $path;
+    }
+
+    /**
+     * Activar un contrato: crear período inicial y generar pagos automáticamente
+     * 
+     * @param int $contractId
+     * @param int $userId ID del usuario que activa (para registrar en pagos)
+     * @return void
+     */
+    private function activateContractWithPayments(int $contractId, int $userId): void
+    {
+        $contract = $this->contracts->find($contractId);
+
+        // Verificar si ya existe un período activo
+        $existingPeriod = $this->periods->findActivePeriod($contract);
+
+        if (! $existingPeriod) {
+            // Crear período inicial
+            $period = $this->periods->createInitialPeriod($contract);
+
+            // Vincular el período al contrato
+            $this->contracts->update($contractId, [
+                'periodo_actual' => $period->getKey(),
+            ]);
+        }
+
+        // Generar pagos mensuales automáticamente
+        $this->payments->generateMonthlyPayments($contract, $userId);
+    }
+
+    /**
+     * Generar pagos para un contrato específico
+     * Útil para regenerar pagos o generar pagos de contratos antiguos
+     * 
+     * @param int $contractId
+     * @param int $userId
+     * @return int Cantidad de pagos generados
+     */
+    public function generatePaymentsForContract(int $contractId, int $userId): int
+    {
+        $contract = $this->contracts->find($contractId);
+
+        if ($contract->estado !== 'ACTIVO') {
+            throw ValidationException::withMessages([
+                'contrato' => 'Solo se pueden generar pagos para contratos activos.',
+            ]);
+        }
+
+        $payments = $this->payments->generateMonthlyPayments($contract, $userId);
+
+        return count($payments);
+    }
+
+    /**
+     * Reactivar un contrato cancelado
+     * Conserva el historial anterior y crea un nuevo período contractual
+     * 
+     * @param int $contractId
+     * @param array $data Debe contener: fecha_inicio, duracion_meses
+     * @param int $userId ID del usuario que reactiva
+     * @return array Feedback con mensaje y tipo
+     */
+    public function reactivate(int $contractId, array $data, int $userId): array
+    {
+        return DB::transaction(function () use ($contractId, $data, $userId): array {
+            $contract = $this->contracts->find($contractId, true);
+
+            // Validar que el contrato esté CANCELADO
+            if ($contract->estado !== 'CANCELADO') {
+                throw ValidationException::withMessages([
+                    'contrato' => 'Solo se pueden reactivar contratos cancelados. Estado actual: '.ucfirst(strtolower($contract->estado)).'.',
+                ]);
+            }
+
+            // Validar el plan sigue activo
+            $plan = $this->plans->lock($contract->plan_id);
+            if ($plan->estado !== 'ACTIVO') {
+                throw ValidationException::withMessages([
+                    'plan_id' => 'El plan del contrato fue inhabilitado. No se puede reactivar.',
+                ]);
+            }
+
+            // Validar que el cliente, zona y responsable sigan activos
+            $client = $this->contracts->activeClient($contract->cliente_id);
+            $zone = $this->contracts->activeZone($contract->zona_id);
+            $employee = $this->contracts->activeEmployee($contract->responsable_id);
+
+            if (! $client || $client->estado !== 'ACTIVO') {
+                throw ValidationException::withMessages([
+                    'cliente' => 'El cliente del contrato no está activo. No se puede reactivar.',
+                ]);
+            }
+
+            if (! $zone || $zone->estado !== 'ACTIVA') {
+                throw ValidationException::withMessages([
+                    'zona' => 'La zona del contrato no está activa. No se puede reactivar.',
+                ]);
+            }
+
+            if (! $employee) {
+                throw ValidationException::withMessages([
+                    'responsable' => 'El responsable del contrato no está activo. No se puede reactivar.',
+                ]);
+            }
+
+            // Validar nueva fecha de inicio
+            $nuevaFechaInicio = $data['fecha_inicio'];
+            if ($nuevaFechaInicio < now()->toDateString()) {
+                throw ValidationException::withMessages([
+                    'fecha_inicio' => 'La fecha de inicio debe ser hoy o una fecha futura.',
+                ]);
+            }
+
+            // Validar nueva duración
+            $nuevaDuracion = (int) $data['duracion_meses'];
+            if ($nuevaDuracion < 1) {
+                throw ValidationException::withMessages([
+                    'duracion_meses' => 'La duración debe ser de al menos 1 mes.',
+                ]);
+            }
+
+            // Calcular nueva fecha de fin
+            $nuevaFechaFin = CarbonImmutable::parse($nuevaFechaInicio)
+                ->addMonthsNoOverflow($nuevaDuracion)
+                ->subDay()
+                ->format('Y-m-d');
+
+            // Cancelar el período anterior si existe y está activo
+            $periodoAnterior = $this->periods->findActivePeriod($contract);
+            if ($periodoAnterior) {
+                $this->periods->cancel(
+                    $periodoAnterior,
+                    'Contrato reactivado con nuevo período',
+                    'MANUAL',
+                    $userId
+                );
+            }
+
+            // Crear nuevo período contractual
+            $nuevoPeriodo = $this->periods->createReactivationPeriod($contract, [
+                'fecha_inicio' => $nuevaFechaInicio,
+                'duracion_meses' => $nuevaDuracion,
+            ]);
+
+            // Actualizar el contrato con los nuevos datos
+            $this->contracts->update($contractId, [
+                'fecha_inicio' => $nuevaFechaInicio,
+                'duracion_meses' => $nuevaDuracion,
+                'fecha_fin' => $nuevaFechaFin,
+                'estado' => 'ACTIVO',
+                'periodo_actual' => $nuevoPeriodo->getKey(),
+            ]);
+
+            // Generar nuevos pagos mensuales para el nuevo período
+            $paymentsGenerated = $this->payments->generateMonthlyPayments(
+                $this->contracts->find($contractId),
+                $userId
+            );
+
+            return [
+                'message' => sprintf(
+                    'Contrato reactivado correctamente. Se creó el período %d y se generaron %d pagos mensuales.',
+                    $nuevoPeriodo->numero_periodo,
+                    count($paymentsGenerated)
+                ),
+                'kind' => 'reactivated',
+                'periodo_numero' => $nuevoPeriodo->numero_periodo,
+                'pagos_generados' => count($paymentsGenerated),
+            ];
+        });
+    }
+
+    /**
+     * Obtener datos para el formulario de reactivación
+     * 
+     * @param int $contractId
+     * @return array
+     */
+    public function reactivationFormData(int $contractId): array
+    {
+        $contract = $this->contracts->find($contractId);
+
+        if ($contract->estado !== 'CANCELADO') {
+            throw ValidationException::withMessages([
+                'contrato' => 'Solo se pueden reactivar contratos cancelados.',
+            ]);
+        }
+
+        // Obtener el historial de períodos
+        $periodos = $this->periods->findByContract($contract);
+
+        // Obtener información detallada
+        $contractDetailed = $this->contracts->findDetailed($contractId);
+
+        return [
+            'contract' => $contract,
+            'contract_detailed' => $contractDetailed,
+            'periods' => $periodos,
+            'total_periods' => $periodos->count(),
+            'suggested_start_date' => now()->addDays(1)->format('Y-m-d'),
+            'previous_duration' => $contract->duracion_meses,
+        ];
+    }
+
+    /**
+     * Obtener contratos cancelados disponibles para reactivación
+     * 
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    public function getCancelledContracts()
+    {
+        return $this->contracts->getCancelledContracts();
     }
 }
