@@ -18,31 +18,10 @@
             padding: 30px;
             background: #f3f4f6;
         }
-        .print-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #087846;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 0 4px 12px rgba(8, 120, 70, 0.3);
-            z-index: 1000;
-        }
-        .print-button:hover {
-            background: #065f36;
-        }
         @media print {
             body {
                 background: white;
                 padding: 0;
-            }
-            .print-button {
-                display: none;
             }
         }
         .receipt-container {
@@ -153,11 +132,12 @@
         .signature-section {
             margin-top: 50px;
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
+            gap: 40px;
         }
         .signature-box {
             text-align: center;
-            width: 45%;
+            flex: 1;
         }
         .signature-line {
             border-top: 2px solid #1f2937;
@@ -192,8 +172,6 @@
     </style>
 </head>
 <body>
-    <button class="print-button" onclick="window.print()">🖨️ Imprimir Comprobante</button>
-    
     <div class="watermark">LUNNYS PERU</div>
 
     <div class="receipt-container">

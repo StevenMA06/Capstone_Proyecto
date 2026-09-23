@@ -30,6 +30,7 @@ class PaymentReceiptPdf
             'plan' => $payment->contract->plan,
             'generated_at' => now(),
             'generated_by' => auth()->user()?->nombre_usuario ?? 'Sistema',
+            'logo_path' => public_path('img/logo.png'),
         ];
 
         // Verificar si dompdf está disponible
@@ -73,6 +74,7 @@ class PaymentReceiptPdf
             'plan' => $payment->contract->plan,
             'generated_at' => now(),
             'generated_by' => auth()->user()?->nombre_usuario ?? 'Sistema',
+            'logo_path' => public_path('img/logo.png'),
         ];
 
         // Verificar si dompdf está disponible

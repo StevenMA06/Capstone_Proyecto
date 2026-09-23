@@ -41,11 +41,15 @@ class PaymentController extends Controller
 
         $payments = $this->payments->search($filters);
         
-        // Obtener el mes para las estadísticas (del filtro o mes actual)
-        $selectedMonth = $filters['month'] ?? now()->format('Y-m'); // Mes actual por defecto
+        // Obtener el mes para las estadísticas
+        $selectedMonth = $filters['month'] ?? null; // null = todos los meses
         
-        // Obtener estadísticas del mes seleccionado
-        $statistics = $this->payments->getStatisticsForMonth($selectedMonth);
+        // Obtener estadísticas: si no hay mes seleccionado, obtener estadísticas globales
+        if ($selectedMonth) {
+            $statistics = $this->payments->getStatisticsForMonth($selectedMonth);
+        } else {
+            $statistics = $this->payments->getGlobalStatistics();
+        }
 
         return view('payments.index', compact('payments', 'filters', 'statistics', 'selectedMonth'));
     }
@@ -130,7 +134,7 @@ class PaymentController extends Controller
         try {
             // Si se marcó como realizado, usar el método específico
             if ($request->boolean('marcar_realizado') && $payment->estado !== 'REALIZADO') {
-                $this->payments->markAsCompleted($payment, $request->validated());
+                $this->payments->markAsCompleted($payment, $request->validated(), $request->user());
                 
                 // Generar comprobante PDF automáticamente
                 try {
@@ -178,7 +182,7 @@ class PaymentController extends Controller
         ]);
 
         try {
-            $this->payments->markAsCompleted($payment, $data);
+            $this->payments->markAsCompleted($payment, $data, $request->user());
             
             // RF-PAG-09: Generar comprobante PDF automáticamente
             $receiptPath = $this->receiptPdf->generate($payment);

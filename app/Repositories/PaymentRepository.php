@@ -457,4 +457,24 @@ class PaymentRepository
             'count' => $maxCount,
         ];
     }
+
+    /**
+     * Contar pagos por estado de todos los meses (estadísticas globales)
+     */
+    public function countByStatusGlobal(): array
+    {
+        $counts = DB::table('pagos')
+            ->select('estado', DB::raw('COUNT(*) as total'))
+            ->groupBy('estado')
+            ->pluck('total', 'estado')
+            ->toArray();
+
+        return [
+            'PENDIENTE' => $counts['PENDIENTE'] ?? 0,
+            'REALIZADO' => $counts['REALIZADO'] ?? 0,
+            'VENCIDO' => $counts['VENCIDO'] ?? 0,
+            'IMPAGO' => $counts['IMPAGO'] ?? 0,
+            'ANULADO' => $counts['ANULADO'] ?? 0,
+        ];
+    }
 }

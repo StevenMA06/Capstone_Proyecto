@@ -7,17 +7,34 @@
         <h2>Estadísticas de Pagos</h2>
         <form method="GET" action="{{ route('payments.index') }}" class="month-filter-form">
             <label for="month-filter">Mes:</label>
-            <input 
-                type="month" 
+            <select 
                 id="month-filter" 
-                name="month" 
-                value="{{ $selectedMonth }}"
-                max="{{ now()->format('Y-m') }}"
+                name="month"
                 onchange="this.form.submit()"
+                style="min-width: 200px; padding: 6px 12px; border-radius: 4px; border: 1px solid #d1d5db;"
             >
-            @if(request('month'))
-                <a href="{{ route('payments.index') }}" class="clear-month-filter" title="Ver todos los meses">✕</a>
-            @endif
+                <option value="">Todos los meses</option>
+                @php
+                    // Generar meses: año actual y siguiente
+                    $currentYear = now()->year;
+                    $months = [];
+                    
+                    for ($y = $currentYear; $y <= $currentYear + 1; $y++) {
+                        for ($m = 1; $m <= 12; $m++) {
+                            $months[] = sprintf('%d-%02d', $y, $m);
+                        }
+                    }
+                @endphp
+                
+                @foreach($months as $monthValue)
+                    <option 
+                        value="{{ $monthValue }}" 
+                        @selected($selectedMonth === $monthValue)
+                    >
+                        {{ \Carbon\Carbon::parse($monthValue . '-01')->locale('es')->isoFormat('MMMM [de] YYYY') }}
+                    </option>
+                @endforeach
+            </select>
         </form>
     </div>
     
@@ -70,10 +87,10 @@
                 $isFiltered = request('status') === $status;
             @endphp
             <a 
-                href="{{ route('payments.index', array_merge(request()->except('status'), ['status' => $status])) }}" 
+                href="{{ route('payments.index', array_merge(request()->except('status', 'page'), ['status' => $status])) }}" 
                 class="stat-card clickable {{ $isFiltered ? 'filtered' : '' }} {{ $status === 'PENDIENTE' || $status === 'VENCIDO' ? 'urgent' : '' }}"
                 style="border-left-color: {{ $config['color'] }};"
-                title="Filtrar por {{ $config['label'] }}"
+                title="Clic para filtrar por {{ $config['label'] }}"
             >
                 <div class="stat-icon" style="background: {{ $config['color'] }}20;">
                     <i class="bi {{ $config['icon'] }}" style="font-size: 1.5rem; color: {{ $config['color'] }};"></i>
@@ -97,10 +114,22 @@
     </div>
     
     @if($totalPayments === 0)
-        <p class="stats-empty">No hay pagos en {{ \Carbon\Carbon::parse($selectedMonth)->locale('es')->isoFormat('MMMM [de] YYYY') }}.</p>
+        <p class="stats-empty">
+            @if($selectedMonth)
+                No hay pagos en {{ \Carbon\Carbon::parse($selectedMonth)->locale('es')->isoFormat('MMMM [de] YYYY') }}.
+            @else
+                No hay pagos registrados en el sistema.
+            @endif
+        </p>
     @else
         <p class="stats-summary">
-            Total de pagos en {{ \Carbon\Carbon::parse($selectedMonth)->locale('es')->isoFormat('MMMM [de] YYYY') }}: 
+            Total de pagos 
+            @if($selectedMonth)
+                en {{ \Carbon\Carbon::parse($selectedMonth)->locale('es')->isoFormat('MMMM [de] YYYY') }}
+            @else
+                en <strong>todos los meses</strong>
+            @endif
+            : 
             <strong>{{ $totalPayments }}</strong>
         </p>
     @endif
@@ -228,6 +257,11 @@
                         <a href="{{ route('payments.show', $payment) }}" aria-label="Ver detalle del pago {{ $payment->codigo }}">Ver detalle</a>
                         @if($payment->estado === 'PENDIENTE' || $payment->estado === 'VENCIDO')
                             <a href="{{ route('payments.edit', $payment) }}" aria-label="Validar pago {{ $payment->codigo }}">Validar pago</a>
+                        @endif
+                        @if($payment->constancia_ruta && $payment->estado === 'REALIZADO')
+                            <a href="{{ asset($payment->constancia_ruta) }}" target="_blank" aria-label="Ver comprobante del pago {{ $payment->codigo }}" title="Descargar comprobante PDF">
+                                <i class="bi bi-file-pdf-fill" style="color: #dc2626;"></i> Comprobante
+                            </a>
                         @endif
                     </div>
                 </td>

@@ -108,7 +108,7 @@ class PaymentService
     /**
      * Marcar un pago como realizado
      */
-    public function markAsCompleted(Payment $payment, array $data): Payment
+    public function markAsCompleted(Payment $payment, array $data, User $confirmedBy = null): Payment
     {
         if ($payment->isCompleted()) {
             throw ValidationException::withMessages([
@@ -135,8 +135,21 @@ class PaymentService
             $attributes['referencia_externa'] = $data['referencia_externa'];
         }
 
-        if (! empty($data['observaciones'])) {
-            $attributes['observaciones'] = $data['observaciones'];
+        // Construir observaciones con información de quién confirmó el pago
+        $observaciones = $data['observaciones'] ?? '';
+        
+        if ($confirmedBy) {
+            $confirmationNote = '- Pago confirmado por usuario ' . $confirmedBy->nombre_usuario . ' el ' . now()->format('d/m/Y H:i');
+            
+            if (! empty($observaciones)) {
+                $observaciones .= "\n" . $confirmationNote;
+            } else {
+                $observaciones = $confirmationNote;
+            }
+        }
+        
+        if (! empty($observaciones)) {
+            $attributes['observaciones'] = $observaciones;
         }
 
         return $this->payments->update($payment, $attributes);
@@ -336,4 +349,18 @@ class PaymentService
             'estado', 'constancia_ruta', 'observaciones',
         ]);
     }
+
+
+    /**
+     * Obtener estadísticas globales de todos los pagos (sin filtro de mes)
+     */
+    public function getGlobalStatistics(): array
+    {
+        $byStatus = $this->payments->countByStatusGlobal();
+
+        return array_merge($byStatus, [
+            'total' => array_sum($byStatus),
+        ]);
+    }
+
 }

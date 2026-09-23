@@ -10,6 +10,11 @@
         @if($payment->canBeEdited())
             <a class="action-link" href="{{ route('payments.edit', $payment) }}">Validar pago</a>
         @endif
+        @if($payment->constancia_ruta && $payment->isCompleted())
+            <a class="action-link" href="{{ asset($payment->constancia_ruta) }}" target="_blank" title="Descargar comprobante de pago">
+                <i class="bi bi-file-pdf"></i> Ver comprobante
+            </a>
+        @endif
     </div>
 </div>
 
@@ -36,7 +41,18 @@
         <div><dt>Fecha de pago</dt><dd>{{ $payment->fecha_pago?->format('d/m/Y') ?? 'Aún no realizado' }}</dd></div>
         <div><dt>Método de pago</dt><dd>{{ $payment->metodo_pago ?? '—' }}</dd></div>
         <div><dt>Referencia externa</dt><dd>{{ $payment->referencia_externa ?? '—' }}</dd></div>
-        <div><dt>Observaciones</dt><dd>{{ $payment->observaciones ?? '—' }}</dd></div>
+        <div><dt>Observaciones</dt><dd style="white-space: pre-line;">{{ $payment->observaciones ?? '—' }}</dd></div>
+        @if($payment->constancia_ruta && $payment->isCompleted())
+            <div>
+                <dt>Comprobante de pago</dt>
+                <dd>
+                    <a href="{{ asset($payment->constancia_ruta) }}" target="_blank" class="action-link" style="display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-file-pdf-fill" style="color: #dc2626;"></i>
+                        Descargar comprobante PDF
+                    </a>
+                </dd>
+            </div>
+        @endif
     </dl>
 </section>
 
