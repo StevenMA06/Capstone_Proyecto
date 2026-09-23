@@ -19,7 +19,7 @@ def render(path):
     pages = []
     for page in pdf:
         if abs(page.get_width() - 595) > 3 or abs(page.get_height() - 842) > 3:
-            raise ValueError("El documento no conserva el tamaño del borrador")
+            raise ValueError("El documento no conserva el tamaño del contrato generado")
         pages.append(np.asarray(page.render(scale=1.5).to_pil().convert("L")))
     return pages
 
@@ -36,16 +36,16 @@ def compare(draft_path, upload_path):
     if expected_code and uploaded_code and expected_code != uploaded_code:
         return "invalid", (
             f"El PDF corresponde al contrato {uploaded_code}, pero estás actualizando "
-            f"{expected_code}. Descarga y firma el borrador correcto."
+            f"{expected_code}. Descarga y firma el contrato correcto."
         )
 
     draft, upload = render(draft_path), render(upload_path)
     if len(draft) != len(upload):
-        return "invalid", "El número de páginas no coincide con el borrador."
+        return "invalid", "El número de páginas no coincide con el contrato generado."
 
     for index, (expected, received) in enumerate(zip(draft, upload)):
         if expected.shape != received.shape:
-            return "invalid", "El tamaño de las páginas no coincide con el borrador."
+            return "invalid", "El tamaño de las páginas no coincide con el contrato generado."
         height, width = expected.shape
         # PDF points converted to image coordinates; the interior contains no draft ink.
         x1, x2 = round(65 * 1.5), round(305 * 1.5)
@@ -61,7 +61,7 @@ def compare(draft_path, upload_path):
         received_near = np.asarray(Image.fromarray(received_ink.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(5))) > 0
         changes = ((received_ink & ~expected_near) | (expected_ink & ~received_near)) & ~excluded
         if np.count_nonzero(changes) > 250:
-            return "invalid", "El PDF difiere del borrador fuera de la firma del cliente."
+            return "invalid", "El PDF difiere del contrato generado fuera de la firma del cliente."
 
     signature = upload[-1][y1:y2, x1:x2] < 175
     points = np.argwhere(signature)

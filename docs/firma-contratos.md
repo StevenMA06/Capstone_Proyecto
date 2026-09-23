@@ -1,6 +1,6 @@
 # Verificación local de la firma de contratos
 
-El módulo genera un borrador PDF con un recuadro fijo para la firma del cliente. Al actualizar el contrato y adjuntar el PDF, un proceso local compara sus páginas con el borrador correspondiente. Si el documento coincide y hay un trazo suficiente dentro del recuadro del cliente, el estado pasa automáticamente de `PENDIENTE` a `ACTIVO`. Un borrador sin firma se guarda y sigue pendiente. Un archivo ajeno o modificado fuera de esa zona se rechaza.
+El módulo genera un contrato para firma con un recuadro fijo para la firma del cliente. Al actualizar el contrato y adjuntar el PDF, un proceso local compara sus páginas con el documento correspondiente. Si el documento coincide y hay un trazo suficiente dentro del recuadro del cliente, el estado pasa automáticamente de `PENDIENTE` a `ACTIVO`. Un contrato sin firma se guarda y sigue pendiente. Un archivo ajeno o modificado fuera de esa zona se rechaza.
 
 ## Instalación
 

@@ -4,13 +4,22 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class StoreContractRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('view-office') ?? false;
+        if (! ($this->user()?->can('view-office') ?? false)) {
+            return false;
+        }
+        if ($this->routeIs('contracts.update')) {
+            return DB::table('contratos')->where('contrato_id', $this->route('contract'))
+                ->where('estado', '!=', 'CANCELADO')->exists();
+        }
+
+        return true;
     }
 
     public function rules(): array
@@ -35,7 +44,8 @@ class StoreContractRequest extends FormRequest
         ];
 
         if ($this->routeIs('contracts.update')) {
-            $rules['estado'] = ['nullable', Rule::in(['ACTIVO', 'CANCELADO'])];
+            $rules['estado'] = ['nullable', Rule::in(['CANCELADO'])];
+            $rules['motivo_cancelacion'] = ['nullable', 'required_if:estado,CANCELADO', 'string', 'max:500'];
         }
 
         return $rules;
@@ -43,7 +53,7 @@ class StoreContractRequest extends FormRequest
 
     public function attributes(): array
     {
-        return ['plan_id' => 'plan', 'cliente_id' => 'cliente', 'zona_id' => 'zona', 'responsable_id' => 'responsable', 'fecha_inicio' => 'fecha de inicio', 'duracion_meses' => 'duración en meses'];
+        return ['plan_id' => 'plan', 'cliente_id' => 'cliente', 'zona_id' => 'zona', 'responsable_id' => 'responsable', 'fecha_inicio' => 'fecha de inicio', 'duracion_meses' => 'duración en meses', 'motivo_cancelacion' => 'motivo de cancelación'];
     }
 
     public function messages(): array
@@ -55,6 +65,7 @@ class StoreContractRequest extends FormRequest
             'string' => 'El campo :attribute debe ser texto.', 'max' => 'El campo :attribute supera el máximo permitido (:max).',
             'prohibited' => 'El contrato firmado se adjunta después de registrar el contrato.',
             'mimes' => 'El archivo seleccionado debe ser un PDF válido.',
+            'motivo_cancelacion.required_if' => 'Debes explicar el motivo de la cancelación.',
         ];
     }
 }

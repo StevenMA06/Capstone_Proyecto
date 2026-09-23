@@ -23,7 +23,7 @@
 .contracts-table .row-actions a:hover { background: #e7f3ec; }
 .contracts-module .management-header { padding-bottom: 14px; margin-bottom: 16px; }
 .contracts-module .management-header h1 { margin-bottom: 9px; }
-.contracts-module .workspace-breadcrumb { margin: 0 0 7px; }
+.contracts-module .workspace-breadcrumb { margin: 0 0 22px; }
 .workspace-shell .contracts-form { display: block; max-width: none; margin-top: 0; padding: 0; border: 0; background: transparent; }
 .contracts-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; }
 .contracts-form-column { display: grid; align-content: start; gap: 15px; min-width: 0; }

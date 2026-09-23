@@ -55,12 +55,14 @@ class ContractController extends Controller
 
     public function edit(int $contract)
     {
+        abort_if($this->contracts->detail($contract)->estado === 'CANCELADO', 403, 'Los contratos cancelados son únicamente de consulta.');
+
         return view('contracts.form', $this->contracts->formData($contract));
     }
 
     public function update(StoreContractRequest $request, int $contract)
     {
-        $feedback = $this->contracts->update($contract, $request->validated());
+        $feedback = $this->contracts->update($contract, $request->validated(), $request->user()->getKey());
 
         return redirect()->route('contracts.show', $contract)
             ->with('status', $feedback['message'])
@@ -85,7 +87,7 @@ class ContractController extends Controller
     {
         $record = $this->contracts->detail($contract);
         $record->estado = 'PENDIENTE';
-        $filename = 'borrador-'.preg_replace('/[^A-Za-z0-9._-]/', '_', $record->codigo).'.pdf';
+        $filename = 'contrato-'.preg_replace('/[^A-Za-z0-9._-]/', '_', $record->codigo).'-para-firma.pdf';
 
         return response($pdf->render($record), 200, [
             'Content-Type' => 'application/pdf',
