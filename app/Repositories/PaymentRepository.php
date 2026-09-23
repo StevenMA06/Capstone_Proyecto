@@ -226,7 +226,7 @@ class PaymentRepository
             'PENDIENTE' => $counts['PENDIENTE'] ?? 0,
             'REALIZADO' => $counts['REALIZADO'] ?? 0,
             'VENCIDO' => $counts['VENCIDO'] ?? 0,
-            'NO_PAGADO' => $counts['NO_PAGADO'] ?? 0,
+            'IMPAGO' => $counts['IMPAGO'] ?? 0,
             'ANULADO' => $counts['ANULADO'] ?? 0,
         ];
     }

@@ -29,8 +29,8 @@ class UpdatePaymentRequest extends FormRequest
             // Fecha de vencimiento
             'fecha_vencimiento' => ['sometimes', 'required', 'date'],
             
-            // Fecha de pago
-            'fecha_pago' => ['nullable', 'date', 'before_or_equal:today'],
+            // Fecha de pago (sin restricciones - puede ser antes o después del vencimiento)
+            'fecha_pago' => ['nullable', 'date'],
             
             // Monto
             'monto' => ['sometimes', 'required', 'numeric', 'gt:0', 'max:9999999999.99'],
@@ -102,18 +102,8 @@ class UpdatePaymentRequest extends FormRequest
                 }
             }
 
-            // Validar que fecha_pago no sea anterior a fecha_vencimiento
-            if ($this->filled('fecha_pago') && $this->filled('fecha_vencimiento')) {
-                $fechaPago = \Carbon\Carbon::parse($this->input('fecha_pago'));
-                $fechaVencimiento = \Carbon\Carbon::parse($this->input('fecha_vencimiento'));
-                
-                if ($fechaPago->lt($fechaVencimiento)) {
-                    $validator->errors()->add(
-                        'fecha_pago',
-                        'La fecha de pago no puede ser anterior a la fecha de vencimiento.'
-                    );
-                }
-            }
+            // No hay restricción de que fecha_pago deba ser posterior al vencimiento
+            // El cliente puede pagar antes (adelantado) o después (vencido) del vencimiento
         });
     }
 }

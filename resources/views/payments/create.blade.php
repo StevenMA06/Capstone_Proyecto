@@ -11,10 +11,10 @@
         <p>Los pagos realizados son definitivos para mantener la integridad del historial financiero.</p>
     </div>
     <a class="action-link" href="{{ route('payments.show', $payment) }}">Ver detalle del pago</a>
-@elseif($payment->exists && in_array($payment->estado, ['NO_PAGADO', 'ANULADO']))
+@elseif($payment->exists && in_array($payment->estado, ['IMPAGO', 'ANULADO']))
     <div class="notice error" role="alert">
-        <strong>⚠️ Este pago está {{ $payment->estado === 'NO_PAGADO' ? 'marcado como NO PAGADO' : 'anulado' }} y no puede ser modificado.</strong>
-        <p>{{ $payment->estado === 'NO_PAGADO' ? 'El pago superó el período de tolerancia de 7 días.' : 'El pago fue anulado por error administrativo.' }}</p>
+        <strong>⚠️ Este pago está {{ $payment->estado === 'IMPAGO' ? 'marcado como IMPAGO' : 'anulado' }} y no puede ser modificado.</strong>
+        <p>{{ $payment->estado === 'IMPAGO' ? 'El pago superó el período de tolerancia de 7 días.' : 'El pago fue anulado por error administrativo.' }}</p>
     </div>
     <a class="action-link" href="{{ route('payments.show', $payment) }}">Ver detalle del pago</a>
 @else

@@ -29,7 +29,7 @@ class PaymentController extends Controller
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:180'],
             'contract' => ['nullable', 'string', 'max:40'],
-            'status' => ['nullable', Rule::in(['PENDIENTE', 'REALIZADO', 'VENCIDO', 'ANULADO'])],
+            'status' => ['nullable', Rule::in(['PENDIENTE', 'REALIZADO', 'VENCIDO', 'IMPAGO', 'ANULADO'])],
             'month' => ['nullable', 'date_format:Y-m'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
@@ -42,7 +42,7 @@ class PaymentController extends Controller
         $payments = $this->payments->search($filters);
         
         // Obtener el mes para las estadísticas (del filtro o mes actual)
-        $selectedMonth = $filters['month'] ?? now()->format('Y-m');
+        $selectedMonth = $filters['month'] ?? now()->format('Y-m'); // Mes actual por defecto
         
         // Obtener estadísticas del mes seleccionado
         $statistics = $this->payments->getStatisticsForMonth($selectedMonth);
@@ -128,7 +128,27 @@ class PaymentController extends Controller
     public function update(UpdatePaymentRequest $request, Payment $payment): RedirectResponse
     {
         try {
+            // Si se marcó como realizado, usar el método específico
+            if ($request->boolean('marcar_realizado') && $payment->estado !== 'REALIZADO') {
+                $this->payments->markAsCompleted($payment, $request->validated());
+                
+                // Generar comprobante PDF automáticamente
+                try {
+                    $receiptPath = $this->receiptPdf->generate($payment);
+                    $payment->constancia_ruta = $receiptPath;
+                    $payment->save();
+                } catch (\Exception $e) {
+                    // Si falla el PDF, continuar pero sin constancia
+                    \Log::warning('No se pudo generar comprobante para pago '.$payment->codigo.': '.$e->getMessage());
+                }
+                
+                return redirect()->route('payments.show', $payment)
+                    ->with('status', 'Pago registrado como realizado correctamente.');
+            }
+            
+            // Si no se marcó como realizado, solo actualizar datos
             $this->payments->update($payment, $request->validated());
+            
         } catch (UniqueConstraintViolationException $exception) {
             if (! str_contains($exception->getMessage(), 'uq_pago_codigo')) {
                 throw $exception;

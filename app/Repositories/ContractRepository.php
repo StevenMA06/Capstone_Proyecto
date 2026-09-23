@@ -13,8 +13,35 @@ class ContractRepository
 
     public function finalizeExpired(string $today): int
     {
-        return Contract::query()->where('estado', 'ACTIVO')->where('fecha_fin', '<', $today)
-            ->update(['estado' => 'FINALIZADO']);
+        // Obtener contratos que serán finalizados
+        $contractsToFinalize = Contract::query()
+            ->where('estado', 'ACTIVO')
+            ->where('fecha_fin', '<', $today)
+            ->get();
+
+        foreach ($contractsToFinalize as $contract) {
+            DB::transaction(function () use ($contract, $today) {
+                // Actualizar estado del contrato
+                $contract->update(['estado' => 'FINALIZADO']);
+
+                // Anular pagos pendientes o vencidos que quedan después de la finalización
+                $anulatedCount = DB::table('pagos')
+                    ->where('contrato_id', $contract->getKey())
+                    ->whereIn('estado', ['PENDIENTE', 'VENCIDO'])
+                    ->update([
+                        'estado' => 'ANULADO',
+                        'observaciones' => DB::raw(
+                            "CONCAT(COALESCE(observaciones, ''), '\n[{$today}] Anulado automáticamente por finalización del contrato.')"
+                        ),
+                    ]);
+
+                if ($anulatedCount > 0) {
+                    \Log::info("Anulados {$anulatedCount} pagos del contrato {$contract->codigo} por finalización automática");
+                }
+            });
+        }
+
+        return $contractsToFinalize->count();
     }
 
     public function search(array $filters): LengthAwarePaginator

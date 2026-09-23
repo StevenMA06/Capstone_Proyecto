@@ -21,7 +21,7 @@ class UpdateOverduePayments extends Command
      *
      * @var string
      */
-    protected $description = 'Actualiza automáticamente los estados de pagos: PENDIENTE → VENCIDO y VENCIDO → NO_PAGADO según las reglas de negocio';
+    protected $description = 'Actualiza automáticamente los estados de pagos: PENDIENTE → VENCIDO y VENCIDO → IMPAGO según las reglas de negocio';
 
     /**
      * Execute the console command.
@@ -77,7 +77,7 @@ class UpdateOverduePayments extends Command
         $this->newLine();
 
         // ============================================================
-        // PASO 2: VENCIDO → NO_PAGADO
+        // PASO 2: VENCIDO → IMPAGO
         // Cuando han pasado 7 días desde el vencimiento
         // ============================================================
 
@@ -99,7 +99,7 @@ class UpdateOverduePayments extends Command
             foreach ($overdueToCancel as $payment) {
                 $diasVencidos = $today->diffInDays($payment->fecha_vencimiento);
                 $this->line(sprintf(
-                    '     • Pago #%d - Contrato: %s - Vencido hace %d días - Será NO_PAGADO',
+                    '     • Pago #%d - Contrato: %s - Vencido hace %d días - Será IMPAGO',
                     $payment->getKey(),
                     $payment->contract->codigo ?? 'N/A',
                     $diasVencidos
@@ -111,16 +111,16 @@ class UpdateOverduePayments extends Command
                     ->where('estado', 'VENCIDO')
                     ->where('fecha_vencimiento', '<', $cutoffDate)
                     ->update([
-                        'estado' => 'NO_PAGADO',
-                        'observaciones' => DB::raw("CONCAT(COALESCE(observaciones, ''), '\nMarcado como NO_PAGADO automáticamente por superar 7 días de vencimiento.')"),
+                        'estado' => 'IMPAGO',
+                        'observaciones' => DB::raw("CONCAT(COALESCE(observaciones, ''), '\nMarcado como IMPAGO automáticamente por superar 7 días de vencimiento.')"),
                     ]);
 
-                $this->info("   ✅ {$cancelled} pagos actualizados a NO_PAGADO");
+                $this->info("   ✅ {$cancelled} pagos actualizados a IMPAGO");
 
                 // Nota: La lógica de cancelación de contratos se maneja en otro command
                 // para mantener la separación de responsabilidades
             } else {
-                $this->comment('   🔸 [DRY-RUN] Se actualizarían a NO_PAGADO');
+                $this->comment('   🔸 [DRY-RUN] Se actualizarían a IMPAGO');
             }
         }
 
@@ -132,7 +132,7 @@ class UpdateOverduePayments extends Command
 
         $this->info('📊 RESUMEN:');
         $this->line(sprintf('   • Pagos PENDIENTE → VENCIDO: %d', $pendingToOverdue->count()));
-        $this->line(sprintf('   • Pagos VENCIDO → NO_PAGADO: %d', $overdueToCancel->count()));
+        $this->line(sprintf('   • Pagos VENCIDO → IMPAGO: %d', $overdueToCancel->count()));
         $this->line(sprintf('   • Total procesados: %d', $pendingToOverdue->count() + $overdueToCancel->count()));
 
         if ($dryRun) {

@@ -36,11 +36,11 @@
                     'label' => 'Vencidos',
                     'description' => 'Requieren atención'
                 ],
-                'NO_PAGADO' => [
-                    'icon' => 'bi-x-circle-fill',
+                'IMPAGO' => [
+                    'icon' => 'bi-file-x',
                     'color' => '#dc2626',
-                    'label' => 'No Pagados',
-                    'description' => 'Deuda incobrable'
+                    'label' => 'Impagos',
+                    'description' => 'No pagados'
                 ],
                 'ANULADO' => [
                     'icon' => 'bi-slash-circle',
@@ -55,7 +55,12 @@
                     'description' => 'Pagados'
                 ]
             ];
-            $totalPayments = array_sum($statistics);
+            // Calcular total solo con los estados (excluir 'total' y 'month' del array $statistics)
+            $totalPayments = ($statistics['PENDIENTE'] ?? 0) + 
+                           ($statistics['VENCIDO'] ?? 0) + 
+                           ($statistics['IMPAGO'] ?? 0) + 
+                           ($statistics['ANULADO'] ?? 0) + 
+                           ($statistics['REALIZADO'] ?? 0);
         @endphp
         
         @foreach($statusConfig as $status => $config)
@@ -118,7 +123,7 @@
         </div>
         <fieldset>
             <legend>Estado del pago</legend>
-            @foreach(['' => 'Todos los estados', 'PENDIENTE' => 'Pendiente', 'REALIZADO' => 'Realizado', 'VENCIDO' => 'Vencido', 'NO_PAGADO' => 'No Pagado', 'ANULADO' => 'Anulado'] as $value => $label)
+            @foreach(['' => 'Todos los estados', 'PENDIENTE' => 'Pendiente', 'REALIZADO' => 'Realizado', 'VENCIDO' => 'Vencido', 'IMPAGO' => 'Impago', 'ANULADO' => 'Anulado'] as $value => $label)
                 <label class="state-option"><input type="radio" name="status" value="{{ $value }}" @checked((request('status') ?? '') === $value)><span>{{ $label }}</span></label>
             @endforeach
         </fieldset>
@@ -205,21 +210,12 @@
                 <td>
                     <span class="state {{ 
                         $payment->estado === 'REALIZADO' ? 'active' : 
-                        ($payment->estado === 'VENCIDO' ? 'inactive' : 
-                        ($payment->estado === 'ANULADO' ? 'inactive' : '')) 
+                        ($payment->estado === 'VENCIDO' || $payment->estado === 'IMPAGO' ? 'inactive' : '') 
                     }}" style="
                         @if($payment->estado === 'VENCIDO') background: #fee2e2; color: #991b1b; @endif
+                        @if($payment->estado === 'IMPAGO') background: #ede9fe; color: #5b21b6; @endif
                         @if($payment->estado === 'PENDIENTE') background: #fef3c7; color: #92400e; @endif
                         @if($payment->estado === 'ANULADO') background: #e5e7eb; color: #374151; @endif
-                        @if($payment->estado === 'NO_PAGADO') background: #fee2e2; color: #991b1b; @endif
-                    ">
-                        @if($payment->estado === 'NO_PAGADO')
-                            No Pagado
-                        @elseif($payment->estado === 'ANULADO')
-                            Anulado
-                        @else
-                            {{ ucfirst(strtolower($payment->estado)) }}
-                        @endif
                     ">
                         {{ ucfirst(strtolower($payment->estado)) }}
                     </span>
@@ -231,7 +227,7 @@
                     <div class="row-actions">
                         <a href="{{ route('payments.show', $payment) }}" aria-label="Ver detalle del pago {{ $payment->codigo }}">Ver detalle</a>
                         @if($payment->estado === 'PENDIENTE' || $payment->estado === 'VENCIDO')
-                            <a href="{{ route('payments.edit', $payment) }}" aria-label="Editar pago {{ $payment->codigo }}">Editar</a>
+                            <a href="{{ route('payments.edit', $payment) }}" aria-label="Validar pago {{ $payment->codigo }}">Validar pago</a>
                         @endif
                     </div>
                 </td>
