@@ -4,6 +4,7 @@ use App\Http\Controllers\AccessHistoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ContractController;
+use App\Http\Controllers\CoverageZoneController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\OperationController;
@@ -59,11 +60,19 @@ Route::middleware(['auth', 'can:view-office'])->group(function (): void {
     Route::put('/contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->whereNumber('contract')->name('contracts.pdf');
     Route::get('/contracts/{contract}/draft', [ContractController::class, 'draft'])->whereNumber('contract')->name('contracts.draft');
-    
+
     // RF-CON-04: Reactivación de contratos cancelados
     Route::get('/contracts-cancelled', [ContractController::class, 'cancelled'])->name('contracts.cancelled');
     Route::get('/contracts/{contract}/reactivate', [ContractController::class, 'reactivateForm'])->whereNumber('contract')->name('contracts.reactivate.form');
     Route::post('/contracts/{contract}/reactivate', [ContractController::class, 'reactivate'])->whereNumber('contract')->name('contracts.reactivate');
+});
+
+Route::middleware(['auth', 'can:manage-zones'])->group(function (): void {
+    Route::patch('/zones/{zone}/status', [CoverageZoneController::class, 'status'])->name('zones.status');
+    Route::resource('zones', CoverageZoneController::class)->only(['create', 'store', 'edit', 'update']);
+});
+Route::middleware(['auth', 'can:view-zones'])->group(function (): void {
+    Route::resource('zones', CoverageZoneController::class)->only(['index', 'show']);
 });
 
 Route::middleware(['auth', 'can:manage-plans'])->group(function (): void {
