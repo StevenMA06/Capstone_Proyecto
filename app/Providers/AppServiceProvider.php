@@ -24,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('edit-employee', fn (User $user, Employee $employee): bool => $user->isManager()
             && ($user->isAdministrator() || ! $employee->accounts()->whereHas('role', fn ($q) => $q->where('nombre', Role::ADMIN))->exists()));
         Gate::define('manage-plans', fn (User $user): bool => $user->isManager());
+        Gate::define('manage-zones', fn (User $user): bool => $user->isManager());
+        Gate::define('view-zones', fn (User $user): bool => $user->isManager() || $user->isOffice());
         Gate::define('view-operations', fn (User $user): bool => $user->isManager());
         Gate::define('view-office', fn (User $user): bool => $user->isManager() || $user->isOffice());
         Gate::define('view-technician', fn (User $user): bool => $user->isManager() || $user->isTechnician());
