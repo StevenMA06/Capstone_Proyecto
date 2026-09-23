@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\ContractSignatureVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\ClientHistoryFixtures;
@@ -42,6 +43,7 @@ class ContractManagementTest extends TestCase
         $this->get('/contracts?search=76543210&estado=CANCELADO')->assertOk()->assertDontSee('>RF-CON-C-0<', false);
         $this->get('/contracts/'.$contract->contrato_id)->assertOk()->assertSee('Internet RF-CON');
         $this->get('/contracts/'.$contract->contrato_id.'/pdf')->assertOk()->assertHeader('Content-Type', 'application/pdf')->assertSee('%PDF-1.4', false);
+        $this->get('/contracts/'.$contract->contrato_id.'/draft')->assertDownload('contrato-'.$contract->codigo.'-para-firma.pdf');
 
         $this->patch('/contracts/'.$contract->contrato_id.'/status', ['estado' => 'ACTIVO'])->assertNotFound();
         Storage::fake('local');
@@ -59,6 +61,55 @@ class ContractManagementTest extends TestCase
         $this->patch('/contracts/'.$contract->contrato_id.'/status', ['estado' => 'ACTIVO'])->assertNotFound();
         $this->patch('/contracts/'.$contract->contrato_id.'/status', ['estado' => 'FINALIZADO'])->assertNotFound();
         $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'PENDIENTE']);
+    }
+
+    public function test_breadcrumb_is_above_heading_and_manual_cancellation_requires_a_reason(): void
+    {
+        [$actor, $client, $contract] = $this->records();
+        Storage::fake('local');
+        Storage::disk('local')->put('contracts/signed.pdf', '%PDF-1.4 signed');
+        DB::table('contratos')->where('contrato_id', $contract->contrato_id)->update([
+            'direccion_servicio' => $client->direccion,
+            'pdf_contrato_ruta' => 'contracts/signed.pdf',
+            'firma_revision' => 'VERIFICADA',
+            'firma_validada_en' => now(),
+        ]);
+        $periodId = DB::table('periodos_contractuales')->insertGetId([
+            'contrato_id' => $contract->contrato_id,
+            'numero_periodo' => 1,
+            'fecha_inicio_periodo' => $contract->fecha_inicio,
+            'fecha_fin_periodo' => $contract->fecha_fin,
+            'duracion_meses_periodo' => $contract->duracion_meses,
+            'estado_periodo' => 'ACTIVO',
+        ]);
+        DB::table('contratos')->where('contrato_id', $contract->contrato_id)->update(['periodo_actual' => $periodId]);
+
+        $this->signIn($actor)->get('/contracts/'.$contract->contrato_id.'/edit')->assertOk()
+            ->assertSeeInOrder(['workspace-breadcrumb', 'GESTIÓN COMERCIAL'])
+            ->assertSee('Motivo de cancelación');
+
+        $data = [
+            'cliente_id' => $client->getKey(), 'plan_id' => $contract->plan_id,
+            'zona_id' => $contract->zona_id, 'responsable_id' => $contract->responsable_id,
+            'fecha_inicio' => $contract->fecha_inicio, 'duracion_meses' => $contract->duracion_meses,
+            'observaciones' => $contract->observaciones, 'estado' => 'CANCELADO',
+        ];
+        $this->put('/contracts/'.$contract->contrato_id, $data)->assertSessionHasErrors('motivo_cancelacion');
+        $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'ACTIVO']);
+
+        $reason = 'El cliente solicitó la baja por cambio de domicilio.';
+        $this->put('/contracts/'.$contract->contrato_id, $data + ['motivo_cancelacion' => $reason])
+            ->assertSessionHasNoErrors()->assertRedirect('/contracts/'.$contract->contrato_id);
+        $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'CANCELADO']);
+        $this->assertDatabaseHas('periodos_contractuales', [
+            'periodo_id' => $periodId, 'estado_periodo' => 'CANCELADO',
+            'motivo_cancelacion' => $reason, 'origen_cancelacion' => 'MANUAL',
+            'cancelado_por' => $actor->getKey(),
+        ]);
+        $this->get('/contracts/'.$contract->contrato_id)->assertOk()->assertSee($reason)
+            ->assertSee('únicamente para consulta')->assertDontSee('Actualizar contrato');
+        $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertForbidden();
+        $this->put('/contracts/'.$contract->contrato_id, $data + ['motivo_cancelacion' => 'Intento posterior'])->assertForbidden();
     }
 
     public function test_contract_rejects_client_district_and_plan_coverage_mismatches(): void
@@ -133,21 +184,23 @@ class ContractManagementTest extends TestCase
         $this->assertSame('Calle Uno', $saved->direccion_servicio);
         $this->get('/contracts/create')->assertOk()->assertDontSee('name="direccion_servicio"', false);
         $this->get('/contracts/'.$saved->contrato_id.'/edit')->assertOk()->assertSee('value="Calle Uno"', false);
-        $this->get('/contracts/'.$saved->contrato_id.'/edit')->assertDontSee('name="estado"', false);
-        $this->put('/contracts/'.$saved->contrato_id, [
-            'cliente_id' => $client->getKey(), 'plan_id' => $saved->plan_id,
-            'zona_id' => $saved->zona_id, 'responsable_id' => $saved->responsable_id,
-            'fecha_inicio' => '2026-10-01', 'duracion_meses' => 12,
-            'estado' => 'CANCELADO',
-        ])->assertSessionHasErrors('estado');
+        $this->get('/contracts/'.$saved->contrato_id.'/edit')->assertSee('name="estado"', false)
+            ->assertSee('value="CANCELADO"', false)->assertDontSee('value="ACTIVO"', false);
         $this->put('/contracts/'.$saved->contrato_id, [
             'cliente_id' => $client->getKey(), 'plan_id' => $saved->plan_id,
             'zona_id' => $saved->zona_id, 'responsable_id' => $saved->responsable_id,
             'fecha_inicio' => '2026-10-01', 'duracion_meses' => 12,
             'estado' => 'ACTIVO',
         ])->assertSessionHasErrors('estado');
+        $this->put('/contracts/'.$saved->contrato_id, [
+            'cliente_id' => $client->getKey(), 'plan_id' => $saved->plan_id,
+            'zona_id' => $saved->zona_id, 'responsable_id' => $saved->responsable_id,
+            'fecha_inicio' => '2026-10-01', 'duracion_meses' => 12,
+            'estado' => 'CANCELADO', 'motivo_cancelacion' => 'Solicitud del cliente',
+        ])->assertSessionHasNoErrors()->assertRedirect('/contracts/'.$saved->contrato_id);
         $this->patch('/contracts/'.$saved->contrato_id.'/status', ['estado' => 'CANCELADO'])->assertNotFound();
-        $this->assertDatabaseHas('contratos', ['contrato_id' => $saved->contrato_id, 'estado' => 'PENDIENTE']);
+        $this->assertDatabaseHas('contratos', ['contrato_id' => $saved->contrato_id, 'estado' => 'CANCELADO']);
+        $this->assertDatabaseHas('periodos_contractuales', ['contrato_id' => $saved->contrato_id, 'estado_periodo' => 'CANCELADO', 'motivo_cancelacion' => 'Solicitud del cliente']);
     }
 
     public function test_signed_document_upload_is_only_available_when_updating(): void
@@ -185,11 +238,11 @@ class ContractManagementTest extends TestCase
     {
         [$actor, $client, $contract] = $this->records();
         ClientHistoryFixtures::attach($client, $actor, 'RF-AUTO', 4);
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-12-31 23:59:59'));
+        $this->travelTo(Carbon::parse('2026-12-31 23:59:59'));
         $this->signIn($actor)->get('/contracts')->assertOk();
         $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'ACTIVO']);
 
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2027-01-01 00:00:00'));
+        $this->travelTo(Carbon::parse('2027-01-01 00:00:00'));
         $this->get('/contracts')->assertOk();
         $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'FINALIZADO']);
         $this->assertDatabaseHas('contratos', ['codigo' => 'RF-AUTO-C-0', 'estado' => 'FINALIZADO']);
@@ -212,7 +265,7 @@ class ContractManagementTest extends TestCase
     public function test_late_signature_does_not_leave_an_expired_contract_active(): void
     {
         [$actor, $client, $existing] = $this->records();
-        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-09-18 12:00:00'));
+        $this->travelTo(Carbon::parse('2026-09-18 12:00:00'));
         $data = [
             'cliente_id' => $client->getKey(), 'plan_id' => $existing->plan_id,
             'zona_id' => $existing->zona_id, 'responsable_id' => $existing->responsable_id,
