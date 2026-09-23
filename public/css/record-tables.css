@@ -1,0 +1,53 @@
+/* Shared table presentation for clients, plans, employees and users. */
+.workspace-shell .record-tables .table-scroll {
+    overflow-x: auto;
+    border: 1px solid #e0e9e3;
+    border-radius: 12px;
+    background: #fff;
+}
+.workspace-shell .record-tables .users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    text-align: left;
+}
+.workspace-shell .record-tables .users-table th {
+    padding: 16px 13px;
+    background: #f2f6f3;
+    color: #63776a;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 1px solid #e6eee8;
+}
+.workspace-shell .record-tables .users-table td {
+    padding: 17px 13px;
+    vertical-align: top;
+    border-bottom: 1px solid #e6eee8;
+}
+.workspace-shell .record-tables .users-table tbody tr:last-child td { border-bottom: 0; }
+.workspace-shell .record-tables .users-table tbody tr:hover { background: #f8fbf9; }
+.workspace-shell .record-tables .users-table .state { font-size: 12px; }
+.workspace-shell .record-tables .users-table .row-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+.workspace-shell .record-tables .users-table .row-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 9px;
+    border: 1px solid #ccdfd1;
+    border-radius: 7px;
+    background: #fff;
+    color: #106f44;
+    text-decoration: none;
+    white-space: nowrap;
+    font-size: 11px;
+    line-height: 1.2;
+}
+.workspace-shell .record-tables .users-table .row-actions a:hover { background: #e7f3ec; }
+.workspace-shell .record-tables .users-table a:focus-visible { outline: 2px solid #087846; outline-offset: 2px; }
+.workspace-shell .record-tables .table-scroll:focus-visible { outline: 2px solid #087846; outline-offset: 2px; }
+.workspace-shell .record-tables .table-subtitle { margin-top: 5px; font-size: 11px; color: #63776a; }
+.workspace-shell .record-tables .client-list-panel { min-width: 0; border: 0; border-radius: 0; background: transparent; overflow: visible; }
+.workspace-shell .record-tables .client-list-panel .management-toolbar { margin: 0 0 20px; padding: 0; align-items: flex-start; }
+.workspace-shell .record-tables .client-list-panel h2 { font-size: 21px; }
+.workspace-shell .record-tables .client-list-panel .pagination { padding: 20px 0 0; }
