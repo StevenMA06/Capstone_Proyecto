@@ -2,7 +2,7 @@
 @section('title', 'Gestión de clientes')
 @push('styles')<link rel="stylesheet" href="{{ asset('css/toast.css') }}?v=1">@endpush
 @section('workspace-content')
-<section class="management clients-management">
+<section class="management record-tables clients-management">
     <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><a href="{{ route('dashboard') }}">Inicio</a><span aria-hidden="true">/</span><span>Gestión de clientes</span></nav>
     <header class="module-heading">
         <span class="eyebrow">RELACIÓN CON TUS CLIENTES</span>

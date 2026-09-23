@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @include('layouts.session-monitor')
     @stack('styles')
+    <link rel="stylesheet" href="{{ asset('css/record-tables.css') }}?v=1">
 </head>
 <body class="workspace-shell">
 <a class="skip-content" href="#module-content">Ir al contenido</a>
