@@ -213,22 +213,21 @@ class PaymentRepository
      */
     public function countByStatusForMonth(string $month): array
     {
-        // Obtener primer y último día del mes
-        $firstDay = \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth();
-        $lastDay = $firstDay->copy()->endOfMonth();
-
+        // Filtrar por periodo_servicio en lugar de fecha_vencimiento
+        // Esto permite contar pagos del mes correcto según su período de facturación
         $counts = DB::table('pagos')
             ->select('estado', DB::raw('COUNT(*) as total'))
-            ->whereBetween('fecha_vencimiento', [$firstDay, $lastDay])
+            ->where('periodo_servicio', $month)
             ->groupBy('estado')
             ->pluck('total', 'estado')
             ->toArray();
 
         return [
-            'pendiente' => $counts['PENDIENTE'] ?? 0,
-            'realizado' => $counts['REALIZADO'] ?? 0,
-            'vencido' => $counts['VENCIDO'] ?? 0,
-            'anulado' => $counts['ANULADO'] ?? 0,
+            'PENDIENTE' => $counts['PENDIENTE'] ?? 0,
+            'REALIZADO' => $counts['REALIZADO'] ?? 0,
+            'VENCIDO' => $counts['VENCIDO'] ?? 0,
+            'NO_PAGADO' => $counts['NO_PAGADO'] ?? 0,
+            'ANULADO' => $counts['ANULADO'] ?? 0,
         ];
     }
 

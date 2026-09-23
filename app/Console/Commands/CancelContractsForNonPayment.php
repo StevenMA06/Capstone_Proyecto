@@ -23,7 +23,7 @@ class CancelContractsForNonPayment extends Command
      *
      * @var string
      */
-    protected $description = 'Cancela automáticamente contratos cuando tienen pagos anulados por falta de pago';
+    protected $description = 'Cancela automáticamente contratos cuando tienen pagos marcados como NO_PAGADO por falta de pago';
 
     /**
      * Execute the console command.
@@ -37,15 +37,15 @@ class CancelContractsForNonPayment extends Command
             $this->newLine();
         }
 
-        $this->info('📋 Buscando contratos ACTIVOS con pagos ANULADOS por falta de pago...');
+        $this->info('📋 Buscando contratos ACTIVOS con pagos NO_PAGADO por falta de pago...');
 
-        // Obtener contratos activos que tienen al menos un pago anulado
+        // Obtener contratos activos que tienen al menos un pago NO_PAGADO
         $contractsToCancel = Contract::where('estado', 'ACTIVO')
             ->whereHas('payments', function ($query) {
-                $query->where('estado', 'ANULADO');
+                $query->where('estado', 'NO_PAGADO');
             })
             ->with(['payments' => function ($query) {
-                $query->where('estado', 'ANULADO')
+                $query->where('estado', 'NO_PAGADO')
                     ->orderBy('fecha_vencimiento');
             }, 'client', 'currentPeriod'])
             ->get();
@@ -75,11 +75,11 @@ class CancelContractsForNonPayment extends Command
                 $contract->client->apellidos ?? ''
             ));
             $this->line(sprintf(
-                '      Pagos anulados: %d',
+                '      Pagos NO_PAGADO: %d',
                 $anulatedPayments->count()
             ));
             $this->line(sprintf(
-                '      Primer pago anulado: %s (vencimiento: %s)',
+                '      Primer pago NO_PAGADO: %s (vencimiento: %s)',
                 $firstAnulated->codigo,
                 $firstAnulated->fecha_vencimiento->format('d/m/Y')
             ));
@@ -91,7 +91,7 @@ class CancelContractsForNonPayment extends Command
                         $periods->cancel(
                             $contract->currentPeriod,
                             sprintf(
-                                'Cancelado automáticamente por falta de pago. Pago anulado: %s',
+                                'Cancelado automáticamente por falta de pago. Pago NO_PAGADO: %s',
                                 $firstAnulated->codigo
                             ),
                             'AUTOMATICO_FALTA_PAGO'
@@ -105,7 +105,7 @@ class CancelContractsForNonPayment extends Command
                             'estado' => 'CANCELADO',
                             'observaciones' => DB::raw(
                                 "CONCAT(COALESCE(observaciones, ''), '\n[".now()->format('Y-m-d H:i:s')."] Cancelado automáticamente por falta de pago (pago ".
-                                $firstAnulated->codigo." anulado).')"
+                                $firstAnulated->codigo." NO_PAGADO).')"
                             ),
                         ]);
                 });

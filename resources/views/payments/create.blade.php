@@ -4,14 +4,32 @@
     <h2>{{ $payment->exists ? 'Editar pago #'.$payment->codigo : 'Registrar pago' }}</h2>
     <a class="secondary" href="{{ route('payments.index') }}">Ver pagos</a>
 </div>
-<p class="muted">Los campos marcados con * son obligatorios. El código se genera automáticamente.</p>
+
+@if($payment->exists && $payment->estado === 'REALIZADO')
+    <div class="notice" role="alert">
+        <strong>⚠️ Este pago ya está realizado y no puede ser modificado.</strong>
+        <p>Los pagos realizados son definitivos para mantener la integridad del historial financiero.</p>
+    </div>
+    <a class="action-link" href="{{ route('payments.show', $payment) }}">Ver detalle del pago</a>
+@elseif($payment->exists && in_array($payment->estado, ['NO_PAGADO', 'ANULADO']))
+    <div class="notice error" role="alert">
+        <strong>⚠️ Este pago está {{ $payment->estado === 'NO_PAGADO' ? 'marcado como NO PAGADO' : 'anulado' }} y no puede ser modificado.</strong>
+        <p>{{ $payment->estado === 'NO_PAGADO' ? 'El pago superó el período de tolerancia de 7 días.' : 'El pago fue anulado por error administrativo.' }}</p>
+    </div>
+    <a class="action-link" href="{{ route('payments.show', $payment) }}">Ver detalle del pago</a>
+@else
+<p class="muted">
+    {{ $payment->exists ? 'Completa los datos del pago cuando el cliente realice el pago.' : 'Los campos marcados con * son obligatorios. El código se genera automáticamente.' }}
+</p>
 <form class="account-form" method="POST" action="{{ $payment->exists ? route('payments.update', $payment) : route('payments.store') }}" novalidate>
     @csrf
     @if($payment->exists) @method('PUT') @endif
     
     <div>
         <label for="contrato_id">Contrato *</label>
-        <select id="contrato_id" name="contrato_id" required @error('contrato_id') aria-invalid="true" aria-describedby="contrato_id-error" @enderror>
+        <select id="contrato_id" name="contrato_id" required 
+            @if($payment->exists) disabled @endif
+            @error('contrato_id') aria-invalid="true" aria-describedby="contrato_id-error" @enderror>
             <option value="">Selecciona un contrato activo</option>
             @foreach($contracts as $contract)
                 <option value="{{ $contract->contrato_id }}" 
@@ -23,7 +41,12 @@
                 </option>
             @endforeach
         </select>
-        <small>Solo se muestran contratos con estado ACTIVO.</small>
+        @if($payment->exists)
+            <input type="hidden" name="contrato_id" value="{{ $payment->contrato_id }}">
+            <small>El contrato no puede modificarse en un pago existente.</small>
+        @else
+            <small>Solo se muestran contratos con estado ACTIVO.</small>
+        @endif
         @error('contrato_id')<p id="contrato_id-error" class="error">{{ $message }}</p>@enderror
     </div>
 
@@ -39,9 +62,10 @@
     <div>
         <label for="monto">Monto a pagar (S/) *</label>
         <input id="monto" name="monto" type="number" step="0.01" min="0.01" max="999999.99" 
-            value="{{ old('monto', $payment->monto) }}" required 
+            value="{{ old('monto', $payment->monto) }}" required
+            @if($payment->exists) readonly @endif
             @error('monto') aria-invalid="true" aria-describedby="monto-error" @enderror>
-        <small>Ingresa el monto en soles.</small>
+        <small>{{ $payment->exists ? 'El monto no puede modificarse en un pago existente.' : 'Ingresa el monto en soles.' }}</small>
         @error('monto')<p id="monto-error" class="error">{{ $message }}</p>@enderror
     </div>
 
@@ -49,19 +73,21 @@
         <label for="periodo_servicio">Período de servicio *</label>
         <input id="periodo_servicio" name="periodo_servicio" type="text" placeholder="YYYY-MM (Ej: 2026-09)" 
             pattern="\d{4}-(0[1-9]|1[0-2])" maxlength="7"
-            value="{{ old('periodo_servicio', $payment->periodo_servicio) }}" required 
+            value="{{ old('periodo_servicio', $payment->periodo_servicio) }}" required
+            @if($payment->exists) readonly @endif
             @error('periodo_servicio') aria-invalid="true" aria-describedby="periodo_servicio-error" @enderror>
-        <small>Formato: YYYY-MM (Ej: 2026-09 para septiembre 2026).</small>
+        <small>{{ $payment->exists ? 'El período de servicio no puede modificarse.' : 'Formato: YYYY-MM (Ej: 2026-09 para septiembre 2026).' }}</small>
         @error('periodo_servicio')<p id="periodo_servicio-error" class="error">{{ $message }}</p>@enderror
     </div>
 
     <div>
         <label for="fecha_vencimiento">Fecha de vencimiento *</label>
         <input id="fecha_vencimiento" name="fecha_vencimiento" type="date" 
-            value="{{ old('fecha_vencimiento', $payment->fecha_vencimiento?->format('Y-m-d')) }}" required 
+            value="{{ old('fecha_vencimiento', $payment->fecha_vencimiento?->format('Y-m-d')) }}" required
+            @if($payment->exists) readonly @endif
             @if(!$payment->exists) min="{{ date('Y-m-d') }}" @endif
             @error('fecha_vencimiento') aria-invalid="true" aria-describedby="fecha_vencimiento-error" @enderror>
-        <small>{{ $payment->exists ? 'Fecha límite de pago.' : 'Debe ser igual o posterior a hoy.' }}</small>
+        <small>{{ $payment->exists ? 'La fecha de vencimiento no puede modificarse.' : 'Debe ser igual o posterior a hoy.' }}</small>
         @error('fecha_vencimiento')<p id="fecha_vencimiento-error" class="error">{{ $message }}</p>@enderror
     </div>
 
@@ -109,5 +135,6 @@
         <a class="secondary" href="{{ $payment->exists ? route('payments.show', $payment) : route('payments.index') }}">Cancelar</a>
     </div>
 </form>
+@endif
 <script src="{{ asset('js/payments.js') }}" defer></script>
 @endsection

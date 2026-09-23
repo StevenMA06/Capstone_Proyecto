@@ -25,25 +25,31 @@
         @php
             $statusConfig = [
                 'PENDIENTE' => [
-                    'icon' => '⏳',
+                    'icon' => 'bi-clock-history',
                     'color' => '#f59e0b',
                     'label' => 'Pendientes',
                     'description' => 'Por cobrar'
                 ],
                 'VENCIDO' => [
-                    'icon' => '⚠️',
+                    'icon' => 'bi-exclamation-triangle-fill',
                     'color' => '#ef4444',
                     'label' => 'Vencidos',
                     'description' => 'Requieren atención'
                 ],
+                'NO_PAGADO' => [
+                    'icon' => 'bi-x-circle-fill',
+                    'color' => '#dc2626',
+                    'label' => 'No Pagados',
+                    'description' => 'Deuda incobrable'
+                ],
                 'ANULADO' => [
-                    'icon' => '❌',
+                    'icon' => 'bi-slash-circle',
                     'color' => '#6b7280',
                     'label' => 'Anulados',
-                    'description' => 'Sin efecto'
+                    'description' => 'Error administrativo'
                 ],
                 'REALIZADO' => [
-                    'icon' => '✅',
+                    'icon' => 'bi-check-circle-fill',
                     'color' => '#10b981',
                     'label' => 'Realizados',
                     'description' => 'Pagados'
@@ -65,7 +71,7 @@
                 title="Filtrar por {{ $config['label'] }}"
             >
                 <div class="stat-icon" style="background: {{ $config['color'] }}20;">
-                    <span style="font-size: 2rem;">{{ $config['icon'] }}</span>
+                    <i class="bi {{ $config['icon'] }}" style="font-size: 1.5rem; color: {{ $config['color'] }};"></i>
                 </div>
                 <div class="stat-content">
                     <h3>{{ $config['label'] }}</h3>
@@ -112,7 +118,7 @@
         </div>
         <fieldset>
             <legend>Estado del pago</legend>
-            @foreach(['' => 'Todos los estados', 'PENDIENTE' => 'Pendiente', 'REALIZADO' => 'Realizado', 'VENCIDO' => 'Vencido', 'ANULADO' => 'Anulado'] as $value => $label)
+            @foreach(['' => 'Todos los estados', 'PENDIENTE' => 'Pendiente', 'REALIZADO' => 'Realizado', 'VENCIDO' => 'Vencido', 'NO_PAGADO' => 'No Pagado', 'ANULADO' => 'Anulado'] as $value => $label)
                 <label class="state-option"><input type="radio" name="status" value="{{ $value }}" @checked((request('status') ?? '') === $value)><span>{{ $label }}</span></label>
             @endforeach
         </fieldset>
@@ -147,7 +153,7 @@
             <h2 id="list-title">Listado de pagos</h2>
             <p class="muted">{{ $payments->total() }} {{ $payments->total() === 1 ? 'pago encontrado' : 'pagos encontrados' }}</p>
         </div>
-        <a class="action-link" href="{{ route('payments.create') }}"><span aria-hidden="true">＋</span> Registrar pago</a>
+        {{-- Botón "Registrar pago" eliminado: los pagos se generan automáticamente al activar contratos --}}
     </div>
     <div class="table-scroll">
         <table class="users-table client-table">
@@ -205,6 +211,15 @@
                         @if($payment->estado === 'VENCIDO') background: #fee2e2; color: #991b1b; @endif
                         @if($payment->estado === 'PENDIENTE') background: #fef3c7; color: #92400e; @endif
                         @if($payment->estado === 'ANULADO') background: #e5e7eb; color: #374151; @endif
+                        @if($payment->estado === 'NO_PAGADO') background: #fee2e2; color: #991b1b; @endif
+                    ">
+                        @if($payment->estado === 'NO_PAGADO')
+                            No Pagado
+                        @elseif($payment->estado === 'ANULADO')
+                            Anulado
+                        @else
+                            {{ ucfirst(strtolower($payment->estado)) }}
+                        @endif
                     ">
                         {{ ucfirst(strtolower($payment->estado)) }}
                     </span>
