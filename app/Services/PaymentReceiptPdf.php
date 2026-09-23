@@ -33,23 +33,12 @@ class PaymentReceiptPdf
             'logo_path' => public_path('img/logo.png'),
         ];
 
-        // Verificar si dompdf está disponible
-        if (class_exists(Pdf::class)) {
-            // Generar PDF real con dompdf
-            $pdf = Pdf::loadView('payments.receipt-pdf', $data)
-                ->setPaper('a4', 'portrait')
-                ->setOption('defaultFont', 'Arial');
+        $pdf = Pdf::loadView('payments.receipt-pdf', $data)
+            ->setPaper('a4', 'portrait')
+            ->setOption('defaultFont', 'Arial');
 
-            // Guardar en storage
-            $path = 'comprobantes/' . $filename;
-            Storage::disk('public')->put($path, $pdf->output());
-        } else {
-            // Fallback: Generar HTML si dompdf no está instalado
-            $html = view('payments.receipt-pdf', $data)->render();
-            $filename = str_replace('.pdf', '.html', $filename);
-            $path = 'comprobantes/' . $filename;
-            Storage::disk('public')->put($path, $html);
-        }
+        $path = 'comprobantes/' . $filename;
+        Storage::disk('public')->put($path, $pdf->output());
 
         // Retornar ruta relativa
         return 'storage/' . $path;
@@ -77,22 +66,11 @@ class PaymentReceiptPdf
             'logo_path' => public_path('img/logo.png'),
         ];
 
-        // Verificar si dompdf está disponible
-        if (class_exists(Pdf::class)) {
-            $pdf = Pdf::loadView('payments.receipt-pdf', $data)
-                ->setPaper('a4', 'portrait')
-                ->setOption('defaultFont', 'Arial');
+        $pdf = Pdf::loadView('payments.receipt-pdf', $data)
+            ->setPaper('a4', 'portrait')
+            ->setOption('defaultFont', 'Arial');
 
-            return $pdf->download($filename);
-        } else {
-            // Fallback: Retornar HTML
-            $html = view('payments.receipt-pdf', $data)->render();
-            
-            return response($html, 200, [
-                'Content-Type' => 'text/html',
-                'Content-Disposition' => 'inline; filename="' . str_replace('.pdf', '.html', $filename) . '"',
-            ]);
-        }
+        return $pdf->download($filename);
     }
 
     /**

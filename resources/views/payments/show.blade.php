@@ -11,7 +11,7 @@
             <a class="action-link" href="{{ route('payments.edit', $payment) }}">Validar pago</a>
         @endif
         @if($payment->constancia_ruta && $payment->isCompleted())
-            <a class="action-link" href="{{ asset($payment->constancia_ruta) }}" target="_blank" title="Descargar comprobante de pago">
+            <a class="action-link" href="{{ route('payments.receipt', $payment) }}" target="_blank" title="Ver comprobante de pago">
                 <i class="bi bi-file-pdf"></i> Ver comprobante
             </a>
         @endif
@@ -46,7 +46,7 @@
             <div>
                 <dt>Comprobante de pago</dt>
                 <dd>
-                    <a href="{{ asset($payment->constancia_ruta) }}" target="_blank" class="action-link" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <a href="{{ route('payments.receipt', $payment) }}" target="_blank" class="action-link" style="display: inline-flex; align-items: center; gap: 6px;">
                         <i class="bi bi-file-pdf-fill" style="color: #dc2626;"></i>
                         Descargar comprobante PDF
                     </a>

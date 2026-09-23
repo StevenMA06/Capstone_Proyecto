@@ -10,9 +10,11 @@ use App\Services\PaymentService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentController extends Controller
 {
@@ -221,22 +223,31 @@ class PaymentController extends Controller
     /**
      * Generar constancia interna de pago (RF-PAG-09)
      */
-    public function receipt(Payment $payment): View|RedirectResponse
+    public function receipt(Payment $payment): StreamedResponse|RedirectResponse
     {
-        // RF-PAG-14: Verificar si ya existe comprobante generado
-        if ($payment->constancia_ruta && $this->receiptPdf->exists($payment->constancia_ruta)) {
-            // Redirigir a la ruta del PDF para visualizarlo
-            return redirect($payment->constancia_ruta);
-        }
-
         try {
-            $data = $this->payments->generateReceipt($payment);
+            $this->payments->generateReceipt($payment);
         } catch (ValidationException $exception) {
             return redirect()->route('payments.show', $payment)
                 ->with('error', $exception->errors()['payment'][0] ?? 'No se pudo generar la constancia.');
         }
 
-        return view('payments.receipt', $data);
+        $hasPdf = $payment->constancia_ruta
+            && str_ends_with(strtolower($payment->constancia_ruta), '.pdf')
+            && $this->receiptPdf->exists($payment->constancia_ruta);
+
+        if (! $hasPdf) {
+            $payment->constancia_ruta = $this->receiptPdf->generate($payment);
+            $payment->save();
+        }
+
+        $storagePath = preg_replace('#^storage/#', '', $payment->constancia_ruta);
+
+        return Storage::disk('public')->response(
+            $storagePath,
+            basename($storagePath),
+            ['Content-Type' => 'application/pdf']
+        );
     }
 
     /**
