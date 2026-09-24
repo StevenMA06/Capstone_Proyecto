@@ -10,6 +10,7 @@
     @include('layouts.session-monitor')
     @stack('styles')
     <link rel="stylesheet" href="{{ asset('css/record-tables.css') }}?v=1">
+    <script src="{{ asset('js/validation-es.js') }}?v=1" defer></script>
 </head>
 <body class="workspace-shell">
 <a class="skip-content" href="#module-content">Ir al contenido</a>

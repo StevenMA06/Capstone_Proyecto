@@ -19,6 +19,26 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash(['code']);
+        $exceptions->respond(function ($response) {
+            if ($response instanceof \Illuminate\Http\JsonResponse) {
+                $messages = [
+                    401 => 'Debes iniciar sesión.',
+                    403 => 'No tienes permiso para realizar esta acción.',
+                    404 => 'No se encontró el recurso solicitado.',
+                    405 => 'Esta acción no está permitida.',
+                    419 => 'La sesión ha vencido. Recarga la página e inicia sesión nuevamente.',
+                    429 => 'Demasiadas solicitudes. Espera un momento e inténtalo nuevamente.',
+                    500 => 'Ocurrió un error en el servidor. Inténtalo nuevamente más tarde.',
+                    503 => 'El servicio no está disponible temporalmente.',
+                ];
+                if (isset($messages[$response->getStatusCode()]) && ! config('app.debug')) {
+                    $data = $response->getData(true);
+                    $data['message'] = $messages[$response->getStatusCode()];
+                    $response->setData($data);
+                }
+            }
+            return $response;
+        });
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

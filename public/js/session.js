@@ -9,7 +9,7 @@
                 window.location.replace(script.dataset.login);
                 return;
             }
-            if (!response.ok) throw new Error('Session check unavailable');
+            if (!response.ok) throw new Error('No se pudo comprobar la sesión');
             const data = await response.json();
             timer = setTimeout(check, Math.max(1, data.remaining) * 1000 + 500);
         } catch {

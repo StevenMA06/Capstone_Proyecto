@@ -22,8 +22,8 @@ class SaveEmployeeRequest extends FormRequest
             'nombres' => ['required', 'string', 'max:100'],
             'apellidos' => ['required', 'string', 'max:120'],
             'cargo' => ['required', 'string', Rule::in(Employee::POSITIONS)],
-            'correo' => ['nullable', 'email', 'max:150', Rule::unique('empleados')->ignore($this->route('employee'))],
-            'telefono' => ['nullable', 'string', 'max:25', 'regex:/^[0-9+() -]+$/'],
+            'correo' => ['required', 'email', 'max:150', Rule::unique('empleados')->ignore($this->route('employee'))],
+            'telefono' => ['required', 'string', 'max:25', 'regex:/^[0-9+() -]+$/'],
             'fecha_ingreso' => ['required', 'date_format:Y-m-d', 'after_or_equal:1000-01-01'],
             'fecha_cese' => ['required', 'date_format:Y-m-d', 'after_or_equal:fecha_ingreso'],
         ];

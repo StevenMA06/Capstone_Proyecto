@@ -8,6 +8,7 @@
     <script src="{{ asset('js/login.js') }}" defer></script>
     @include('layouts.session-monitor')
     @stack('styles')
+    <script src="{{ asset('js/validation-es.js') }}?v=1" defer></script>
 </head>
 <body class="@yield('body-class')">
     <div class="page-decoration" aria-hidden="true"></div>
