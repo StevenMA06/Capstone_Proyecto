@@ -1,7 +1,6 @@
 @extends('users.layout')
 @section('management-content')
 <h2>{{ $account->exists ? 'Editar cuenta' : 'Registrar cuenta' }}</h2>
-<p class="muted">Los campos marcados con * son obligatorios.</p>
 <form class="account-form" method="POST" action="{{ $account->exists ? route('users.update', $account) : route('users.store') }}">
     @csrf
     @if($account->exists) @method('PUT') @endif
