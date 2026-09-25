@@ -6,7 +6,9 @@ use App\Repositories\ContractPeriodRepository;
 use App\Repositories\ContractRepository;
 use App\Repositories\PaymentRepository;
 use App\Repositories\PlanRepository;
+use App\Repositories\SaleRepository;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +23,8 @@ class ContractService
         private PlanRepository $plans,
         private ContractSignatureVerifier $signatures,
         private ContractPeriodRepository $periods,
-        private PaymentRepository $payments
+        private PaymentRepository $payments,
+        private SaleRepository $sales
     ) {}
 
     public function search(array $filters)
@@ -162,10 +165,12 @@ class ContractService
                     $this->periods->cancel($period, $reason, 'MANUAL', $userId);
                     $attributes['estado'] = 'CANCELADO';
                     $attributes['periodo_actual'] = $period->getKey();
+                    $this->sales->annul($id);
                     $feedback = ['message' => 'El contrato se canceló correctamente.', 'kind' => 'cancelled'];
                 }
                 if ($termsChanged && in_array($current->estado, ['ACTIVO', 'PENDIENTE'], true) && ($current->estado === 'ACTIVO' || $current->pdf_contrato_ruta)) {
                     $attributes += ['estado' => 'PENDIENTE', 'firma_revision' => null, 'firma_validada_en' => null];
+                    $this->sales->annul($id);
                     $oldPath = $current->pdf_contrato_ruta;
                     $attributes['pdf_contrato_ruta'] = null;
                     $feedback = ['message' => 'Contrato actualizado. Debes subir el documento con los nuevos datos para activarlo.', 'kind' => 'pending'];
@@ -192,6 +197,9 @@ class ContractService
                         'firma_revision' => $signed ? 'VERIFICADA' : 'SIN_FIRMA',
                         'firma_validada_en' => $signed ? now() : null,
                     ]);
+                    if ($signed) {
+                        $this->sales->confirm($this->contracts->find($id));
+                    }
 
                     // Si el contrato pasa a ACTIVO, crear período inicial y generar pagos
                     if ($newState === 'ACTIVO' && $current->estado !== 'ACTIVO') {
@@ -274,9 +282,8 @@ class ContractService
 
     /**
      * Activar un contrato: crear período inicial y generar pagos automáticamente
-     * @param int $contractId
-     * @param int $userId ID del usuario que activa (para registrar en pagos)
-     * @return void
+     *
+     * @param  int  $userId  ID del usuario que activa (para registrar en pagos)
      */
     private function activateContractWithPayments(int $contractId, int $userId): void
     {
@@ -302,8 +309,7 @@ class ContractService
     /**
      * Generar pagos para un contrato específico
      * Útil para regenerar pagos o generar pagos de contratos antiguos
-     * @param int $contractId
-     * @param int $userId
+     *
      * @return int Cantidad de pagos generados
      */
     public function generatePaymentsForContract(int $contractId, int $userId): int
@@ -324,9 +330,9 @@ class ContractService
     /**
      * Reactivar un contrato cancelado
      * Conserva el historial anterior y crea un nuevo período contractual
-     * @param int $contractId
-     * @param array $data Debe contener: fecha_inicio, duracion_meses
-     * @param int $userId ID del usuario que reactiva
+     *
+     * @param  array  $data  Debe contener: fecha_inicio, duracion_meses
+     * @param  int  $userId  ID del usuario que reactiva
      * @return array Feedback con mensaje y tipo
      */
     public function reactivate(int $contractId, array $data, int $userId): array
@@ -425,6 +431,7 @@ class ContractService
                 $this->contracts->find($contractId),
                 $userId
             );
+            $this->sales->confirm($this->contracts->find($contractId));
 
             return [
                 'message' => sprintf(
@@ -441,8 +448,6 @@ class ContractService
 
     /**
      * Obtener datos para el formulario de reactivación
-     * @param int $contractId
-     * @return array
      */
     public function reactivationFormData(int $contractId): array
     {
@@ -472,7 +477,8 @@ class ContractService
 
     /**
      * Obtener contratos cancelados disponibles para reactivación
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     *
+     * @return LengthAwarePaginator
      */
     public function getCancelledContracts()
     {

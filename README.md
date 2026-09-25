@@ -101,7 +101,7 @@ Cuando se habilita `ACCESS_TWO_FACTOR_ENABLED=true`, el inicio de sesión exige 
 | RF-ACC-17 a RF-ACC-19 | Cierre de sesión con retorno al login y expiración por inactividad, aplicada en servidor y comprobada desde el navegador. |
 | RF-ACC-20 a RF-ACC-26 | Historial exclusivo de Administrador y Gerente con usuario, fecha, hora y resultado, búsqueda por usuario, filtros combinables de fecha y resultado, y paginación. Incluye rechazos de credenciales y códigos. |
 
-Administrador y Gerente acceden a todos los módulos implementados. Usuario de oficina accede a clientes, planes, contratos y pagos. Técnico accede únicamente a su panel, con instalaciones asignadas y evidencias. Las rutas aplican los mismos permisos que el menú.
+Administrador y Gerente acceden a todos los módulos implementados. Usuario de oficina accede a clientes, planes, contratos, ventas y pagos. Técnico accede únicamente a su panel, con instalaciones asignadas y evidencias. Las rutas aplican los mismos permisos que el menú.
 
 El código dura **5 minutos** (`ACCESS_CODE_MINUTES`, entre 1 y 10). Se permiten **5 intentos por código**, un reenvío cada **60 segundos** y un máximo de **5 envíos por usuario en 15 minutos**. La solicitud de acceso dura como máximo 15 minutos; después se vuelven a pedir las credenciales. Un error del transporte invalida el código emitido y mantiene bloqueado el acceso. Los códigos no se guardan en texto plano ni se muestran en la pantalla o en logs.
 
@@ -166,7 +166,7 @@ Se mantiene el flujo Blade → ClientController / StoreClientRequest → ClientS
 
 El dashboard es la primera vista después de iniciar sesión para administración, gerencia y oficina, incluso si antes se intentó abrir otra URL protegida. El técnico es redirigido a su panel técnico. La raíz de la aplicación lleva al dashboard cuando hay sesión y al login para invitados.
 
-Administrador y Gerente tienen siete ítems: clientes registrados (incluidos inactivos), contratos ACTIVO, pagos PENDIENTE o VENCIDO, instalaciones EN_PROCESO, tarjetas de Equipos y Materiales, y ventas de seis meses. Las cuatro primeras tarjetas abren sus interfaces. Equipos y Materiales abren modales con nombre, stock actual a la derecha y un enlace a su interfaz de consulta. Las interfaces de pagos, instalaciones e inventario general son consultas paginadas. Contratos incluye registro básico con planes activos. Oficina puede consultar planes, contratos y pagos; instalaciones e inventario general están restringidos a Administrador y Gerente.
+Administrador y Gerente tienen siete ítems: clientes registrados (incluidos inactivos), contratos ACTIVO, pagos PENDIENTE o VENCIDO, instalaciones EN_PROCESO, tarjetas de Equipos y Materiales, y ventas de seis meses. Las cuatro primeras tarjetas abren sus interfaces. Equipos y Materiales abren modales con nombre, stock actual a la derecha y un enlace a su interfaz de consulta. Las interfaces de ventas, pagos, instalaciones e inventario general son consultas paginadas. Contratos incluye registro básico con planes activos. Oficina puede consultar planes, contratos, ventas y pagos; instalaciones e inventario general están restringidos a Administrador y Gerente.
 
 Cada equipo es una unidad individual. El stock se agrupa por nombre, tipo, marca y modelo y cuenta solo unidades DISPONIBLE; los grupos con unidades asignadas o en mantenimiento siguen visibles con cero disponibles. Los inactivos se excluyen. El mínimo por grupo se configura con `EQUIPMENT_MINIMUM_STOCK` en el `.env` local (por defecto 1). Los materiales usan sus campos `stock_actual`, `stock_minimo` y `unidad_medida`, manteniendo hasta tres decimales. Las tarjetas y filas avisan cuando el stock es igual o inferior al mínimo. Los modales se cierran con el botón, Escape o clic fuera; el foco vuelve a la tarjeta.
 
@@ -207,7 +207,7 @@ Se incluyen código fuente, SQL del esquema y `composer.lock`. `.env`, dependenc
 | --- | --- |
 | Administrador | Todos los módulos; administra las cuentas owner. |
 | Gerente | Todos los módulos; no puede modificar credenciales ni asignar el rol Administrador. |
-| Usuario de oficina | Clientes, planes de servicio, contratos y pagos. |
+| Usuario de oficina | Clientes, planes de servicio, contratos, ventas y pagos. |
 | Técnico | Panel técnico: únicamente instalaciones asignadas a su empleado y sus evidencias. |
 
 La cuenta Administrador no se puede eliminar, inhabilitar ni degradar de rol. No existe eliminación de cuentas desde la interfaz. Al cambiar credenciales o permisos se revocan sesiones. Se conserva la protección de la última cuenta con acceso administrativo.
@@ -248,7 +248,7 @@ Administrador y Gerente registran, editan, activan e inhabilitan planes desde **
 
 El número de plan se genera automáticamente con formato `PLAN-000001` y no se puede editar. Un contador transaccional evita duplicados entre registros simultáneos y omite números ya existentes. Se conservan los números anteriores y los de planes inactivos. El precio mensual debe ser positivo, con máximo dos decimales; la velocidad es opcional y, si se indica, debe ser un entero positivo. Descripción y condiciones son opcionales, con ancho limitado a su columna y redimensionamiento solo vertical.
 
-Para RF-PLA-10 se incluye **Contratos → Registrar contrato**, disponible para administración, gerencia y oficina. Requiere cliente, plan, zona y empleado responsable activos, código único, fecha de inicio, duración y dirección de servicio. Guarda estado PENDIENTE, calcula la fecha final como inicio + duración en meses (sin desbordamiento de mes) − un día y toma el precio vigente del plan en el servidor. Los cambios posteriores del plan no modifican el precio ya contratado. No genera ventas, cobros ni documentos; esas acciones quedan para sus historias específicas. Si faltan planes, clientes, zonas o empleados activos, el formulario lo indica.
+Para RF-PLA-10 se incluye **Contratos → Registrar contrato**, disponible para administración, gerencia y oficina. Requiere cliente, plan, zona y empleado responsable activos, código único, fecha de inicio, duración y dirección de servicio. Guarda estado PENDIENTE, calcula la fecha final como inicio + duración en meses (sin desbordamiento de mes) − un día y toma el precio vigente del plan en el servidor. Los cambios posteriores del plan no modifican el precio ya contratado. El registro inicial todavía no genera una venta; esta se crea al confirmar automáticamente el contrato firmado. Si faltan planes, clientes, zonas o empleados activos, el formulario lo indica.
 
 La numeración automática requiere ejecutar `php artisan migrate` para crear e inicializar `secuencias_sistema`. `PlanManagementTest` y `PlanNumberAndTimezoneTest` comprueban registro, validación, numeración, ficha, edición, conservación histórica, estados, búsqueda, paginación, permisos y selección/rechazo de planes inactivos en contratos. Las pruebas y la revisión visual usan datos sintéticos en bases aisladas.
 
@@ -336,3 +336,11 @@ La integración está probada con respuestas HTTP simuladas, incluyendo destinat
 Un contrato `ACTIVO` pasa a `FINALIZADO` desde las 00:00 del día siguiente a `fecha_fin`, según la zona horaria `America/Lima`. Los contratos `PENDIENTE` y `CANCELADO` no cambian. La finalización ya no se selecciona manualmente en el formulario; la baja anticipada continúa usando `CANCELADO`.
 
 La tarea `contracts:finalize` se ejecuta cada minuto mediante el programador de Laravel. En desarrollo, mantén `php artisan schedule:work` abierto; en un servidor, programa `php artisan schedule:run` cada minuto. Si el programador no está activo, la siguiente solicitud web también procesa los contratos vencidos. Puedes verificar la tarea con `php artisan schedule:list` o ejecutarla manualmente con `php artisan contracts:finalize`. Este cambio no requiere migración de base de datos.
+
+## Gestión de ventas: RF-VEN-01 a RF-VEN-19
+
+El menú **Ventas** está disponible para Administrador, Gerente y Usuario de oficina. Al detectar la firma del cliente y activar el contrato, se registra una sola venta por contrato en la tabla existente `ventas`. La fecha de venta es el momento de la confirmación; el monto es el **precio mensual contratado** y el responsable es el empleado asignado al contrato. Si se cancela el contrato o se modifican sus condiciones y vuelve a quedar pendiente de firma, la venta pasa a ANULADA. Una nueva confirmación actualiza ese mismo registro a CONFIRMADA. La finalización por vencimiento conserva la venta confirmada.
+
+El panel permite combinar cliente, fechas, estado de venta y empleado, muestra cantidad y monto acumulado, gráficos por empleado, período y estado, y un listado paginado con enlaces al detalle y PDF del contrato. Los segmentos y la leyenda del gráfico circular activan o desactivan estados; **Restablecer** limpia los filtros. Los gráficos y el listado se calculan con los mismos filtros, excepto que el gráfico circular conserva ambos estados para poder volver a seleccionarlos.
+
+Después de actualizar el proyecto, ejecuta `php artisan migrate`. La migración de ventas recupera los contratos ya verificados que tengan fecha de validación y todavía no tengan venta; no cambia la estructura de la base. `SaleManagementTest` y `ContractSignatureTest` comprueban filtros, permisos, creación automática y anulación.
