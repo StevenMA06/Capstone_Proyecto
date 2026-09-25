@@ -8,7 +8,7 @@
             @method('PUT')
         @endif
         
-        <h2>{{ $material->exists ? 'Editar material' : 'Registrar nuevo material' }}</h2>
+        <h2>{{ $material->exists ? 'Editar material' : 'Registrar nuevo material' }}</h2><p class="form-intro">Completa los campos marcados con *. Los demás son opcionales.</p>
         
         @if($material->exists)
         <div class="alert alert-info" style="background: #e0f2fe; border-left: 4px solid #0284c7; padding: 0.75rem 1rem; margin-bottom: 1.5rem; border-radius: 4px;">
@@ -16,7 +16,7 @@
         </div>
         @endif
         
-        <!-- Fila 1: Código, Nombre, Unidad -->
+        <div class="inventory-grid"><section class="inventory-card"><h3><span>01</span> Información del material</h3>
         <div class="form-row" style="grid-template-columns: 1fr 2fr 1fr;">
             <div class="form-group">
                 <label for="codigo">Código *</label>
@@ -37,19 +37,19 @@
             </div>
         </div>
         
-        <!-- Fila 2: Descripción (ancho completo) -->
+        <div style="height:20px" aria-hidden="true"></div>
         <div class="form-group">
             <label for="descripcion">Descripción</label>
             <textarea id="descripcion" name="descripcion" rows="2" maxlength="500" placeholder="Descripción detallada del material...">{{ old('descripcion', $material->descripcion) }}</textarea>
             @error('descripcion')<span class="error-message">{{ $message }}</span>@enderror
         </div>
         
-        <!-- Fila 3: Stock inicial/mínimo, Estado -->
-        <div class="form-row" style="grid-template-columns: {{ !$material->exists ? '1fr 1fr 1fr' : '1fr 1fr' }};">
+        </section><section class="inventory-card"><h3><span>02</span> Control de inventario</h3>
+        <div class="form-row" style="grid-template-columns: 1fr;">
             @if(!$material->exists)
             <div class="form-group">
                 <label for="stock_actual">Stock inicial *</label>
-                <input type="number" step="0.001" id="stock_actual" name="stock_actual" value="{{ old('stock_actual', 0) }}" required min="0">
+                <input type="number" step="0.001" id="stock_actual" name="stock_actual" value="{{ old('stock_actual', 0) }}" required min="0" max="999999999.999">
                 <small>Genera ENTRADA si > 0</small>
                 @error('stock_actual')<span class="error-message">{{ $message }}</span>@enderror
             </div>
@@ -57,7 +57,7 @@
             
             <div class="form-group">
                 <label for="stock_minimo">Stock mínimo *</label>
-                <input type="number" step="0.001" id="stock_minimo" name="stock_minimo" value="{{ old('stock_minimo', $material->stock_minimo) }}" required min="0">
+                <input type="number" step="0.001" id="stock_minimo" name="stock_minimo" value="{{ old('stock_minimo', $material->stock_minimo) }}" required min="0" max="999999999.999">
                 <small>Para alertas</small>
                 @error('stock_minimo')<span class="error-message">{{ $message }}</span>@enderror
             </div>
@@ -76,7 +76,7 @@
             </div>
         </div>
         
-        <div class="form-actions">
+        </section></div><div class="form-actions">
             <button type="submit" class="action-link">{{ $material->exists ? 'Actualizar material' : 'Registrar material' }}</button>
             <a href="{{ $material->exists ? route('materials.show', $material) : route('materials.index') }}" class="clear-link">Cancelar</a>
         </div>

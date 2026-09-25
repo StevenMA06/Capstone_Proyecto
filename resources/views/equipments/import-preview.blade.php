@@ -1,7 +1,7 @@
 @extends('equipments.layout')
 @section('equipments-content')
 <div class="form-layout">
-<div class="standard-form">
+<div class="standard-form inventory-card">
     <h2>Vista previa de importación</h2>
     <p class="muted">Archivo: <strong>{{ $fileName }}</strong></p>
     

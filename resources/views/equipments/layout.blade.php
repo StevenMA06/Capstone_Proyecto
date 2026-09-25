@@ -1,8 +1,9 @@
 @extends('layouts.management')
 @section('title', 'Gestión de equipos')
 @push('styles')<link rel="stylesheet" href="{{ asset('css/toast.css') }}?v=1">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/inventory.css') }}?v=2"><script src="{{ asset('js/inventory.js') }}?v=1" defer></script>@endpush
 @section('workspace-content')
-<section class="management record-tables clients-management">
+<section class="management record-tables clients-management inventory-management">
     <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><a href="{{ route('dashboard') }}">Inicio</a><span aria-hidden="true">/</span><span>Gestión de equipos</span></nav>
     <header class="module-heading">
         <span class="eyebrow">INVENTARIO DE EQUIPOS</span>

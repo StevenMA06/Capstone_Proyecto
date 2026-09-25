@@ -3,7 +3,7 @@
 <div class="client-detail">
     <div class="detail-header">
         <div><h2>{{ $equipment->nombre }}</h2><p class="muted">Código: {{ $equipment->codigo }} @if($equipment->numero_serie) | Serie: {{ $equipment->numero_serie }}@endif</p></div>
-        <div class="detail-actions">
+        <div class="detail-actions"><a class="clear-link" href="{{ route('equipments.index') }}">Volver al listado</a>
             @if($equipment->estado !== 'ASIGNADO')<a href="{{ route('equipments.edit', $equipment) }}" class="action-link">Editar</a>@endif
             @if($equipment->estado !== 'INACTIVO' && $equipment->estado !== 'ASIGNADO')<form method="POST" action="{{ route('equipments.deactivate', $equipment) }}" style="display:inline;" onsubmit="return confirm('¿Inhabilitar este equipo?');"> @csrf @method('DELETE') <button type="submit" class="clear-link" style="cursor:pointer;">Inhabilitar</button></form>@endif
             <a href="{{ route('equipments.kardex', $equipment) }}" class="action-link">Ver Kardex</a>
@@ -19,7 +19,7 @@
     <div class="detail-card"><h3>Historial de movimientos Kardex ({{ $movements->total() }})</h3>
         @if($movements->count() > 0)
         <div class="table-scroll"><table class="users-table"><thead><tr><th>Fecha</th><th>Movimiento</th><th>Cantidad</th><th>Responsable</th><th>Observación</th></tr></thead><tbody>
-        @foreach($movements as $movement)<tr><td>{{ $movement->fecha_movimiento->format('d/m/Y H:i') }}</td><td><strong>{{ $movement->tipo_movimiento }}</strong></td><td>{{ $movement->cantidad }}</td><td>{{ $movement->responsible->nombre_completo ?? '—' }}</td><td>{{ $movement->observacion ?? '—' }}</td></tr>@endforeach
+        @foreach($movements as $movement)<tr><td>{{ $movement->fecha_movimiento->format('d/m/Y H:i') }}</td><td><strong>{{ $movement->tipo_movimiento }}</strong></td><td>{{ \App\Support\InventoryQuantity::format($movement->cantidad) }}</td><td>{{ $movement->responsible->nombre_completo ?? '—' }}</td><td>{{ $movement->observacion ?? '—' }}</td></tr>@endforeach
         </tbody></table></div>
         @if($movements->hasPages()) @include('clients.pagination', ['records' => $movements, 'label' => 'Paginación de movimientos']) @endif
         @else

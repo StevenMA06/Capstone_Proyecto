@@ -28,8 +28,8 @@ class StoreMaterialRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:120'],
             'descripcion' => ['nullable', 'string', 'max:500'],
             'unidad_medida' => ['required', 'string', 'max:30'],
-            'stock_actual' => ['required', 'numeric', 'min:0', 'max:999999999.999'],
-            'stock_minimo' => ['required', 'numeric', 'min:0', 'max:999999999.999'],
+            'stock_actual' => ['required', 'numeric', 'decimal:0,3', 'min:0', 'max:999999999.999'],
+            'stock_minimo' => ['required', 'numeric', 'decimal:0,3', 'min:0', 'max:999999999.999'],
             'estado' => ['required', Rule::in(['ACTIVO', 'INACTIVO'])],
         ];
     }
@@ -52,6 +52,7 @@ class StoreMaterialRequest extends FormRequest
             'string' => 'El campo :attribute debe ser texto.',
             'max' => 'El campo :attribute admite hasta :max caracteres.',
             'unique' => 'Este :attribute ya está registrado.',
+            'decimal' => 'El campo :attribute admite hasta 3 decimales.',
             'numeric' => 'El campo :attribute debe ser numérico.',
             'min' => 'El campo :attribute debe ser mayor o igual a :min.',
             'max' => 'El campo :attribute no puede exceder :max.',

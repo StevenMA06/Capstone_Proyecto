@@ -100,13 +100,13 @@
                         <td>{{ $m->unidad_medida }}</td>
                         <td>
                             <strong style="color: {{ $m->isLowStock() ? '#dc2626' : '#059669' }};">
-                                {{ number_format($m->stock_actual, 2) }}
+                                {{ \App\Support\InventoryQuantity::format($m->stock_actual) }}
                             </strong>
                             @if($m->isLowStock())
                             <small class="table-subtitle" style="color: #dc2626;">⚠ Bajo</small>
                             @endif
                         </td>
-                        <td>{{ number_format($m->stock_minimo, 2) }}</td>
+                        <td>{{ \App\Support\InventoryQuantity::format($m->stock_minimo) }}</td>
                         <td>
                             <span class="state {{ $m->estado === 'ACTIVO' ? 'active' : 'inactive' }}">
                                 {{ ucfirst(strtolower($m->estado)) }}

@@ -1,0 +1,51 @@
+.workspace-shell .workspace-main > .inventory-management { max-width: none; }
+.inventory-management { --inv-border: #dfe8e3; --inv-muted: #657a70; }
+.inventory-management .form-layout, .inventory-management .standard-form { width: 100%; max-width: none; margin: 0; }
+.inventory-management .standard-form, .inventory-management .client-detail { display: grid; gap: 22px; }
+.inventory-management .standard-form > h2 { margin: 0; }
+.inventory-management .form-intro { margin: -12px 0 0; color: var(--inv-muted); font-size: 13px; }
+.inventory-management .inventory-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 20px; align-items: start; }
+.inventory-management .inventory-card, .inventory-management .detail-card { min-width: 0; padding: 24px; border: 1px solid var(--inv-border); border-radius: 16px; background: #fff; box-shadow: 0 3px 12px #173d3004; }
+.inventory-management .inventory-card h3, .inventory-management .detail-card h3 { margin: 0 0 20px; font-size: 16px; }
+.inventory-management .inventory-card h3 span { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-right: 8px; border-radius: 8px; background: #eaf4ee; color: #147448; font-size: 12px; }
+.inventory-management .inventory-card > p { color: var(--inv-muted); font-size: 13px; line-height: 1.7; }
+.inventory-management .form-row { display: grid; gap: 18px; align-items: start; }
+.inventory-management .form-row + .form-row { margin-top: 20px; }
+.inventory-management .form-group { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.inventory-management .inventory-card > .form-group + .form-group { margin-top: 20px; }
+.inventory-management .form-group label { font-size: 13px; font-weight: 600; color: #304e40; }
+.inventory-management .form-group :is(input, select, textarea) { box-sizing: border-box; width: 100%; min-width: 0; margin: 0; padding: 12px 13px; border: 1px solid #cbdad1; border-radius: 9px; background: #fbfdfc; color: #243b33; font: inherit; font-size: 14px; }
+.inventory-management .form-group textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
+.inventory-management :is(input, select, textarea):focus-visible { outline: 3px solid #16834d25; border-color: #16834d; }
+.inventory-management .form-group :is(input, select):is(:disabled, [readonly]) { background: #eef2ef; color: #657a70; }
+.inventory-management .form-group small { color: var(--inv-muted); font-size: 12px; line-height: 1.5; }
+.inventory-management .form-group:has(.error-message) :is(input, select, textarea), .inventory-management [aria-invalid="true"] { border-color: #c34444; }
+.inventory-management .error-message { color: #b42332; font-size: 12px; line-height: 1.5; }
+.inventory-management .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 18px 22px; background: #fff; border: 1px solid var(--inv-border); border-radius: 12px; }
+.inventory-management .clear-link { display: inline-flex; align-items: center; justify-content: center; border: 1px solid #cedbd3; border-radius: 8px; padding: 11px 16px; background: #fff; text-decoration: none; font: inherit; font-size: 13px; cursor: pointer; }
+.inventory-management .action-link { border-radius: 8px; font-size: 13px; }
+.inventory-management .filter-buttons { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.inventory-management .filter-buttons > :is(button, a) { margin: 0; width: 100%; box-sizing: border-box; }
+.inventory-management .detail-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; padding: 24px; border: 1px solid var(--inv-border); border-left: 4px solid #16834d; border-radius: 14px; background: #fff; }
+.inventory-management .detail-header h2 { margin: 0 0 8px; overflow-wrap: anywhere; }
+.inventory-management .detail-header p { margin: 0; font-size: 13px; }
+.inventory-management .detail-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.inventory-management .detail-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 20px; }
+.inventory-management .detail-card dl { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(0, 2fr); margin: 0; }
+.inventory-management .detail-card dt, .inventory-management .detail-card dd { margin: 0; padding: 13px 0; border-bottom: 1px solid #edf2ef; font-size: 14px; overflow-wrap: anywhere; }
+.inventory-management .detail-card dt { color: var(--inv-muted); padding-right: 12px; }
+.inventory-management .detail-card dd { font-weight: 500; white-space: pre-line; }
+.inventory-management .detail-card .muted { padding: 24px; background: #f5f8f6; border-radius: 10px; }
+.inventory-management .inventory-note { padding: 15px 18px; border: 1px solid #d5e8dc; border-radius: 10px; background: #edf7f1; color: #35634a; font-size: 13px; line-height: 1.6; }
+.inventory-management .inventory-card ol { padding-left: 20px; color: var(--inv-muted); font-size: 14px; line-height: 2; }
+.inventory-management input[type=file] { padding: 26px 16px; border-style: dashed; background: #f3f8f5; }
+.inventory-management input::file-selector-button { padding: 9px 12px; margin-right: 12px; border: 1px solid #cbdad1; border-radius: 6px; background: white; color: #17643e; cursor: pointer; }
+.inventory-management .stock-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; padding: 18px; margin: 16px 0; background: #edf7f1; border-radius: 12px; }
+.inventory-management .stock-summary strong { font-size: 28px; font-variant-numeric: tabular-nums; }
+.inventory-management .table-scroll { max-width: 100%; }
+.inventory-management .movement-badge { display: inline-block; padding: 6px 9px; border-radius: 6px; background: #edf2f6; color: #40576c; font-size: 11px; white-space: nowrap; }
+.inventory-management .movement-ENTRADA, .inventory-management .movement-DEVOLUCION { background: #e7f5ed; color: #17643e; }
+.inventory-management .movement-SALIDA, .inventory-management .movement-CONSUMO { background: #fff1e5; color: #965313; }
+.inventory-management .movement-AJUSTE { background: #f2ebfa; color: #7543a0; }
+@media (max-width: 1100px) { .inventory-management .inventory-grid, .inventory-management .detail-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 650px) { .inventory-management .form-row { grid-template-columns: minmax(0, 1fr) !important; } .inventory-management .inventory-card, .inventory-management .detail-card, .inventory-management .detail-header { padding: 18px; } .inventory-management .detail-card dl { grid-template-columns: minmax(90px, 1fr) minmax(0, 1.5fr); } .inventory-management .form-actions > * { flex: 1; } }

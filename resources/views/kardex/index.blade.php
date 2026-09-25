@@ -1,6 +1,7 @@
 @extends('kardex.layout')
 
 @section('kardex-content')
+@if($errors->any())<div class="notice error-summary" role="alert"><strong>Revisa los filtros:</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 <div class="clients-grid">
     <!-- Panel de Filtros -->
     <aside class="client-filter-panel">
@@ -8,7 +9,7 @@
         <form class="filters client-filters" method="GET" action="{{ route('kardex.index') }}">
             <div>
                 <label for="search">Código o nombre</label>
-                <input id="search" name="search" value="{{ request('search') }}" placeholder="Buscar…">
+                <input id="search" name="search" maxlength="180" value="{{ request('search') }}" placeholder="Buscar…">
             </div>
 
             <fieldset>
@@ -90,13 +91,13 @@
                     @forelse($movements as $m)
                     <tr>
                         <td>{{ $m->fecha_movimiento->format('d/m/Y H:i') }}</td>
-                        <td><strong>{{ $m->tipo_movimiento }}</strong></td>
+                        <td><span class="movement-badge movement-{{ $m->tipo_movimiento }}">{{ $m->tipo_movimiento }}</span></td>
                         <td>{{ $m->item_type }}</td>
                         <td>{{ $m->item_name ?? '—' }}</td>
                         <td>{{ $m->item_code ?? '—' }}</td>
-                        <td>{{ number_format($m->cantidad, 3) }}</td>
-                        <td>{{ $m->cantidad_anterior !== null ? number_format($m->cantidad_anterior, 3) : '—' }}</td>
-                        <td>{{ $m->cantidad_posterior !== null ? number_format($m->cantidad_posterior, 3) : '—' }}</td>
+                        <td>{{ \App\Support\InventoryQuantity::format($m->cantidad) }}</td>
+                        <td>{{ $m->cantidad_anterior !== null ? \App\Support\InventoryQuantity::format($m->cantidad_anterior) : '—' }}</td>
+                        <td>{{ $m->cantidad_posterior !== null ? \App\Support\InventoryQuantity::format($m->cantidad_posterior) : '—' }}</td>
                         <td>{{ $m->responsible->nombre_completo ?? '—' }}</td>
                     </tr>
                     @empty

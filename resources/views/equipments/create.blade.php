@@ -8,10 +8,10 @@
             @method('PUT')
         @endif
         
-        <h2>{{ $equipment->exists ? 'Editar equipo' : 'Registrar nuevo equipo' }}</h2>
+        <h2>{{ $equipment->exists ? 'Editar equipo' : 'Registrar nuevo equipo' }}</h2><p class="form-intro">Completa los campos marcados con *. Los demás son opcionales.</p>
         
-        <!-- Fila 1: Código, Número Serie, Nombre -->
-        <div class="form-row" style="grid-template-columns: 1fr 1fr 2fr;">
+        <div class="inventory-grid"><section class="inventory-card"><h3><span>01</span> Identificación del equipo</h3>
+        <div class="form-row" style="grid-template-columns: 1fr 1fr;">
             <div class="form-group">
                 <label for="codigo">Código *</label>
                 <input type="text" id="codigo" name="codigo" value="{{ old('codigo', $equipment->codigo) }}" required maxlength="60" @if($equipment->estado === 'ASIGNADO') readonly @endif>
@@ -24,7 +24,7 @@
                 @error('numero_serie')<span class="error-message">{{ $message }}</span>@enderror
             </div>
             
-            <div class="form-group">
+            <div class="form-group" style="grid-column: 1 / -1;">
                 <label for="nombre">Nombre del equipo *</label>
                 <input type="text" id="nombre" name="nombre" value="{{ old('nombre', $equipment->nombre) }}" required maxlength="120">
                 @error('nombre')<span class="error-message">{{ $message }}</span>@enderror
@@ -52,8 +52,8 @@
             </div>
         </div>
         
-        <!-- Fila 3: Condición, Estado, Observaciones -->
-        <div class="form-row" style="grid-template-columns: 1fr 1fr 2fr;">
+        </section><section class="inventory-card"><h3><span>02</span> Estado y condición</h3>
+        <div class="form-row" style="grid-template-columns: 1fr 1fr;">
             <div class="form-group">
                 <label for="condicion">Condición *</label>
                 <select id="condicion" name="condicion" required>
@@ -78,14 +78,14 @@
                 @error('estado')<span class="error-message">{{ $message }}</span>@enderror
             </div>
             
-            <div class="form-group">
+            <div class="form-group" style="grid-column: 1 / -1;">
                 <label for="observaciones">Observaciones</label>
                 <textarea id="observaciones" name="observaciones" rows="2" maxlength="500" placeholder="Notas adicionales...">{{ old('observaciones', $equipment->observaciones) }}</textarea>
                 @error('observaciones')<span class="error-message">{{ $message }}</span>@enderror
             </div>
         </div>
         
-        <div class="form-actions">
+        </section></div><div class="form-actions">
             <button type="submit" class="action-link">{{ $equipment->exists ? 'Actualizar equipo' : 'Registrar equipo' }}</button>
             <a href="{{ $equipment->exists ? route('equipments.show', $equipment) : route('equipments.index') }}" class="clear-link">Cancelar</a>
         </div>
