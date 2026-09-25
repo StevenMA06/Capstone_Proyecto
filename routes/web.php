@@ -7,6 +7,9 @@ use App\Http\Controllers\ContractController;
 use App\Http\Controllers\CoverageZoneController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EquipmentController;
+use App\Http\Controllers\KardexController;
+use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\OperationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlanController;
@@ -105,4 +108,48 @@ Route::middleware(['auth', 'can:manage-payments'])->group(function (): void {
     Route::patch('/payments/{payment}/reminders/{reminder}', [PaymentController::class, 'attendReminder'])->whereNumber(['payment', 'reminder'])->name('payments.reminders.attend');
     Route::get('/api/contracts/{contract}/amount', [PaymentController::class, 'getContractAmount'])->whereNumber('contract')->name('api.contracts.amount');
     Route::resource('payments', PaymentController::class)->except('destroy');
+});
+
+// ============================================
+// INVENTARIO: EQUIPOS, MATERIALES Y KARDEX
+// ============================================
+
+Route::middleware(['auth'])->group(function (): void {
+    // Gestión de Equipos
+    Route::get('/equipments', [EquipmentController::class, 'index'])->name('equipments.index');
+    Route::get('/equipments/create', [EquipmentController::class, 'create'])->name('equipments.create');
+    Route::post('/equipments', [EquipmentController::class, 'store'])->name('equipments.store');
+    Route::get('/equipments/{equipment}', [EquipmentController::class, 'show'])->whereNumber('equipment')->name('equipments.show');
+    Route::get('/equipments/{equipment}/edit', [EquipmentController::class, 'edit'])->whereNumber('equipment')->name('equipments.edit');
+    Route::put('/equipments/{equipment}', [EquipmentController::class, 'update'])->whereNumber('equipment')->name('equipments.update');
+    Route::delete('/equipments/{equipment}', [EquipmentController::class, 'deactivate'])->whereNumber('equipment')->name('equipments.deactivate');
+    Route::get('/equipments/{equipment}/kardex', [EquipmentController::class, 'kardex'])->whereNumber('equipment')->name('equipments.kardex');
+
+    // Importación masiva de Equipos
+    Route::get('/equipments/import/form', [EquipmentController::class, 'importForm'])->name('equipments.import');
+    Route::get('/equipments/import/template', [EquipmentController::class, 'downloadTemplate'])->name('equipments.template');
+    Route::post('/equipments/import/process', [EquipmentController::class, 'processImport'])->name('equipments.import.process');
+    Route::post('/equipments/import/confirm', [EquipmentController::class, 'confirmImport'])->name('equipments.import.confirm');
+    Route::post('/equipments/import/cancel', [EquipmentController::class, 'cancelImport'])->name('equipments.import.cancel');
+
+    // Gestión de Materiales
+    Route::get('/materials', [MaterialController::class, 'index'])->name('materials.index');
+    Route::get('/materials/create', [MaterialController::class, 'create'])->name('materials.create');
+    Route::post('/materials', [MaterialController::class, 'store'])->name('materials.store');
+    Route::get('/materials/{material}', [MaterialController::class, 'show'])->whereNumber('material')->name('materials.show');
+    Route::get('/materials/{material}/edit', [MaterialController::class, 'edit'])->whereNumber('material')->name('materials.edit');
+    Route::put('/materials/{material}', [MaterialController::class, 'update'])->whereNumber('material')->name('materials.update');
+    Route::delete('/materials/{material}', [MaterialController::class, 'deactivate'])->whereNumber('material')->name('materials.deactivate');
+    Route::get('/materials/{material}/kardex', [MaterialController::class, 'kardex'])->whereNumber('material')->name('materials.kardex');
+
+    // Operaciones de Stock de Materiales
+    Route::get('/materials/{material}/entry', [MaterialController::class, 'entryForm'])->whereNumber('material')->name('materials.entry');
+    Route::post('/materials/{material}/entry', [MaterialController::class, 'storeEntry'])->whereNumber('material')->name('materials.entry.store');
+    Route::get('/materials/{material}/exit', [MaterialController::class, 'exitForm'])->whereNumber('material')->name('materials.exit');
+    Route::post('/materials/{material}/exit', [MaterialController::class, 'storeExit'])->whereNumber('material')->name('materials.exit.store');
+    Route::get('/materials/{material}/adjustment', [MaterialController::class, 'adjustmentForm'])->whereNumber('material')->name('materials.adjustment');
+    Route::post('/materials/{material}/adjustment', [MaterialController::class, 'storeAdjustment'])->whereNumber('material')->name('materials.adjustment.store');
+
+    // Kardex de Inventario (consulta únicamente)
+    Route::get('/kardex', [KardexController::class, 'index'])->name('kardex.index');
 });

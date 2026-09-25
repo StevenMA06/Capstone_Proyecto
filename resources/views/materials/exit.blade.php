@@ -1,0 +1,7 @@
+@extends('materials.layout')
+@section('materials-content')
+<div class="form-layout"><form class="standard-form" method="POST" action="{{route('materials.exit.store',$material)}}">@csrf<h2>Registrar salida de material</h2><p class="muted">Material: <strong>{{$material->nombre}}</strong> ({{$material->codigo}})</p><p class="muted">Stock actual: <strong style="color:{{$material->isLowStock()?'#dc2626':'#059669'}};">{{number_format($material->stock_actual,3)}} {{$material->unidad_medida}}</strong>@if($material->isLowStock())<span style="color:#dc2626;"> ⚠ Nivel bajo</span>@endif</p>
+<div class="form-group"><label for="cantidad">Cantidad a retirar *</label><input type="number" step="0.001" id="cantidad" name="cantidad" value="{{old('cantidad')}}" required min="0.001" max="{{$material->stock_actual}}" autofocus><small>Máximo disponible: {{number_format($material->stock_actual,3)}}</small>@error('cantidad')<span class="error-message">{{$message}}</span>@enderror</div>
+<div class="form-group"><label for="observacion">Observación</label><textarea id="observacion" name="observacion" rows="3" placeholder="Opcional: motivo de la salida">{{old('observacion')}}</textarea>@error('observacion')<span class="error-message">{{$message}}</span>@enderror</div>
+<div class="form-actions"><button type="submit" class="action-link">Confirmar salida</button><a href="{{route('materials.show',$material)}}" class="clear-link">Cancelar</a></div></form></div>
+@endsection

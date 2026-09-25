@@ -38,10 +38,14 @@
                 @canany(['view-technician', 'view-operations'])<p class="nav-section">Operaciones</p>@endcanany
                 @can('view-technician')<a class="{{ request()->routeIs('technician.*') ? 'nav-active' : '' }}" @if(request()->routeIs('technician.*')) aria-current="page" @endif href="{{ route('technician.index') }}">@include('layouts.module-icon', ['icon' => 'tool'])<span>Panel técnico</span></a>@endcan
                 @can('view-operations')
-                @foreach(['installations' => ['Instalaciones', 'tool'], 'equipment' => ['Equipos', 'router'], 'materials' => ['Materiales', 'box']] as $key => [$module, $icon])
-                    <a class="{{ request()->routeIs($key.'.*') ? 'nav-active' : '' }}" @if(request()->routeIs($key.'.*')) aria-current="page" @endif href="{{ route($key.'.index') }}">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></a>
-                @endforeach
+                <a class="{{ request()->routeIs('installations.*') ? 'nav-active' : '' }}" @if(request()->routeIs('installations.*')) aria-current="page" @endif href="{{ route('installations.index') }}">@include('layouts.module-icon', ['icon' => 'tool'])<span>Instalaciones</span></a>
                 @endcan
+                @unless(auth()->user()->isTechnician())
+                <p class="nav-section">Inventario</p>
+                <a class="{{ request()->routeIs('equipments.*') ? 'nav-active' : '' }}" @if(request()->routeIs('equipments.*')) aria-current="page" @endif href="{{ route('equipments.index') }}">@include('layouts.module-icon', ['icon' => 'router'])<span>Equipos</span></a>
+                <a class="{{ request()->routeIs('materials.*') ? 'nav-active' : '' }}" @if(request()->routeIs('materials.*')) aria-current="page" @endif href="{{ route('materials.index') }}">@include('layouts.module-icon', ['icon' => 'box'])<span>Materiales</span></a>
+                <a class="{{ request()->routeIs('kardex.*') ? 'nav-active' : '' }}" @if(request()->routeIs('kardex.*')) aria-current="page" @endif href="{{ route('kardex.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Kardex</span></a>
+                @endunless
                 @canany(['manage-employees', 'manage-users', 'view-access-history'])<p class="nav-section">Administración</p>@endcanany
                 @can('manage-employees')<a class="{{ request()->routeIs('employees.*') ? 'nav-active' : '' }}" @if(request()->routeIs('employees.*')) aria-current="page" @endif href="{{ route('employees.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Empleados</span></a>@endcan
                 @can('manage-users')<a class="{{ request()->routeIs('users.*') ? 'nav-active' : '' }}" @if(request()->routeIs('users.*')) aria-current="page" @endif href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Usuarios</span></a>@endcan
