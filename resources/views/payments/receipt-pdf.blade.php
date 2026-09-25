@@ -180,10 +180,10 @@
                 <img src="{{ $logo_path }}" alt="Lunnys Peru" class="logo">
             </div>
             <div class="company-info">
-                <h1>Lunnys Peru</h1>
+                <h1>LUNNYS PERU R2D E.I.R.L.</h1>
                 <p>Servicios de Internet y Telecomunicaciones</p>
-                <p>RUC: 20XXXXXXXXX</p>
-                <p>Dirección: Lima, Perú</p>
+                <p>RUC: 20607812536</p>
+                <p>Dirección: Huanchaco, Perú</p>
                 <p>Teléfono: (01) XXX-XXXX</p>
             </div>
         </div>

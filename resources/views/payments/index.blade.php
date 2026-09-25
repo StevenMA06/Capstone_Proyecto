@@ -53,12 +53,6 @@
                     'label' => 'Vencidos',
                     'description' => 'Requieren atención'
                 ],
-                'IMPAGO' => [
-                    'icon' => 'bi-file-x',
-                    'color' => '#dc2626',
-                    'label' => 'Impagos',
-                    'description' => 'No pagados'
-                ],
                 'ANULADO' => [
                     'icon' => 'bi-slash-circle',
                     'color' => '#6b7280',
@@ -150,12 +144,12 @@
             <input id="contract" name="contract" value="{{ request('contract') }}" placeholder="Ej: CON-2026-001" maxlength="40">
             <small>Buscar pagos de un contrato específico.</small>
         </div>
-        <fieldset>
+<!--         <fieldset>
             <legend>Estado del pago</legend>
-            @foreach(['' => 'Todos los estados', 'PENDIENTE' => 'Pendiente', 'REALIZADO' => 'Realizado', 'VENCIDO' => 'Vencido', 'IMPAGO' => 'Impago', 'ANULADO' => 'Anulado'] as $value => $label)
+            @foreach(['' => 'Todos los estados', 'PENDIENTE' => 'Pendiente', 'REALIZADO' => 'Realizado', 'VENCIDO' => 'Vencido', 'ANULADO' => 'Anulado'] as $value => $label)
                 <label class="state-option"><input type="radio" name="status" value="{{ $value }}" @checked((request('status') ?? '') === $value)><span>{{ $label }}</span></label>
             @endforeach
-        </fieldset>
+        </fieldset> -->
         <div>
             <label for="from">Desde (vencimiento)</label>
             <input id="from" name="from" type="date" value="{{ request('from') }}">
@@ -164,17 +158,6 @@
             <label for="to">Hasta (vencimiento)</label>
             <input id="to" name="to" type="date" value="{{ request('to') }}">
         </div>
-        <fieldset>
-            <legend>Filtros especiales</legend>
-            <label class="state-option">
-                <input type="checkbox" name="due_soon" value="1" @checked(request('due_soon'))>
-                <span>Próximos a vencer (7 días)</span>
-            </label>
-            <label class="state-option">
-                <input type="checkbox" name="overdue" value="1" @checked(request('overdue'))>
-                <span>Vencidos</span>
-            </label>
-        </fieldset>
         <div class="filter-buttons">
             <button class="action-link" type="submit">Aplicar filtros</button>
             <a class="clear-link" href="{{ route('payments.index') }}">Limpiar filtros</a>

@@ -22,7 +22,7 @@ class TestGenerateReceipt extends Command
             return self::FAILURE;
         }
         
-        $this->info("📄 Generando comprobante para pago: {$payment->codigo}");
+        $this->info("Generando comprobante para pago: {$payment->codigo}");
         
         try {
             $path = $receiptService->generate($payment);

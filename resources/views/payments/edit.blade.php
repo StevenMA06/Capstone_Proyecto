@@ -147,164 +147,242 @@
 </style>
 
 {{-- Formulario de validación --}}
-<section class="validation-form-section">
-    <h3>Datos del pago realizado</h3>
+<form class="payment-validation-form" method="POST" action="{{ route('payments.update', $payment) }}" novalidate>
+    @csrf
+    @method('PUT')
     
-    <form class="account-form" method="POST" action="{{ route('payments.update', $payment) }}" novalidate>
-        @csrf
-        @method('PUT')
-        
-        <input type="hidden" name="contrato_id" value="{{ $payment->contrato_id }}">
-        <input type="hidden" name="monto" value="{{ $payment->monto }}">
-        <input type="hidden" name="periodo_servicio" value="{{ $payment->periodo_servicio }}">
-        <input type="hidden" name="fecha_vencimiento" value="{{ $payment->fecha_vencimiento->format('Y-m-d') }}">
+    <input type="hidden" name="contrato_id" value="{{ $payment->contrato_id }}">
+    <input type="hidden" name="monto" value="{{ $payment->monto }}">
+    <input type="hidden" name="periodo_servicio" value="{{ $payment->periodo_servicio }}">
+    <input type="hidden" name="fecha_vencimiento" value="{{ $payment->fecha_vencimiento->format('Y-m-d') }}">
+    <input type="hidden" name="marcar_realizado" value="1">
 
-        <div class="form-row">
-            <div class="form-field">
+    <section class="form-section">
+        <h3><i class="bi bi-cash-stack"></i> Datos del pago realizado</h3>
+        
+        <div class="form-grid">
+            <div class="form-group">
                 <label for="fecha_pago">Fecha de pago <span class="required">*</span></label>
                 <input id="fecha_pago" name="fecha_pago" type="date" 
                     value="{{ old('fecha_pago', $payment->fecha_pago?->format('Y-m-d') ?? date('Y-m-d')) }}"
-                    @error('fecha_pago') aria-invalid="true" aria-describedby="fecha_pago-error" @enderror
+                    @error('fecha_pago') aria-invalid="true" @enderror
                     required>
-                <small class="field-help">Fecha en que el cliente realizó el pago</small>
-                @error('fecha_pago')<p id="fecha_pago-error" class="error">{{ $message }}</p>@enderror
+                @error('fecha_pago')<span class="error-msg">{{ $message }}</span>@enderror
             </div>
 
-            <div class="form-field">
+            <div class="form-group">
                 <label for="metodo_pago">Método de pago <span class="required">*</span></label>
                 <select id="metodo_pago" name="metodo_pago" 
-                    @error('metodo_pago') aria-invalid="true" aria-describedby="metodo_pago-error" @enderror
+                    @error('metodo_pago') aria-invalid="true" @enderror
                     required>
-                    <option value="">-- Seleccionar --</option>
-                    @foreach(['EFECTIVO' => 'Efectivo', 'TRANSFERENCIA' => 'Transferencia bancaria', 'YAPE' => 'Yape', 'PLIN' => 'Plin', 'TARJETA' => 'Tarjeta', 'OTRO' => 'Otro'] as $value => $label)
+                    <option value="">-- Seleccionar método --</option>
+                    @foreach(['EFECTIVO' => 'Efectivo', 'TRANSFERENCIA' => 'Transferencia', 'YAPE' => 'Yape', 'PLIN' => 'Plin', 'TARJETA' => 'Tarjeta', 'OTRO' => 'Otro'] as $value => $label)
                         <option value="{{ $value }}" @selected(old('metodo_pago', $payment->metodo_pago) === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
-                <small class="field-help">Cómo realizó el pago el cliente</small>
-                @error('metodo_pago')<p id="metodo_pago-error" class="error">{{ $message }}</p>@enderror
+                @error('metodo_pago')<span class="error-msg">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group full-width">
+                <label for="referencia_externa">Referencia externa (opcional)</label>
+                <input id="referencia_externa" name="referencia_externa" type="text" maxlength="120"
+                    value="{{ old('referencia_externa', $payment->referencia_externa) }}"
+                    placeholder="Ej: Operación #123456, Voucher 789, etc."
+                    @error('referencia_externa') aria-invalid="true" @enderror>
+                @error('referencia_externa')<span class="error-msg">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group full-width">
+                <label for="observaciones">Observaciones (opcional)</label>
+                <textarea id="observaciones" name="observaciones" rows="3" maxlength="500"
+                    placeholder="Información adicional sobre el pago..."
+                    @error('observaciones') aria-invalid="true" @enderror>{{ old('observaciones', $payment->observaciones) }}</textarea>
+                @error('observaciones')<span class="error-msg">{{ $message }}</span>@enderror
             </div>
         </div>
 
-        <div class="form-field">
-            <label for="referencia_externa">Referencia externa</label>
-            <input id="referencia_externa" name="referencia_externa" type="text" maxlength="120"
-                value="{{ old('referencia_externa', $payment->referencia_externa) }}"
-                placeholder="Ej: Operación #123456, Voucher 789, etc."
-                @error('referencia_externa') aria-invalid="true" aria-describedby="referencia_externa-error" @enderror>
-            <small class="field-help">Número de operación, transacción o comprobante externo</small>
-            @error('referencia_externa')<p id="referencia_externa-error" class="error">{{ $message }}</p>@enderror
+        @if($payment->estado !== 'REALIZADO')
+        <div class="info-banner">
+            <i class="bi bi-info-circle-fill"></i>
+            <span>Al enviar este formulario, el pago se marcará como <strong>REALIZADO</strong> y se generará automáticamente el comprobante PDF.</span>
         </div>
+        @endif
+    </section>
 
-        <div class="form-field checkbox-field">
-            <label class="checkbox-label">
-                <input type="checkbox" name="marcar_realizado" value="1" 
-                    @checked(old('marcar_realizado', $payment->estado === 'REALIZADO'))
-                    @if($payment->estado === 'REALIZADO') disabled @endif>
-                <span class="checkbox-text">
-                    <strong>Marcar pago como realizado</strong>
-                    <small>
-                        @if($payment->estado === 'REALIZADO')
-                            Este pago ya está marcado como realizado
-                        @else
-                            El estado cambiará a REALIZADO y se generará el comprobante automáticamente
-                        @endif
-                    </small>
-                </span>
-            </label>
-        </div>
-
-        <div class="form-field">
-            <label for="observaciones">Observaciones</label>
-            <textarea id="observaciones" name="observaciones" rows="3" maxlength="500"
-                placeholder="Información adicional sobre el pago (opcional)..."
-                @error('observaciones') aria-invalid="true" aria-describedby="observaciones-error" @enderror>{{ old('observaciones', $payment->observaciones) }}</textarea>
-            <small class="field-help">Información adicional sobre el pago</small>
-            @error('observaciones')<p id="observaciones-error" class="error">{{ $message }}</p>@enderror
-        </div>
-
-        <div class="form-actions" style="margin-top: 24px;">
-            <button class="action-link" type="submit">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 6px;">
-                    <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/>
-                </svg>
-                Registrar pago
-            </button>
-            <a class="secondary" href="{{ route('payments.show', $payment) }}">Cancelar</a>
-        </div>
-    </form>
-</section>
+    <div class="form-actions">
+        <button class="btn-primary" type="submit">
+            <i class="bi bi-check-circle"></i>
+            Confirmar pago
+        </button>
+        <a class="btn-secondary" href="{{ route('payments.show', $payment) }}">Cancelar</a>
+    </div>
+</form>
 
 <style>
-.form-row {
+.payment-validation-form {
+    width: 100%;
+}
+
+.form-section {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.form-section h3 {
+    margin: 0 0 24px 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-section h3 i {
+    color: #087846;
+    font-size: 1.25rem;
+}
+
+.form-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
 }
 
-.form-field {
-    margin-bottom: 20px;
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.form-field label {
-    display: block;
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
     font-weight: 500;
-    margin-bottom: 6px;
     color: #374151;
+    font-size: 0.9375rem;
 }
 
 .required {
     color: #dc2626;
+    margin-left: 2px;
 }
 
-.field-help {
-    display: block;
-    margin-top: 4px;
-    color: #6b7280;
+.form-group input[type="date"],
+.form-group input[type="text"],
+.form-group select,
+.form-group textarea {
+    padding: 10px 14px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.form-group input[type="date"]:focus,
+.form-group input[type="text"]:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #087846;
+    box-shadow: 0 0 0 3px rgba(8, 120, 70, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-group select {
+    cursor: pointer;
+}
+
+.error-msg {
+    color: #dc2626;
     font-size: 0.875rem;
+    margin-top: -4px;
 }
 
-.checkbox-field {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 16px;
+.form-group input[aria-invalid="true"],
+.form-group select[aria-invalid="true"],
+.form-group textarea[aria-invalid="true"] {
+    border-color: #dc2626;
 }
 
-.checkbox-label {
+.info-banner {
+    margin-top: 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1px solid #10b981;
+    border-radius: 8px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
-    cursor: pointer;
-    margin: 0;
+    color: #065f46;
+    font-size: 0.9375rem;
 }
 
-.checkbox-label input[type="checkbox"] {
-    margin-top: 3px;
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
+.info-banner i {
+    font-size: 1.25rem;
+    color: #10b981;
+    flex-shrink: 0;
 }
 
-.checkbox-text {
+.form-actions {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    gap: 12px;
+    justify-content: flex-start;
 }
 
-.checkbox-text strong {
-    color: #1f2937;
+.btn-primary,
+.btn-secondary {
+    padding: 12px 24px;
+    border-radius: 8px;
     font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    border: none;
 }
 
-.checkbox-text small {
-    color: #6b7280;
-    font-weight: normal;
+.btn-primary {
+    background: #087846;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #065f37;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(8, 120, 70, 0.2);
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
 }
 
 @media (max-width: 768px) {
-    .form-row {
+    .form-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .form-section {
+        padding: 24px 20px;
     }
 }
 </style>
@@ -313,17 +391,51 @@
 @if($payment->canBeCancelled())
 <section aria-labelledby="cancel-section" style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
     <details class="client-deactivate">
-        <summary style="color: #dc2626;">Anular pago</summary>
-        <p class="muted">El pago se marcará como anulado por error administrativo. La información se conserva en el historial pero no se puede volver a activar.</p>
-        <form method="POST" action="{{ route('payments.cancel', $payment) }}" style="max-width: 500px;">
-            @csrf @method('PATCH')
-            <div style="margin-bottom: 12px;">
-                <label for="observaciones_anular">Motivo de anulación *</label>
-                <textarea id="observaciones_anular" name="observaciones" rows="2" maxlength="500" required placeholder="Describe el motivo de la anulación..."></textarea>
-                <small>Requerido. Explica por qué se anula este pago.</small>
+        <summary style="color: #dc2626; font-weight: 600; font-size: 1.05rem; cursor: pointer;">
+            <i class="bi bi-exclamation-triangle-fill" style="margin-right: 8px;"></i>
+            Anular pago
+        </summary>
+        <div style="margin-top: 20px; padding: 20px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;">
+            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                <div style="flex-shrink: 0;">
+                    <i class="bi bi-info-circle-fill" style="color: #dc2626; font-size: 1.25rem;"></i>
+                </div>
+                <div>
+                    <p style="margin: 0 0 8px 0; color: #991b1b; font-weight: 500;">
+                        Esta acción es irreversible
+                    </p>
+                    <p class="muted" style="margin: 0; color: #7f1d1d; font-size: 0.9rem;">
+                        El pago se marcará como anulado por error administrativo. La información se conserva en el historial pero no se puede volver a activar.
+                    </p>
+                </div>
             </div>
-            <button class="secondary danger" type="submit">Confirmar anulación</button>
-        </form>
+            
+            <form method="POST" action="{{ route('payments.cancel', $payment) }}" style="max-width: 600px;">
+                @csrf @method('PATCH')
+                <div style="margin-bottom: 16px;">
+                    <label for="observaciones_anular" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">
+                        Motivo de anulación <span style="color: #dc2626;">*</span>
+                    </label>
+                    <textarea 
+                        id="observaciones_anular" 
+                        name="observaciones" 
+                        rows="3" 
+                        maxlength="500" 
+                        required 
+                        placeholder="Describe el motivo de la anulación..."
+                        style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; font-family: inherit; resize: vertical;"
+                    ></textarea>
+                    <small style="display: block; margin-top: 6px; color: #6b7280;">
+                        <i class="bi bi-pencil" style="margin-right: 4px;"></i>
+                        Requerido. Explica por qué se anula este pago (máx. 500 caracteres).
+                    </small>
+                </div>
+                <button class="secondary danger" type="submit" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; font-weight: 600;">
+                    <i class="bi bi-x-circle-fill"></i>
+                    Confirmar anulación
+                </button>
+            </form>
+        </div>
     </details>
 </section>
 @endif
