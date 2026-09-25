@@ -265,12 +265,13 @@ class PaymentManagementTest extends TestCase
             'metodo_pago' => 'EFECTIVO',
         ]);
 
-        $this->signIn($actor)->get('/payments/' . $payment->getKey() . '/receipt')
-            ->assertOk()
-            ->assertSee('CONSTANCIA DE PAGO')
-            ->assertSee($payment->codigo)
-            ->assertSee('Juan Pérez')
-            ->assertSee('99.90');
+        $response = $this->signIn($actor)->get('/payments/' . $payment->getKey() . '/receipt');
+
+        $response->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->assertStringStartsWith('%PDF-', $response->streamedContent());
+        $this->assertStringEndsWith('.pdf', $payment->fresh()->constancia_ruta);
     }
 
     public function test_receipt_cannot_be_generated_for_pending_payment(): void
@@ -278,12 +279,12 @@ class PaymentManagementTest extends TestCase
         $actor = $this->actor();
         $payment = $this->payment($actor, ['estado' => 'PENDIENTE']); // PENDIENTE, no REALIZADO
 
-        // La constancia debería poder generarse para cualquier estado en este sistema,
-        // pero si queremos restringirlo, aquí lo validaríamos.
-        // Por ahora, simplemente verificamos que la vista se renderiza correctamente
-        $this->signIn($actor)->get('/payments/' . $payment->getKey() . '/receipt')
-            ->assertOk()
-            ->assertSee($payment->codigo);
+        $response = $this->signIn($actor)->get('/payments/' . $payment->getKey() . '/receipt');
+
+        $response->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->assertStringStartsWith('%PDF-', $response->streamedContent());
     }
 
     public function test_reminder_can_be_created_for_pending_payment(): void

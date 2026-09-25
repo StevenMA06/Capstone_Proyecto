@@ -6,7 +6,9 @@ use App\Repositories\ContractPeriodRepository;
 use App\Repositories\ContractRepository;
 use App\Repositories\PaymentRepository;
 use App\Repositories\PlanRepository;
+use App\Repositories\SaleRepository;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +23,8 @@ class ContractService
         private PlanRepository $plans,
         private ContractSignatureVerifier $signatures,
         private ContractPeriodRepository $periods,
-        private PaymentRepository $payments
+        private PaymentRepository $payments,
+        private SaleRepository $sales
     ) {}
 
     public function search(array $filters)
@@ -51,9 +54,8 @@ class ContractService
         $data['contract'] = $id ? $this->contracts->find($id) : null;
         $data['storedPdfAvailable'] = $data['contract']?->pdf_contrato_ruta
             && Storage::disk('local')->exists($data['contract']->pdf_contrato_ruta);
-        $data['canCancel'] = $data['storedPdfAvailable']
-            && $data['contract']->estado === 'ACTIVO'
-            && $data['contract']->firma_revision === 'VERIFICADA';
+        $data['canCancel'] = $data['contract']
+            && in_array($data['contract']->estado, ['PENDIENTE', 'ACTIVO'], true);
         if ($data['contract']) {
             foreach ([
                 ['plans', 'plan_id', $data['contract']->plan_id],
@@ -106,14 +108,17 @@ class ContractService
         throw new \LogicException('No se pudo generar un código de contrato único.');
     }
 
-    public function update(int $id, array $data): array
+    public function update(int $id, array $data, ?int $userId = null): array
     {
         $path = $this->storeSignedPdf($data);
         $oldPath = null;
         $feedback = ['message' => 'Contrato actualizado correctamente.', 'kind' => 'updated'];
         try {
-            DB::transaction(function () use ($id, $data, $path, &$oldPath, &$feedback): void {
+            DB::transaction(function () use ($id, $data, $path, $userId, &$oldPath, &$feedback): void {
                 $current = $this->contracts->find($id, true);
+                if ($current->estado === 'CANCELADO') {
+                    throw ValidationException::withMessages(['contrato' => 'Los contratos cancelados son únicamente de consulta.']);
+                }
                 $plan = $this->plans->lock($data['plan_id']);
                 if ($plan->estado !== 'ACTIVO' && (int) $current->plan_id !== (int) $data['plan_id']) {
                     throw ValidationException::withMessages(['plan_id' => 'Selecciona un plan activo.']);
@@ -138,17 +143,34 @@ class ContractService
                     throw ValidationException::withMessages(['estado' => 'La activación solo se realiza automáticamente al verificar la firma del cliente.']);
                 }
                 if (($data['estado'] ?? null) === 'CANCELADO') {
-                    if ($current->estado !== 'ACTIVO' || $current->firma_revision !== 'VERIFICADA' || ! $current->pdf_contrato_ruta || ! Storage::disk('local')->exists($current->pdf_contrato_ruta)) {
-                        throw ValidationException::withMessages(['estado' => 'Solo puedes cerrar un contrato activo con la firma del cliente verificada.']);
+                    if (! in_array($current->estado, ['PENDIENTE', 'ACTIVO'], true)) {
+                        throw ValidationException::withMessages(['estado' => 'Solo puedes cancelar un contrato pendiente o activo.']);
+                    }
+                    if ($current->estado === 'ACTIVO' && ($current->firma_revision !== 'VERIFICADA' || ! $current->pdf_contrato_ruta || ! Storage::disk('local')->exists($current->pdf_contrato_ruta))) {
+                        throw ValidationException::withMessages(['estado' => 'El contrato activo no conserva un PDF firmado válido.']);
                     }
                     if ($termsChanged || $path) {
                         throw ValidationException::withMessages(['estado' => 'Para cerrar el contrato, conserva los datos y el PDF actual.']);
                     }
+                    $reason = trim((string) ($data['motivo_cancelacion'] ?? ''));
+                    if ($reason === '') {
+                        throw ValidationException::withMessages(['motivo_cancelacion' => 'Debes explicar el motivo de la cancelación.']);
+                    }
+                    $period = $this->periods->findActivePeriod($current);
+                    if (! $period) {
+                        $period = $this->periods->findLatestPeriod($current)
+                            ? $this->periods->createReactivationPeriod($current, ['fecha_inicio' => $current->fecha_inicio, 'duracion_meses' => $current->duracion_meses])
+                            : $this->periods->createInitialPeriod($current);
+                    }
+                    $this->periods->cancel($period, $reason, 'MANUAL', $userId);
                     $attributes['estado'] = 'CANCELADO';
+                    $attributes['periodo_actual'] = $period->getKey();
+                    $this->sales->annul($id);
                     $feedback = ['message' => 'El contrato se canceló correctamente.', 'kind' => 'cancelled'];
                 }
                 if ($termsChanged && in_array($current->estado, ['ACTIVO', 'PENDIENTE'], true) && ($current->estado === 'ACTIVO' || $current->pdf_contrato_ruta)) {
                     $attributes += ['estado' => 'PENDIENTE', 'firma_revision' => null, 'firma_validada_en' => null];
+                    $this->sales->annul($id);
                     $oldPath = $current->pdf_contrato_ruta;
                     $attributes['pdf_contrato_ruta'] = null;
                     $feedback = ['message' => 'Contrato actualizado. Debes subir el documento con los nuevos datos para activarlo.', 'kind' => 'pending'];
@@ -169,18 +191,21 @@ class ContractService
                     $signed = $result['status'] === 'signed';
                     $expiredAtConfirmation = $signed && $attributes['fecha_fin'] < now()->toDateString();
                     $newState = $expiredAtConfirmation ? 'FINALIZADO' : ($signed ? 'ACTIVO' : 'PENDIENTE');
-                    
+
                     $this->contracts->update($id, [
                         'estado' => $newState,
                         'firma_revision' => $signed ? 'VERIFICADA' : 'SIN_FIRMA',
                         'firma_validada_en' => $signed ? now() : null,
                     ]);
+                    if ($signed) {
+                        $this->sales->confirm($this->contracts->find($id));
+                    }
 
                     // Si el contrato pasa a ACTIVO, crear período inicial y generar pagos
                     if ($newState === 'ACTIVO' && $current->estado !== 'ACTIVO') {
                         $this->activateContractWithPayments($id, auth()->id() ?? 1);
                     }
-                    
+
                     $feedback = $expiredAtConfirmation
                         ? ['message' => 'Se detectó la firma del cliente. El contrato quedó finalizado porque su vigencia ya terminó.', 'kind' => 'finalized']
                         : ($signed
@@ -257,10 +282,8 @@ class ContractService
 
     /**
      * Activar un contrato: crear período inicial y generar pagos automáticamente
-     * 
-     * @param int $contractId
-     * @param int $userId ID del usuario que activa (para registrar en pagos)
-     * @return void
+     *
+     * @param  int  $userId  ID del usuario que activa (para registrar en pagos)
      */
     private function activateContractWithPayments(int $contractId, int $userId): void
     {
@@ -286,9 +309,7 @@ class ContractService
     /**
      * Generar pagos para un contrato específico
      * Útil para regenerar pagos o generar pagos de contratos antiguos
-     * 
-     * @param int $contractId
-     * @param int $userId
+     *
      * @return int Cantidad de pagos generados
      */
     public function generatePaymentsForContract(int $contractId, int $userId): int
@@ -309,10 +330,9 @@ class ContractService
     /**
      * Reactivar un contrato cancelado
      * Conserva el historial anterior y crea un nuevo período contractual
-     * 
-     * @param int $contractId
-     * @param array $data Debe contener: fecha_inicio, duracion_meses
-     * @param int $userId ID del usuario que reactiva
+     *
+     * @param  array  $data  Debe contener: fecha_inicio, duracion_meses
+     * @param  int  $userId  ID del usuario que reactiva
      * @return array Feedback con mensaje y tipo
      */
     public function reactivate(int $contractId, array $data, int $userId): array
@@ -411,6 +431,7 @@ class ContractService
                 $this->contracts->find($contractId),
                 $userId
             );
+            $this->sales->confirm($this->contracts->find($contractId));
 
             return [
                 'message' => sprintf(
@@ -427,9 +448,6 @@ class ContractService
 
     /**
      * Obtener datos para el formulario de reactivación
-     * 
-     * @param int $contractId
-     * @return array
      */
     public function reactivationFormData(int $contractId): array
     {
@@ -459,8 +477,8 @@ class ContractService
 
     /**
      * Obtener contratos cancelados disponibles para reactivación
-     * 
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     *
+     * @return LengthAwarePaginator
      */
     public function getCancelledContracts()
     {

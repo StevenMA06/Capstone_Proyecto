@@ -2,7 +2,7 @@
 @section('contracts-title', $contract ? 'Actualizar contrato ' . $contract->codigo : 'Registro de Contrato')
 @section('contracts-crumb', $contract ? 'Actualizar' : 'Nuevo')
 @push('styles')
-    <script src="{{ asset('js/contracts.js') }}?v=4" defer></script>
+    <script src="{{ asset('js/contracts.js') }}?v=5" defer></script>
 @endpush
 @section('contracts-content')
     @if ($plans->isEmpty())
@@ -69,7 +69,7 @@
                 </div>
                 <div class="contract-field"><label for="direccion_servicio">Dirección de servicio</label><input
                         id="direccion_servicio" value="{{ $selectedClient?->direccion ?? '' }}"
-                        placeholder="Selecciona un cliente" readonly><small>Se toma de la dirección registrada del cliente.</small>
+                        placeholder="Selecciona un cliente" readonly>
                 </div>
                 <div class="contract-field"><label for="responsable_id">Responsable (Asistente de Ventas) *</label><select id="responsable_id"
                         name="responsable_id" required
@@ -107,15 +107,19 @@
                         readonly></div>
                 @if($canCancel)
                     <div class="contract-field"><label for="estado">Estado</label><select id="estado" name="estado" @error('estado') aria-invalid="true" aria-describedby="estado-error" @enderror>
-                            <option value="ACTIVO">Activo</option>
-                            <option value="CANCELADO" @selected(old('estado') === 'CANCELADO')>Cancelar contrato · baja anticipada</option>
-                        </select><small>La baja se registra al guardar. Conserva los datos y el PDF actual.</small>
+                            <option value="">{{ ucfirst(mb_strtolower($contract->estado)) }}</option>
+                            <option value="CANCELADO" @selected(old('estado') === 'CANCELADO')>Cancelar</option>
+                        </select>
                         @error('estado')<p id="estado-error" class="field-error">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="contract-field contract-cancellation-reason" data-cancel-reason @if(old('estado') !== 'CANCELADO') hidden @endif><label for="motivo_cancelacion">Motivo de cancelación *</label>
+                        <textarea id="motivo_cancelacion" name="motivo_cancelacion" rows="4" maxlength="500" placeholder="Explica de forma clara por qué se cancela el contrato" @error('motivo_cancelacion') aria-invalid="true" aria-describedby="motivo_cancelacion-error" @enderror>{{ old('motivo_cancelacion') }}</textarea><small>Esta justificación quedará registrada en el historial del período contractual.</small>
+                        @error('motivo_cancelacion')<p id="motivo_cancelacion-error" class="field-error">{{ $message }}</p>@enderror
                     </div>
                 @else
                     <div class="contract-field"><label for="estado_actual">Estado</label><select id="estado_actual" disabled>
                             <option>{{ $contract ? ucfirst(mb_strtolower($contract->estado)) : 'Pendiente' }}</option>
-                        </select><small>Se activa automáticamente cuando se detecta la firma del cliente en el PDF.</small></div>
+                        </select></div>
                 @endif
                 <div class="contract-field"><label for="observaciones">Observaciones</label>
                     <textarea id="observaciones" name="observaciones" rows="5" maxlength="10000"
@@ -143,7 +147,7 @@
                 </svg><span id="selected-pdf" aria-live="polite">Arrastra un PDF aquí o selecciona uno</span><span id="selected-pdf-hint" class="contract-selected-hint" hidden>Archivo seleccionado · se guardará al pulsar «Guardar cambios».</span><label class="contract-file-button"
                     for="documento_pdf">Seleccionar archivo</label></div><input class="contract-file-input"
                 id="documento_pdf" type="file" name="documento_pdf" accept="application/pdf"
-                @error('documento_pdf') aria-invalid="true" aria-describedby="documento_pdf-error" @enderror><small>Usa el borrador PDF generado por este sistema y firma dentro del recuadro «Firma del cliente». Máximo 10 MB. Si no se detecta el trazo, seguirá pendiente.</small>
+                @error('documento_pdf') aria-invalid="true" aria-describedby="documento_pdf-error" @enderror><small>Usa el contrato para firma generado por este sistema y firma dentro del recuadro «Firma del cliente». Máximo 10 MB. Si no se detecta el trazo, seguirá pendiente.</small>
             @error('documento_pdf')
                 <p id="documento_pdf-error" class="field-error">{{ $message }}</p>
             @enderror

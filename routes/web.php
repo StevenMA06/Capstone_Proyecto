@@ -10,6 +10,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\OperationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlanController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SessionStatusController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\TwoFactorController;
@@ -52,6 +53,7 @@ Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
 });
 
 Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+    Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
     Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
     Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
     Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');

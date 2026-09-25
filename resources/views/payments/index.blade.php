@@ -242,7 +242,7 @@
                             <a href="{{ route('payments.edit', $payment) }}" aria-label="Validar pago {{ $payment->codigo }}">Validar pago</a>
                         @endif
                         @if($payment->constancia_ruta && $payment->estado === 'REALIZADO')
-                            <a href="{{ asset($payment->constancia_ruta) }}" target="_blank" aria-label="Ver comprobante del pago {{ $payment->codigo }}" title="Descargar comprobante PDF">
+                            <a href="{{ route('payments.receipt', $payment) }}" target="_blank" aria-label="Ver comprobante del pago {{ $payment->codigo }}" title="Ver comprobante PDF">
                                 <i class="bi bi-file-pdf-fill" style="color: #dc2626;"></i> Comprobante
                             </a>
                         @endif

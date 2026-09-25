@@ -57,6 +57,7 @@ class ContractSignatureTest extends TestCase
             'documento_pdf' => UploadedFile::fake()->createWithContent('sin-firma.pdf', $draft),
         ])->assertSessionHasNoErrors();
         $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'PENDIENTE', 'firma_revision' => 'SIN_FIRMA']);
+        $this->assertDatabaseMissing('ventas', ['contrato_id' => $contract->contrato_id]);
         $this->patch('/contracts/'.$contract->contrato_id.'/status', ['estado' => 'ACTIVO'])->assertNotFound();
         $this->put('/contracts/'.$contract->contrato_id, $data + [
             'documento_pdf' => UploadedFile::fake()->createWithContent('otro.pdf', "%PDF-1.4\nDocumento ajeno"),
@@ -67,7 +68,7 @@ class ContractSignatureTest extends TestCase
         $this->put('/contracts/'.$contract->contrato_id, $data + [
             'documento_pdf' => UploadedFile::fake()->createWithContent('otro-contrato.pdf', app(ContractPdf::class)->render($otherContract)),
         ])->assertSessionHasErrors([
-            'documento_pdf' => 'El PDF corresponde al contrato CON-20260917-OTRO1234, pero estás actualizando '.$contract->codigo.'. Descarga y firma el borrador correcto.',
+            'documento_pdf' => 'El PDF corresponde al contrato CON-20260917-OTRO1234, pero estás actualizando '.$contract->codigo.'. Descarga y firma el contrato correcto.',
         ]);
 
         $input = tempnam(sys_get_temp_dir(), 'draft-');
@@ -85,7 +86,13 @@ class ContractSignatureTest extends TestCase
                 'documento_pdf' => UploadedFile::fake()->createWithContent('firmado.pdf', file_get_contents($output)),
             ])->assertSessionHasNoErrors()->assertSessionHas('status_kind', 'activated');
             $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'ACTIVO', 'firma_revision' => 'VERIFICADA']);
-            $this->get('/contracts/'.$contract->contrato_id)->assertOk()->assertSee('Descargar PDF adjunto')->assertDontSee('Descargar borrador PDF');
+            $this->assertDatabaseHas('ventas', [
+                'contrato_id' => $contract->contrato_id, 'cliente_id' => $client->getKey(),
+                'responsable_id' => $employee->empleado_id, 'monto' => $plan->precio_mensual,
+                'estado' => 'CONFIRMADA',
+            ]);
+            $this->assertDatabaseCount('ventas', 1);
+            $this->get('/contracts/'.$contract->contrato_id)->assertOk()->assertSee('Descargar PDF adjunto')->assertDontSee('Descargar contrato para firma');
             $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertOk()->assertSee('PDF adjunto guardado')->assertSee('Descargar adjunto')->assertSee('name="estado"', false);
             (new Process([$python, base_path('tests/Support/make_signed_contract.py'), $input, $output, 'alter']))->mustRun();
             $this->put('/contracts/'.$contract->contrato_id, $data + [
@@ -94,10 +101,12 @@ class ContractSignatureTest extends TestCase
             $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'ACTIVO', 'firma_revision' => 'VERIFICADA']);
             $this->put('/contracts/'.$contract->contrato_id, $data + ['estado' => 'FINALIZADO'])
                 ->assertSessionHasErrors('estado');
-            $this->put('/contracts/'.$contract->contrato_id, $data + ['estado' => 'CANCELADO'])
+            $this->put('/contracts/'.$contract->contrato_id, $data + ['estado' => 'CANCELADO', 'motivo_cancelacion' => 'Solicitud del cliente'])
                 ->assertSessionHasNoErrors()->assertSessionHas('status_kind', 'cancelled');
             $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'CANCELADO', 'firma_revision' => 'VERIFICADA']);
-            $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertDontSee('name="estado"', false);
+            $this->assertDatabaseHas('ventas', ['contrato_id' => $contract->contrato_id, 'estado' => 'ANULADA']);
+            $this->assertDatabaseCount('ventas', 1);
+            $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertForbidden();
         } finally {
             @unlink($input);
             @unlink($output);

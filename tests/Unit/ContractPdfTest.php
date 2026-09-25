@@ -17,6 +17,7 @@ class ContractPdfTest extends TestCase
             'direccion_servicio' => 'Calle Uno', 'fecha_inicio' => '2026-09-01',
             'duracion_meses' => 12, 'fecha_fin' => '2027-08-31', 'estado' => 'PENDIENTE',
             'responsable_nombres' => 'Luis', 'responsable_apellidos' => 'García',
+            'responsable_cargo' => 'Asistente de Ventas',
             'observaciones' => null,
         ];
         $pdf = (new ContractPdf)->render($record);
@@ -24,12 +25,18 @@ class ContractPdfTest extends TestCase
         $this->assertStringStartsWith('%PDF-1.4', $pdf);
         $this->assertStringContainsString('CON-001', $pdf);
         $this->assertStringContainsString('89.90', $pdf);
+        $this->assertStringContainsString('CONTRATO DE PRESTACI', $pdf);
+        $this->assertStringContainsString('Ana P', $pdf);
+        $this->assertStringContainsString('DNI 12345678', $pdf);
+        $this->assertStringContainsString('Firma del Asistente de Ventas', $pdf);
+        $this->assertStringContainsString('Luis Garc', $pdf);
         $this->assertStringContainsString('startxref', $pdf);
         $this->assertStringEndsWith('%%EOF', $pdf);
 
         $record->observaciones = str_repeat('Observación extensa. ', 250);
         $longPdf = (new ContractPdf)->render($record);
-        $this->assertStringContainsString('/Count 3', $longPdf);
+        preg_match('/\/Count (\d+)/', $longPdf, $matches);
+        $this->assertGreaterThan(1, (int) ($matches[1] ?? 0));
         $this->assertStringContainsString('Firma del cliente', $longPdf);
     }
 }

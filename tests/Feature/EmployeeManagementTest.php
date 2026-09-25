@@ -34,6 +34,25 @@ class EmployeeManagementTest extends TestCase
         return array_merge(['tipo_documento' => 'DNI', 'numero_documento' => '12345678', 'nombres' => 'Ana', 'apellidos' => 'Pérez', 'cargo' => 'Técnico de Campo', 'correo' => 'ana@example.test', 'telefono' => '987654321', 'fecha_ingreso' => '2026-09-01', 'fecha_cese' => '2026-09-30'], $changes);
     }
 
+    public function test_contact_is_required_on_create_and_update(): void
+    {
+        $this->signIn($this->actor());
+        foreach ([null, '', '   '] as $blank) {
+            $this->post('/employees', $this->data(['correo' => $blank, 'telefono' => $blank]))
+                ->assertSessionHasErrors([
+                    'correo' => 'El campo correo electrónico es obligatorio.',
+                    'telefono' => 'El campo teléfono es obligatorio.',
+                ]);
+        }
+        $this->assertDatabaseCount('empleados', 0);
+        $this->post('/employees', $this->data())->assertSessionHasNoErrors();
+        $employee = Employee::firstOrFail();
+        $this->put('/employees/'.$employee->getKey(), $this->data(['correo' => '', 'telefono' => '']))
+            ->assertSessionHasErrors(['correo', 'telefono']);
+        $this->assertSame('ana@example.test', $employee->fresh()->correo);
+        $this->assertSame('987654321', $employee->fresh()->telefono);
+    }
+
     public function test_managers_register_consult_search_and_edit_without_deleting_history(): void
     {
         $this->signIn($this->actor())->get('/employees/create')->assertOk()->assertSee('Fecha de inicio')->assertSee('Fecha de cese');

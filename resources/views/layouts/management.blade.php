@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @include('layouts.session-monitor')
     @stack('styles')
+    <link rel="stylesheet" href="{{ asset('css/record-tables.css') }}?v=1">
+    <script src="{{ asset('js/validation-es.js') }}?v=1" defer></script>
 </head>
 <body class="workspace-shell">
 <a class="skip-content" href="#module-content">Ir al contenido</a>
@@ -28,7 +30,7 @@
                 @canany(['register-clients', 'view-office'])<p class="nav-section">Comercial</p>@endcanany
                 @can('register-clients')<a class="{{ request()->routeIs('clients.*') ? 'nav-active' : '' }}" @if(request()->routeIs('clients.*')) aria-current="page" @endif href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Clientes</span></a>@endcan
                 @can('view-office')
-                @foreach(['plans' => ['Planes de servicio', 'file'], 'contracts' => ['Contratos', 'file'], 'payments' => ['Pagos', 'money']] as $key => [$module, $icon])
+                @foreach(['plans' => ['Planes de servicio', 'file'], 'contracts' => ['Contratos', 'file'], 'sales' => ['Ventas', 'cart'], 'payments' => ['Pagos', 'money']] as $key => [$module, $icon])
                     <a class="{{ request()->routeIs($key.'.*') ? 'nav-active' : '' }}" @if(request()->routeIs($key.'.*')) aria-current="page" @endif href="{{ route($key.'.index') }}">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></a>
                 @endforeach
                 @can('view-zones')<a class="{{ request()->routeIs('zones.*') ? 'nav-active' : '' }}" @if(request()->routeIs('zones.*')) aria-current="page" @endif href="{{ route('zones.index') }}">@include('layouts.module-icon', ['icon' => 'pin'])<span>Zonas de cobertura</span></a>@endcan
@@ -46,7 +48,7 @@
                 @can('view-access-history')<a class="{{ request()->routeIs('access.index') ? 'nav-active' : '' }}" @if(request()->routeIs('access.index')) aria-current="page" @endif href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Historial de accesos</span></a>@endcan
                 @can('view-operations')
                 <p class="nav-section nav-section-future">Próximamente</p>
-                @foreach(['Ventas' => 'cart', 'Facturación' => 'file', 'Reportes' => 'chart', 'BI' => 'chart', 'Chatbot' => 'chat'] as $module => $icon)
+                @foreach(['Facturación' => 'file', 'Reportes' => 'chart', 'BI' => 'chart', 'Chatbot' => 'chat'] as $module => $icon)
                     <span class="nav-pending" aria-disabled="true" title="{{ $module }}: próximamente">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></span>
                 @endforeach
                 @endcan

@@ -156,7 +156,8 @@ class ContractRepository
             ->join('planes_servicio', 'planes_servicio.plan_id', '=', 'contratos.plan_id')
             ->join('zonas_cobertura', 'zonas_cobertura.zona_id', '=', 'contratos.zona_id')
             ->join('empleados', 'empleados.empleado_id', '=', 'contratos.responsable_id')
-            ->select('contratos.*', 'clientes.numero_documento', 'clientes.tipo_documento', 'clientes.nombres_razon_social', 'clientes.apellidos', 'clientes.distrito as cliente_distrito', 'planes_servicio.nombre as plan_nombre', 'planes_servicio.numero_plan', 'zonas_cobertura.nombre as zona_nombre', 'empleados.nombres as responsable_nombres', 'empleados.apellidos as responsable_apellidos');
+            ->leftJoin('periodos_contractuales as periodo_vigente', 'periodo_vigente.periodo_id', '=', 'contratos.periodo_actual')
+            ->select('contratos.*', 'clientes.numero_documento', 'clientes.tipo_documento', 'clientes.nombres_razon_social', 'clientes.apellidos', 'clientes.distrito as cliente_distrito', 'planes_servicio.nombre as plan_nombre', 'planes_servicio.numero_plan', 'zonas_cobertura.nombre as zona_nombre', 'empleados.nombres as responsable_nombres', 'empleados.apellidos as responsable_apellidos', 'empleados.cargo as responsable_cargo', 'periodo_vigente.motivo_cancelacion', 'periodo_vigente.fecha_cancelacion', 'periodo_vigente.origen_cancelacion');
     }
 
     /**

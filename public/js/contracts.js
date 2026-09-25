@@ -14,8 +14,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropzone = form.querySelector('[data-dropzone]');
     const selectedPdf = form.querySelector('#selected-pdf');
     const selectedPdfHint = form.querySelector('#selected-pdf-hint');
+    const state = form.querySelector('#estado');
+    const cancellationReason = form.querySelector('[data-cancel-reason]');
+    const cancellationReasonInput = form.querySelector('#motivo_cancelacion');
     const coverage = JSON.parse(form.dataset.coverage || '[]');
     const normalize = value => (value || '').trim().toLocaleLowerCase('es-PE');
+
+    function refreshCancellationReason() {
+        if (!state || !cancellationReason || !cancellationReasonInput) return;
+        const cancelling = state.value === 'CANCELADO';
+        cancellationReason.hidden = !cancelling;
+        cancellationReasonInput.required = cancelling;
+    }
 
     function refresh() {
         address.value = client.selectedOptions[0]?.dataset.address || '';
@@ -45,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         message.classList.toggle('coverage-error', !matchingDistrict || !matchingPlan);
     }
     [client, plan, zone, start, months].forEach(input => input.addEventListener('change', refresh));
+    state?.addEventListener('change', refreshCancellationReason);
     months.addEventListener('input', refresh);
     if (fileInput && dropzone && selectedPdf) {
         fileInput.addEventListener('change', () => {
@@ -82,4 +93,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     refresh();
+    refreshCancellationReason();
 });
