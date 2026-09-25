@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Contract;
-use App\Models\Payment;
 use App\Repositories\ContractPeriodRepository;
+use App\Repositories\SaleRepository;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -28,7 +28,7 @@ class CancelContractsForNonPayment extends Command
     /**
      * Execute the console command.
      */
-    public function handle(ContractPeriodRepository $periods): int
+    public function handle(ContractPeriodRepository $periods, SaleRepository $sales): int
     {
         $dryRun = $this->option('dry-run');
 
@@ -52,6 +52,7 @@ class CancelContractsForNonPayment extends Command
 
         if ($contractsToCancel->isEmpty()) {
             $this->line('   ✓ No hay contratos que deban cancelarse por falta de pago');
+
             return self::SUCCESS;
         }
 
@@ -85,7 +86,7 @@ class CancelContractsForNonPayment extends Command
             ));
 
             if (! $dryRun) {
-                DB::transaction(function () use ($contract, $periods, $firstAnulated) {
+                DB::transaction(function () use ($contract, $periods, $sales, $firstAnulated) {
                     // Cancelar el período actual
                     if ($contract->currentPeriod) {
                         $periods->cancel(
@@ -104,10 +105,11 @@ class CancelContractsForNonPayment extends Command
                         ->update([
                             'estado' => 'CANCELADO',
                             'observaciones' => DB::raw(
-                                "CONCAT(COALESCE(observaciones, ''), '\n[".now()->format('Y-m-d H:i:s')."] Cancelado automáticamente por falta de pago (pago ".
+                                "CONCAT(COALESCE(observaciones, ''), '\n[".now()->format('Y-m-d H:i:s').'] Cancelado automáticamente por falta de pago (pago '.
                                 $firstAnulated->codigo." IMPAGO).')"
                             ),
                         ]);
+                    $sales->annul($contract->getKey());
 
                     // Anular todos los pagos pendientes, vencidos e impagos del contrato
                     $anulatedPaymentsCount = DB::table('pagos')
