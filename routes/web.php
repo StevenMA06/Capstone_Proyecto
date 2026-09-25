@@ -18,6 +18,7 @@ use App\Http\Controllers\SessionStatusController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Middleware\EnsureAccountActive;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +54,11 @@ Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
     Route::get('/installations', [OperationController::class, 'installations'])->name('installations.index');
     Route::get('/equipment', [OperationController::class, 'equipment'])->name('equipment.index');
     Route::get('/materials', [OperationController::class, 'materials'])->name('materials.index');
+    
+    // Chatbot IA - Solo para Gerencia
+    Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');
+    Route::post('/chatbot/query', [ChatbotController::class, 'query'])->middleware('throttle:60,1')->name('chatbot.query');
+    Route::post('/chatbot/new', [ChatbotController::class, 'newConversation'])->name('chatbot.new');
 });
 
 Route::middleware(['auth', 'can:view-office'])->group(function (): void {

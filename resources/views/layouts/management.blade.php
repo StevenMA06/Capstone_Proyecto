@@ -51,8 +51,12 @@
                 @can('manage-users')<a class="{{ request()->routeIs('users.*') ? 'nav-active' : '' }}" @if(request()->routeIs('users.*')) aria-current="page" @endif href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Usuarios</span></a>@endcan
                 @can('view-access-history')<a class="{{ request()->routeIs('access.index') ? 'nav-active' : '' }}" @if(request()->routeIs('access.index')) aria-current="page" @endif href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Historial de accesos</span></a>@endcan
                 @can('view-operations')
+                <p class="nav-section">Inteligencia</p>
+                <a class="{{ request()->routeIs('chatbot.*') ? 'nav-active' : '' }}" @if(request()->routeIs('chatbot.*')) aria-current="page" @endif href="{{ route('chatbot.index') }}">@include('layouts.module-icon', ['icon' => 'chat'])<span>Chatbot IA</span></a>
+                @endcan
+                @can('view-operations')
                 <p class="nav-section nav-section-future">Próximamente</p>
-                @foreach(['Facturación' => 'file', 'Reportes' => 'chart', 'BI' => 'chart', 'Chatbot' => 'chat'] as $module => $icon)
+                @foreach(['Facturación' => 'file', 'Reportes' => 'chart', 'BI' => 'chart'] as $module => $icon)
                     <span class="nav-pending" aria-disabled="true" title="{{ $module }}: próximamente">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></span>
                 @endforeach
                 @endcan
