@@ -103,9 +103,11 @@ Route::middleware(['auth', 'can:view-technician'])->group(function (): void {
     Route::post('/technician/installations/{pedido}/material', [TechnicianController::class, 'material'])->whereNumber('pedido')->name('technician.material');
     Route::post('/technician/installations/{pedido}/observation', [TechnicianController::class, 'observation'])->whereNumber('pedido')->name('technician.observation');
     Route::post('/technician/installations/{pedido}/contract-evidence', [TechnicianController::class, 'contractEvidence'])->whereNumber('pedido')->name('technician.contractEvidence');
+    Route::get('/technician/installations/{pedido}/contract-evidence/{evidence}/preview', [TechnicianController::class, 'previewContract'])->whereNumber(['pedido', 'evidence'])->name('technician.contract.preview');
     Route::get('/technician/installations/{pedido}/contract-evidence/{evidence}', [TechnicianController::class, 'downloadContract'])->whereNumber(['pedido', 'evidence'])->name('technician.contract.download');
     Route::get('/technician/installations/{pedido}', [TechnicianController::class, 'show'])->whereNumber('pedido')->name('technician.show');
     Route::post('/technician/installations/{pedido}/evidence', [TechnicianController::class, 'store'])->whereNumber('pedido')->name('technician.evidence.store');
+    Route::get('/technician/installations/{pedido}/evidence/{evidence}/preview', [TechnicianController::class, 'preview'])->whereNumber(['pedido', 'evidence'])->name('technician.evidence.preview');
     Route::get('/technician/installations/{pedido}/evidence/{evidence}', [TechnicianController::class, 'download'])->whereNumber(['pedido', 'evidence'])->name('technician.evidence.download');
 });
 

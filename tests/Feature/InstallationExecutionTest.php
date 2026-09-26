@@ -267,6 +267,52 @@ class InstallationExecutionTest extends TestCase
         $this->assertDatabaseHas('ejecuciones_instalacion', ['pedido_id' => $this->id, 'inicio_en' => '2026-09-26 09:15:00']);
     }
 
+    public function test_filters_search_client_code_date_and_state_without_leaking_other_assignments(): void
+    {
+        $this->get('/technician?search=Cliente%20Instalaci%C3%B3n&fecha=2026-09-05&estado=PROGRAMADO')
+            ->assertOk()->assertSee('INS-I-0')->assertSee('INS-I-2')->assertDontSee('INS-I-1')->assertDontSee('INS-I-3');
+        $this->get('/technician?search=INS-I-0')->assertOk()->assertSee('INS-I-0')->assertDontSee('INS-I-2');
+        $this->get('/technician?search=INS-I-3')->assertOk()->assertSee('No hay instalaciones que coincidan')->assertDontSee('Ficha #'.$this->other);
+        $this->get('/technician?search=%25')->assertOk()->assertSee('No hay instalaciones que coincidan');
+        $this->get('/technician?fecha=2026-02-31')->assertSessionHasErrors('fecha');
+        $this->get('/technician?estado=INVALIDO')->assertSessionHasErrors('estado');
+        $this->get('/technician')->assertOk()->assertSee('Ejecución de Instalaciones')->assertSee('Dirección original del contrato');
+    }
+
+    public function test_list_orders_pending_then_running_then_completed(): void
+    {
+        $ids = DB::table('pedidos_instalacion')->where('tecnico_id', $this->tech->empleado_id)->orderBy('pedido_id')->pluck('pedido_id');
+        foreach (['COMPLETADO', 'EN_PROCESO', 'PROGRAMADO'] as $i => $state) {
+            DB::table('pedidos_instalacion')->where('pedido_id', $ids[$i])->update(['estado' => $state]);
+        }
+        $this->get('/technician')->assertOk()->assertViewHas('records', function ($records) use ($ids) {
+            return $records->pluck('pedido_id')->all() === [$ids[2], $ids[1], $ids[0]];
+        });
+    }
+
+    public function test_photo_previews_are_private_and_scoped_and_reject_non_images(): void
+    {
+        $this->start();
+        $this->post($this->url('evidence'), ['evidence' => $this->photo()])->assertSessionHasNoErrors();
+        $this->post($this->url('contract-evidence'), ['evidence' => $this->photo()])->assertSessionHasNoErrors();
+        $photo = DB::table('evidencias_instalacion')->first();
+        $contract = DB::table('evidencias_contrato')->first();
+        $photoUrl = $this->url('evidence/'.$photo->evidencia_id.'/preview');
+        $contractUrl = $this->url('contract-evidence/'.$contract->evidencia_contrato_id.'/preview');
+        foreach ([$photoUrl, $contractUrl] as $url) {
+            $this->get($url)->assertOk()->assertHeader('Content-Type', 'image/png')
+                ->assertHeader('X-Content-Type-Options', 'nosniff')->assertHeader('Cache-Control', 'no-store, private');
+        }
+        $this->get($this->url())->assertOk()->assertSee($photoUrl)->assertSee('data-confirm-finish', false)->assertSee('data-evidence-input', false);
+        $this->signIn($this->manager)->get($this->url('evidence/'.$photo->evidencia_id.'/preview', $this->other))->assertNotFound();
+        $this->get($this->url('contract-evidence/'.$contract->evidencia_contrato_id.'/preview', $this->other))->assertNotFound();
+        Storage::disk('local')->put($photo->ruta_archivo, '<html>no es una imagen</html>');
+        $this->get($photoUrl)->assertNotFound();
+        $otherTech = User::factory()->create(['rol_id' => Role::where('nombre', Role::TECHNICIAN)->value('rol_id')]);
+        $this->signIn($otherTech)->get($contractUrl)->assertNotFound();
+        $this->get($photoUrl)->assertNotFound();
+    }
+
     public function test_observation_is_escaped_and_completed_installations_are_read_only(): void
     {
         $this->start();
