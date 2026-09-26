@@ -6,6 +6,7 @@ use App\Services\InstallationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class TechnicianController extends Controller
 {
@@ -13,13 +14,41 @@ class TechnicianController extends Controller
 
     public function index(Request $request)
     {
-        $data = $request->validate(['pedido_id' => ['nullable', 'integer', 'min:1'], 'page' => ['nullable', 'integer', 'min:1']]);
-        $query = $this->installations->assignments($request->user());
+        $states = ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO', 'EN_PROCESO', 'COMPLETADO', 'CANCELADO'];
+        $data = $request->validate([
+            'pedido_id' => ['nullable', 'integer', 'min:1'], 'page' => ['nullable', 'integer', 'min:1'],
+            'search' => ['nullable', 'string', 'max:150'], 'fecha' => ['nullable', 'date_format:Y-m-d'],
+            'estado' => ['nullable', Rule::in($states)],
+        ], [], ['search' => 'búsqueda', 'fecha' => 'fecha programada', 'estado' => 'estado']);
+        $query = $this->installations->assignments($request->user())
+            ->join('clientes as cl', 'cl.cliente_id', '=', 'pedidos_instalacion.cliente_id')
+            ->join('contratos as c', 'c.contrato_id', '=', 'pedidos_instalacion.contrato_id')
+            ->leftJoin('empleados as e', 'e.empleado_id', '=', 'pedidos_instalacion.tecnico_id')
+            ->select('pedidos_instalacion.*', 'cl.nombres_razon_social', 'cl.apellidos', 'c.direccion_servicio',
+                'e.nombres as tecnico_nombres', 'e.apellidos as tecnico_apellidos');
         if (! empty($data['pedido_id'])) {
-            $query->where('pedido_id', $data['pedido_id']);
+            $query->where('pedidos_instalacion.pedido_id', $data['pedido_id']);
+        }
+        if (filled($data['search'] ?? null)) {
+            $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], trim($data['search'])).'%';
+            $query->where(function ($q) use ($pattern) {
+                $q->whereRaw("pedidos_instalacion.codigo LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("CONCAT_WS(' ', cl.nombres_razon_social, cl.apellidos) LIKE ? ESCAPE '!'", [$pattern]);
+            });
+        }
+        if (! empty($data['fecha'])) {
+            $query->whereDate('pedidos_instalacion.fecha_programada', $data['fecha']);
+        }
+        if (! empty($data['estado'])) {
+            $query->where('pedidos_instalacion.estado', $data['estado']);
         }
 
-        return view('technician.index', ['records' => $query->orderByDesc('pedido_id')->paginate(15)->withQueryString()]);
+        return view('technician.index', [
+            'states' => $states,
+            'records' => $query->orderByRaw("CASE pedidos_instalacion.estado WHEN 'PENDIENTE' THEN 0 WHEN 'PROGRAMADO' THEN 0 WHEN 'REPROGRAMADO' THEN 0 WHEN 'EN_PROCESO' THEN 1 WHEN 'COMPLETADO' THEN 2 ELSE 3 END")
+                ->orderByRaw('pedidos_instalacion.fecha_programada IS NULL')
+                ->orderBy('pedidos_instalacion.fecha_programada')->orderBy('pedidos_instalacion.pedido_id')->paginate(15)->withQueryString(),
+        ]);
     }
 
     public function show(Request $request, int $pedido)
@@ -43,9 +72,9 @@ class TechnicianController extends Controller
             })->orderBy('nombre')->get(),
             'materials' => DB::table('materiales')->where('estado', 'ACTIVO')->orderBy('nombre')->get(),
             'usedEquipment' => DB::table('pedido_equipos as pe')->join('equipos as e', 'e.equipo_id', '=', 'pe.equipo_id')
-                ->where('pe.pedido_id', $pedido)->select('pe.*', 'e.codigo', 'e.nombre', 'e.numero_serie')->get(),
+                ->where('pe.pedido_id', $pedido)->select('pe.*', 'e.codigo', 'e.nombre', 'e.numero_serie', 'e.marca', 'e.modelo')->get(),
             'usedMaterials' => DB::table('pedido_materiales as pm')->join('materiales as m', 'm.material_id', '=', 'pm.material_id')
-                ->where('pm.pedido_id', $pedido)->select('pm.*', 'm.nombre', 'm.unidad_medida')->get(),
+                ->where('pm.pedido_id', $pedido)->select('pm.*', 'm.codigo', 'm.nombre', 'm.unidad_medida')->get(),
         ]);
     }
 
@@ -139,10 +168,33 @@ class TechnicianController extends Controller
         return $this->downloadFile($record, 'installation-contracts');
     }
 
-    private function downloadFile(?object $record, string $folder)
+    public function preview(Request $request, int $pedido, int $evidence)
+    {
+        $this->installations->find($request->user(), $pedido);
+        $record = DB::table('evidencias_instalacion')->where('pedido_id', $pedido)->where('evidencia_id', $evidence)->first();
+        return $this->downloadFile($record, 'installation-evidence', true);
+    }
+
+    public function previewContract(Request $request, int $pedido, int $evidence)
+    {
+        $installation = $this->installations->find($request->user(), $pedido);
+        $record = DB::table('evidencias_contrato')->where('contrato_id', $installation->contrato_id)
+            ->where('tipo', 'CONTRATO_FIRMADO')->where('evidencia_contrato_id', $evidence)->first();
+        return $this->downloadFile($record, 'installation-contracts', true);
+    }
+
+    private function downloadFile(?object $record, string $folder, bool $preview = false)
     {
         abort_unless($record && preg_match('#^'.preg_quote($folder, '#').'/[a-zA-Z0-9]+\.[a-zA-Z0-9]+$#D', $record->ruta_archivo), 404);
         abort_unless(Storage::disk('local')->exists($record->ruta_archivo), 404);
+        if ($preview) {
+            $mime = Storage::disk('local')->mimeType($record->ruta_archivo);
+            abort_unless(in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true), 404);
+            return Storage::disk('local')->response($record->ruta_archivo, null, [
+                'Content-Type' => $mime, 'X-Content-Type-Options' => 'nosniff',
+                'Cache-Control' => 'private, no-store',
+            ]);
+        }
 
         return Storage::disk('local')->download($record->ruta_archivo, basename($record->ruta_archivo), ['X-Content-Type-Options' => 'nosniff']);
     }
