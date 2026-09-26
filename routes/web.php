@@ -169,3 +169,13 @@ Route::middleware(['auth'])->group(function (): void {
     // Kardex de Inventario (consulta únicamente)
     Route::get('/kardex', [KardexController::class, 'index'])->name('kardex.index');
 });
+
+Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+    Route::view('/reports', 'analytics.screen', ['screen' => 'reports'])->name('reports.index');
+    // Exportación real pendiente; la entrega actual contiene solo pantallas de demostración.
+});
+
+Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
+    Route::view('/indicators', 'analytics.screen', ['screen' => 'indicators'])->name('indicators.index');
+    Route::view('/bi', 'analytics.screen', ['screen' => 'bi'])->name('bi.index');
+});

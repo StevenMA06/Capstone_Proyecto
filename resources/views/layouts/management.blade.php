@@ -26,6 +26,7 @@
     <aside class="workspace-sidebar" aria-label="Menú de módulos">
         <div class="module-menu">
             <nav aria-label="Navegación principal">
+                @can('view-office')<a class="{{ request()->routeIs('reports.*') ? 'nav-active' : '' }}" @if(request()->routeIs('reports.*')) aria-current="page" @endif href="{{ route('reports.index') }}">@include('layouts.module-icon', ['icon' => 'chart'])<span>Reportes</span></a>@endcan
                 @unless(auth()->user()->isTechnician())<a class="{{ request()->routeIs('dashboard') ? 'nav-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif href="{{ route('dashboard') }}">@include('layouts.module-icon', ['icon' => 'home'])<span>Dashboard</span></a>@endunless
                 @canany(['register-clients', 'view-office'])<p class="nav-section">Comercial</p>@endcanany
                 @can('register-clients')<a class="{{ request()->routeIs('clients.*') ? 'nav-active' : '' }}" @if(request()->routeIs('clients.*')) aria-current="page" @endif href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Clientes</span></a>@endcan
@@ -52,11 +53,13 @@
                 @can('view-access-history')<a class="{{ request()->routeIs('access.index') ? 'nav-active' : '' }}" @if(request()->routeIs('access.index')) aria-current="page" @endif href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Historial de accesos</span></a>@endcan
                 @can('view-operations')
                 <p class="nav-section">Inteligencia</p>
+                <a class="{{ request()->routeIs('indicators.*') ? 'nav-active' : '' }}" href="{{ route('indicators.index') }}">@include('layouts.module-icon', ['icon' => 'chart'])<span>Indicadores</span></a>
+                <a class="{{ request()->routeIs('bi.*') ? 'nav-active' : '' }}" href="{{ route('bi.index') }}">@include('layouts.module-icon', ['icon' => 'chart'])<span>Business Intelligence</span></a>
                 <a class="{{ request()->routeIs('chatbot.*') ? 'nav-active' : '' }}" @if(request()->routeIs('chatbot.*')) aria-current="page" @endif href="{{ route('chatbot.index') }}">@include('layouts.module-icon', ['icon' => 'chat'])<span>Chatbot IA</span></a>
                 @endcan
                 @can('view-operations')
                 <p class="nav-section nav-section-future">Próximamente</p>
-                @foreach(['Facturación' => 'file', 'Reportes' => 'chart', 'BI' => 'chart'] as $module => $icon)
+                @foreach(['Facturación' => 'file'] as $module => $icon)
                     <span class="nav-pending" aria-disabled="true" title="{{ $module }}: próximamente">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></span>
                 @endforeach
                 @endcan
