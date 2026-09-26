@@ -7,6 +7,7 @@ use App\Http\Requests\StoreContractRequest;
 use App\Services\ContractPdf;
 use App\Services\ContractService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -48,9 +49,26 @@ class ContractController extends Controller
         return redirect()->route('contracts.show', $id)->with('status', 'Contrato registrado correctamente. Código generado automáticamente.');
     }
 
-    public function show(int $contract)
+    public function show(Request $request, int $contract)
     {
-        return view('contracts.show', ['contract' => $this->contracts->detail($contract)]);
+        $request->validate(['page' => ['nullable', 'integer', 'min:1']]);
+
+        return view('contracts.show', [
+            'contract' => $this->contracts->detail($contract),
+            'fieldEvidences' => DB::table('evidencias_contrato')->where('contrato_id', $contract)
+                ->where('tipo', 'CONTRATO_FIRMADO')->orderByDesc('evidencia_contrato_id')->paginate(10),
+        ]);
+    }
+
+    public function evidence(int $contract, int $evidence)
+    {
+        $this->contracts->detail($contract);
+        $record = DB::table('evidencias_contrato')->where('contrato_id', $contract)
+            ->where('evidencia_contrato_id', $evidence)->where('tipo', 'CONTRATO_FIRMADO')->first();
+        abort_unless($record && preg_match('#^installation-contracts/[a-zA-Z0-9]+\.[a-zA-Z0-9]+$#D', $record->ruta_archivo), 404);
+        abort_unless(Storage::disk('local')->exists($record->ruta_archivo), 404);
+
+        return Storage::disk('local')->download($record->ruta_archivo, basename($record->ruta_archivo), ['X-Content-Type-Options' => 'nosniff']);
     }
 
     public function edit(int $contract)

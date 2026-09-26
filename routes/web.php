@@ -70,6 +70,7 @@ Route::middleware(['auth', 'can:view-office'])->group(function (): void {
     Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->whereNumber('contract')->name('contracts.edit');
     Route::put('/contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->whereNumber('contract')->name('contracts.pdf');
+    Route::get('/contracts/{contract}/field-evidence/{evidence}', [ContractController::class, 'evidence'])->whereNumber(['contract', 'evidence'])->name('contracts.evidence');
     Route::get('/contracts/{contract}/draft', [ContractController::class, 'draft'])->whereNumber('contract')->name('contracts.draft');
 
     // RF-CON-04: Reactivación de contratos cancelados
@@ -96,6 +97,13 @@ Route::middleware(['auth', 'can:view-office'])->group(function (): void {
 
 Route::middleware(['auth', 'can:view-technician'])->group(function (): void {
     Route::get('/technician', [TechnicianController::class, 'index'])->name('technician.index');
+    Route::post('/technician/installations/{pedido}/start', [TechnicianController::class, 'start'])->whereNumber('pedido')->name('technician.start');
+    Route::post('/technician/installations/{pedido}/finish', [TechnicianController::class, 'finish'])->whereNumber('pedido')->name('technician.finish');
+    Route::post('/technician/installations/{pedido}/equipment', [TechnicianController::class, 'equipment'])->whereNumber('pedido')->name('technician.equipment');
+    Route::post('/technician/installations/{pedido}/material', [TechnicianController::class, 'material'])->whereNumber('pedido')->name('technician.material');
+    Route::post('/technician/installations/{pedido}/observation', [TechnicianController::class, 'observation'])->whereNumber('pedido')->name('technician.observation');
+    Route::post('/technician/installations/{pedido}/contract-evidence', [TechnicianController::class, 'contractEvidence'])->whereNumber('pedido')->name('technician.contractEvidence');
+    Route::get('/technician/installations/{pedido}/contract-evidence/{evidence}', [TechnicianController::class, 'downloadContract'])->whereNumber(['pedido', 'evidence'])->name('technician.contract.download');
     Route::get('/technician/installations/{pedido}', [TechnicianController::class, 'show'])->whereNumber('pedido')->name('technician.show');
     Route::post('/technician/installations/{pedido}/evidence', [TechnicianController::class, 'store'])->whereNumber('pedido')->name('technician.evidence.store');
     Route::get('/technician/installations/{pedido}/evidence/{evidence}', [TechnicianController::class, 'download'])->whereNumber(['pedido', 'evidence'])->name('technician.evidence.download');

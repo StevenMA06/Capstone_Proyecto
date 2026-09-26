@@ -88,6 +88,7 @@ class RolePermissionsTest extends TestCase
         $unassigned = DB::table('pedidos_instalacion')->where('codigo', 'TECH-I-3')->first();
         $tech = $this->account(Role::TECHNICIAN);
         $tech->update(['empleado_id' => $assigned->tecnico_id]);
+        DB::table('pedidos_instalacion')->where('pedido_id', $assigned->pedido_id)->update(['estado' => 'PROGRAMADO']);
         $this->signIn($tech)->get('/dashboard')->assertRedirect('/technician');
         $this->get('/technician')->assertOk()->assertSee('TECH-I-0')->assertDontSee('TECH-I-3')->assertDontSee('href="'.route('clients.index').'"', false);
         foreach (['clients', 'plans', 'contracts', 'payments', 'users', 'equipment', 'installations', 'access-history'] as $path) {
@@ -95,6 +96,7 @@ class RolePermissionsTest extends TestCase
         }
         $this->get('/technician/installations/'.$unassigned->pedido_id)->assertNotFound();
         $this->post('/technician/installations/'.$unassigned->pedido_id.'/evidence', ['evidence' => $this->picture()])->assertNotFound();
+        $this->post('/technician/installations/'.$assigned->pedido_id.'/start')->assertSessionHasNoErrors();
         $this->post('/technician/installations/'.$assigned->pedido_id.'/evidence', ['evidence' => $this->picture(), 'descripcion' => '<script>prueba</script>'])->assertSessionHasNoErrors()->assertRedirect();
         $record = DB::table('evidencias_instalacion')->first();
         Storage::disk('local')->assertExists($record->ruta_archivo);
