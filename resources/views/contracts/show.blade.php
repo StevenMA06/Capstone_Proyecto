@@ -15,4 +15,14 @@
 @if($contract->estado === 'CANCELADO')<p class="contract-status-help">Este contrato está cancelado y se conserva únicamente para consulta. Si el cliente desea volver, utiliza el flujo de reactivación.</p>@endif
 @if($contract->estado === 'PENDIENTE')<p class="contract-status-help">Descarga el contrato para firma y sube el PDF firmado desde «Actualizar contrato». La activación se realiza automáticamente al verificarlo.</p>@endif
 </section>
+<section class="contracts-panel">
+<h2>Evidencias del contrato firmado</h2>
+<p>Documentos adjuntados durante la instalación. Su registro no sustituye la verificación del PDF ni activa automáticamente el contrato.</p>
+<div class="table-scroll"><table><thead><tr><th>Archivo</th><th>Observación</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>
+@forelse($fieldEvidences as $file)
+<tr><td>{{ $file->nombre_archivo }}</td><td>{{ $file->observacion }}</td><td>{{ $file->subido_en }}</td><td><a class="action-link secondary" href="{{ route('contracts.evidence', [$contract->contrato_id, $file->evidencia_contrato_id]) }}">Descargar evidencia</a></td></tr>
+@empty<tr><td colspan="4">Aún no hay evidencias adjuntadas desde instalaciones.</td></tr>@endforelse
+</tbody></table></div>
+@include('clients.pagination', ['records' => $fieldEvidences, 'label' => 'Paginación de evidencias del contrato'])
+</section>
 @endsection
