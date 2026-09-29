@@ -62,7 +62,7 @@
     @endif
     <section class="overview-shortcuts">
         @if($summary !== null)<div class="future-grid">
-            <div class="future-shortcut" aria-disabled="true">@include('layouts.module-icon', ['icon' => 'chart'])<div><strong>Business Intelligence</strong><span>Análisis e indicadores avanzados</span></div><span class="coming-soon">Próximamente</span></div>
+            <a class="future-shortcut" href="{{ route('bi.index') }}">@include('layouts.module-icon', ['icon' => 'chart'])<div><strong>Business Intelligence</strong><span>Explorar el panel de demostración</span></div><span class="coming-soon">Ver pantalla</span></a>
             <div class="future-shortcut" aria-disabled="true">@include('layouts.module-icon', ['icon' => 'chat'])<div><strong>Chatbot IA</strong><span>Asistencia para tu operación</span></div><span class="coming-soon">Próximamente</span></div>
         </div>@endif
     </section>

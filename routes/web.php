@@ -70,6 +70,7 @@ Route::middleware(['auth', 'can:view-office'])->group(function (): void {
     Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->whereNumber('contract')->name('contracts.edit');
     Route::put('/contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->whereNumber('contract')->name('contracts.pdf');
+    Route::get('/contracts/{contract}/field-evidence/{evidence}', [ContractController::class, 'evidence'])->whereNumber(['contract', 'evidence'])->name('contracts.evidence');
     Route::get('/contracts/{contract}/draft', [ContractController::class, 'draft'])->whereNumber('contract')->name('contracts.draft');
 
     // RF-CON-04: Reactivación de contratos cancelados
@@ -96,8 +97,17 @@ Route::middleware(['auth', 'can:view-office'])->group(function (): void {
 
 Route::middleware(['auth', 'can:view-technician'])->group(function (): void {
     Route::get('/technician', [TechnicianController::class, 'index'])->name('technician.index');
+    Route::post('/technician/installations/{pedido}/start', [TechnicianController::class, 'start'])->whereNumber('pedido')->name('technician.start');
+    Route::post('/technician/installations/{pedido}/finish', [TechnicianController::class, 'finish'])->whereNumber('pedido')->name('technician.finish');
+    Route::post('/technician/installations/{pedido}/equipment', [TechnicianController::class, 'equipment'])->whereNumber('pedido')->name('technician.equipment');
+    Route::post('/technician/installations/{pedido}/material', [TechnicianController::class, 'material'])->whereNumber('pedido')->name('technician.material');
+    Route::post('/technician/installations/{pedido}/observation', [TechnicianController::class, 'observation'])->whereNumber('pedido')->name('technician.observation');
+    Route::post('/technician/installations/{pedido}/contract-evidence', [TechnicianController::class, 'contractEvidence'])->whereNumber('pedido')->name('technician.contractEvidence');
+    Route::get('/technician/installations/{pedido}/contract-evidence/{evidence}/preview', [TechnicianController::class, 'previewContract'])->whereNumber(['pedido', 'evidence'])->name('technician.contract.preview');
+    Route::get('/technician/installations/{pedido}/contract-evidence/{evidence}', [TechnicianController::class, 'downloadContract'])->whereNumber(['pedido', 'evidence'])->name('technician.contract.download');
     Route::get('/technician/installations/{pedido}', [TechnicianController::class, 'show'])->whereNumber('pedido')->name('technician.show');
     Route::post('/technician/installations/{pedido}/evidence', [TechnicianController::class, 'store'])->whereNumber('pedido')->name('technician.evidence.store');
+    Route::get('/technician/installations/{pedido}/evidence/{evidence}/preview', [TechnicianController::class, 'preview'])->whereNumber(['pedido', 'evidence'])->name('technician.evidence.preview');
     Route::get('/technician/installations/{pedido}/evidence/{evidence}', [TechnicianController::class, 'download'])->whereNumber(['pedido', 'evidence'])->name('technician.evidence.download');
 });
 
@@ -158,4 +168,14 @@ Route::middleware(['auth'])->group(function (): void {
 
     // Kardex de Inventario (consulta únicamente)
     Route::get('/kardex', [KardexController::class, 'index'])->name('kardex.index');
+});
+
+Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+    Route::view('/reports', 'analytics.screen', ['screen' => 'reports'])->name('reports.index');
+    // Exportación real pendiente; la entrega actual contiene solo pantallas de demostración.
+});
+
+Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
+    Route::view('/indicators', 'analytics.screen', ['screen' => 'indicators'])->name('indicators.index');
+    Route::view('/bi', 'analytics.screen', ['screen' => 'bi'])->name('bi.index');
 });
