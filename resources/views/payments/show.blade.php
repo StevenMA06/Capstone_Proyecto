@@ -62,6 +62,24 @@
         <div><dt>Contrato</dt><dd><strong>{{ $payment->contract?->codigo ?? '—' }}</strong></dd></div>
         <div><dt>Cliente</dt><dd>{{ trim(($payment->contract?->client?->nombres_razon_social ?? '') . ' ' . ($payment->contract?->client?->apellidos ?? '')) }}</dd></div>
         <div><dt>Documento</dt><dd>{{ $payment->contract?->client?->tipo_documento }} {{ $payment->contract?->client?->numero_documento }}</dd></div>
+        <div><dt>Correo electrónico</dt><dd>
+            @if($payment->contract?->client?->correo)
+                <a href="mailto:{{ $payment->contract->client->correo }}" style="color: #087846; text-decoration: none;">
+                    <i class="bi bi-envelope"></i> {{ $payment->contract->client->correo }}
+                </a>
+            @else
+                —
+            @endif
+        </dd></div>
+        <div><dt>Teléfono</dt><dd>
+            @if($payment->contract?->client?->telefono)
+                <a href="tel:{{ $payment->contract->client->telefono }}" style="color: #087846; text-decoration: none;">
+                    <i class="bi bi-telephone"></i> {{ $payment->contract->client->telefono }}
+                </a>
+            @else
+                —
+            @endif
+        </dd></div>
         <div><dt>Plan contratado</dt><dd>{{ $payment->contract?->plan?->nombre ?? 'Sin plan' }}</dd></div>
     </dl>
 </section>
