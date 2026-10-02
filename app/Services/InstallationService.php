@@ -125,7 +125,9 @@ class InstallationService
             }
             $stock = $units($material->stock_actual);
             if ($delta > $stock) {
-                $this->fail('cantidad_utilizada', 'Stock insuficiente para registrar el consumo adicional. Disponible: '.$material->stock_actual.' '.$material->unidad_medida.'.');
+                // Obtener la unidad correcta: usar unidad_empaque si existe, sino unidad_base
+                $unit = $material->unidad_empaque ?? $material->unidad_base;
+                $this->fail('cantidad_utilizada', 'Stock insuficiente para registrar el consumo adicional. Disponible: '.$material->stock_actual.' '.$unit.'.');
             }
             $format = fn ($value) => number_format($value / 1000, 3, '.', '');
             DB::table('materiales')->where('material_id', $materialId)->update(['stock_actual' => $format($stock - $delta)]);

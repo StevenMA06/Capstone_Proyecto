@@ -13,10 +13,20 @@ class StockExitRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'cantidad' => ['required', 'numeric', 'decimal:0,3', 'min:0.001', 'max:999999999.999'],
+        $material = $this->route('material');
+        
+        $rules = [
             'observacion' => ['nullable', 'string', 'max:500'],
         ];
+
+        // Si el material usa inventario en empaques, solo permitir enteros
+        if ($material && $material->inventario_en_empaque) {
+            $rules['cantidad'] = ['required', 'integer', 'min:1', 'max:999999999'];
+        } else {
+            $rules['cantidad'] = ['required', 'numeric', 'decimal:0,3', 'min:0.001', 'max:999999999.999'];
+        }
+
+        return $rules;
     }
 
     public function attributes(): array

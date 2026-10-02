@@ -157,17 +157,17 @@ class EquipmentRepository
             $errors = [];
             $rowNumber = $index + 1;
 
-            // Validar código
-            if (empty($row['codigo'])) {
-                $errors[] = 'Código es obligatorio';
-            } elseif (strlen($row['codigo']) > 60) {
-                $errors[] = 'Código no puede exceder 60 caracteres';
-            } elseif ($this->codeExists($row['codigo'])) {
-                $errors[] = 'Código ya existe en la base de datos';
-            } elseif (in_array($row['codigo'], $codesInFile)) {
-                $errors[] = 'Código duplicado en el archivo';
-            } else {
-                $codesInFile[] = $row['codigo'];
+            // Validar código (ahora es opcional)
+            if (!empty($row['codigo'])) {
+                if (strlen($row['codigo']) > 60) {
+                    $errors[] = 'Código no puede exceder 60 caracteres';
+                } elseif ($this->codeExists($row['codigo'])) {
+                    $errors[] = 'Código ya existe en la base de datos';
+                } elseif (in_array($row['codigo'], $codesInFile)) {
+                    $errors[] = 'Código duplicado en el archivo';
+                } else {
+                    $codesInFile[] = $row['codigo'];
+                }
             }
 
             // Validar número de serie (opcional pero único)

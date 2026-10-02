@@ -47,7 +47,7 @@ class DashboardTest extends TestCase
             DB::table('equipos')->insert(['codigo' => $state, 'nombre' => 'Router', 'tipo' => 'Router', 'estado' => $state, 'creado_por' => $manager->getKey()]);
         }
         foreach ([[1, 2, 'ACTIVO'], [2, 2, 'ACTIVO'], [3, 2, 'ACTIVO'], [0, 2, 'INACTIVO']] as $i => [$stock, $min, $state]) {
-            DB::table('materiales')->insert(['codigo' => 'M'.$i, 'nombre' => 'Cable', 'unidad_medida' => 'metro', 'stock_actual' => $stock, 'stock_minimo' => $min, 'estado' => $state, 'creado_por' => $manager->getKey()]);
+            DB::table('materiales')->insert(['codigo' => 'M'.$i, 'nombre' => 'Cable', 'unidad_base' => 'metro', 'stock_actual' => $stock, 'stock_minimo' => $min, 'estado' => $state, 'creado_por' => $manager->getKey()]);
         }
         $this->signIn($manager)->get('/dashboard')->assertOk()->assertViewHas('clientCount', 1)
             ->assertViewHas('summary', fn ($s) => $s['topPlans']->count() === 1 && (int) $s['topPlans'][0]->total === 1)
@@ -65,7 +65,7 @@ class DashboardTest extends TestCase
             DB::table('equipos')->insert(['codigo' => 'E'.$i, 'nombre' => 'Router <script>', 'tipo' => 'Router', 'modelo' => $model, 'estado' => $state, 'creado_por' => $manager->getKey()]);
         }
         foreach ([[0, 1, 'ACTIVO'], [1, 1, 'ACTIVO'], [1.125, 1, 'ACTIVO'], [0, 1, 'INACTIVO']] as $i => [$stock, $minimum, $state]) {
-            DB::table('materiales')->insert(['codigo' => 'MAT'.$i, 'nombre' => 'Fibra <script>', 'unidad_medida' => 'm', 'stock_actual' => $stock, 'stock_minimo' => $minimum, 'estado' => $state, 'creado_por' => $manager->getKey()]);
+            DB::table('materiales')->insert(['codigo' => 'MAT'.$i, 'nombre' => 'Fibra <script>', 'unidad_base' => 'm', 'stock_actual' => $stock, 'stock_minimo' => $minimum, 'estado' => $state, 'creado_por' => $manager->getKey()]);
         }
         $this->signIn($manager)->get('/dashboard')->assertOk()
             ->assertSee('Router &lt;script&gt;', false)->assertDontSee('Router <script>', false)

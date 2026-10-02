@@ -24,10 +24,12 @@ class StoreMaterialRequest extends FormRequest
         }
 
         return [
-            'codigo' => ['required', 'string', 'max:60', $codigoRule],
+            'codigo' => ['nullable', 'string', 'max:60', $codigoRule],
             'nombre' => ['required', 'string', 'max:120'],
             'descripcion' => ['nullable', 'string', 'max:500'],
-            'unidad_medida' => ['required', 'string', 'max:30'],
+            'unidad_base' => ['required', 'string', 'max:30'],
+            'unidad_empaque' => ['nullable', 'required_with:factor_conversion', 'string', 'max:30'],
+            'factor_conversion' => ['nullable', 'required_with:unidad_empaque', 'numeric', 'decimal:0,3', 'min:0.001', 'max:999999.999'],
             'stock_actual' => ['required', 'numeric', 'decimal:0,3', 'min:0', 'max:999999999.999'],
             'stock_minimo' => ['required', 'numeric', 'decimal:0,3', 'min:0', 'max:999999999.999'],
             'estado' => ['required', Rule::in(['ACTIVO', 'INACTIVO'])],
@@ -39,7 +41,9 @@ class StoreMaterialRequest extends FormRequest
         return [
             'codigo' => 'código',
             'descripcion' => 'descripción',
-            'unidad_medida' => 'unidad de medida',
+            'unidad_base' => 'unidad base',
+            'unidad_empaque' => 'unidad de empaque',
+            'factor_conversion' => 'factor de conversión',
             'stock_actual' => 'stock actual',
             'stock_minimo' => 'stock mínimo',
         ];
@@ -49,6 +53,7 @@ class StoreMaterialRequest extends FormRequest
     {
         return [
             'required' => 'El campo :attribute es obligatorio.',
+            'required_with' => 'El campo :attribute es obligatorio cuando se especifica :values.',
             'string' => 'El campo :attribute debe ser texto.',
             'max' => 'El campo :attribute admite hasta :max caracteres.',
             'unique' => 'Este :attribute ya está registrado.',

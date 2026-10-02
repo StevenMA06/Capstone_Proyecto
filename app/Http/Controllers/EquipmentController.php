@@ -130,7 +130,7 @@ class EquipmentController extends Controller
 
         // Encabezados
         $headers = [
-            'codigo',
+            'codigo (opcional)',
             'numero_serie',
             'nombre',
             'tipo',
@@ -150,7 +150,7 @@ class EquipmentController extends Controller
         }
 
         // Fila de ejemplo
-        $sheet->setCellValue('A2', 'EQ-001');
+        $sheet->setCellValue('A2', '');  // Vacío para mostrar que es opcional
         $sheet->setCellValue('B2', 'SN123456');
         $sheet->setCellValue('C2', 'Router TP-Link');
         $sheet->setCellValue('D2', 'Router');

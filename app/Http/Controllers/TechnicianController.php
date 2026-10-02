@@ -74,7 +74,8 @@ class TechnicianController extends Controller
             'usedEquipment' => DB::table('pedido_equipos as pe')->join('equipos as e', 'e.equipo_id', '=', 'pe.equipo_id')
                 ->where('pe.pedido_id', $pedido)->select('pe.*', 'e.codigo', 'e.nombre', 'e.numero_serie', 'e.marca', 'e.modelo')->get(),
             'usedMaterials' => DB::table('pedido_materiales as pm')->join('materiales as m', 'm.material_id', '=', 'pm.material_id')
-                ->where('pm.pedido_id', $pedido)->select('pm.*', 'm.codigo', 'm.nombre', 'm.unidad_medida')->get(),
+                ->where('pm.pedido_id', $pedido)->select('pm.*', 'm.codigo', 'm.nombre', 'm.unidad_base', 'm.unidad_empaque', 'm.inventario_en_empaque')
+                ->selectRaw('CASE WHEN m.inventario_en_empaque = 1 THEN m.unidad_empaque ELSE m.unidad_base END as unidad_medida')->get(),
         ]);
     }
 

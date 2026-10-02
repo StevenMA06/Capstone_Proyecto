@@ -26,7 +26,7 @@ class StoreEquipmentRequest extends FormRequest
         }
 
         return [
-            'codigo' => ['required', 'string', 'max:60', $codigoRule],
+            'codigo' => ['nullable', 'string', 'max:60', $codigoRule],
             'numero_serie' => ['nullable', 'string', 'max:100', $serieRule],
             'nombre' => ['required', 'string', 'max:120'],
             'tipo' => ['required', 'string', 'max:80'],

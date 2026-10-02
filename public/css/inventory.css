@@ -19,8 +19,8 @@
 .inventory-management :is(input, select, textarea):focus-visible { outline: 3px solid #16834d25; border-color: #16834d; }
 .inventory-management .form-group :is(input, select):is(:disabled, [readonly]) { background: #eef2ef; color: #657a70; }
 .inventory-management .form-group small { color: var(--inv-muted); font-size: 12px; line-height: 1.5; }
-.inventory-management .form-group:has(.error-message) :is(input, select, textarea), .inventory-management [aria-invalid="true"] { border-color: #c34444; }
-.inventory-management .error-message { color: #b42332; font-size: 12px; line-height: 1.5; }
+.inventory-management .form-group:has(.error-message) :is(input, select, textarea), .inventory-management [aria-invalid="true"] 
+.inventory-management .error-message { color: #243b33; font-size: 12px; line-height: 1.5; }
 .inventory-management .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 18px 22px; background: #fff; border: 1px solid var(--inv-border); border-radius: 12px; }
 .inventory-management .clear-link { display: inline-flex; align-items: center; justify-content: center; border: 1px solid #cedbd3; border-radius: 8px; padding: 11px 16px; background: #fff; text-decoration: none; font: inherit; font-size: 13px; cursor: pointer; }
 .inventory-management .action-link { border-radius: 8px; font-size: 13px; }

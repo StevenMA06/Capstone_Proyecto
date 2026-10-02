@@ -48,7 +48,7 @@ class InstallationExecutionTest extends TestCase
         DB::table('pedidos_instalacion')->where('pedido_id', $this->id)->update(['estado' => 'PROGRAMADO']);
         $this->tech = User::factory()->create(['rol_id' => Role::where('nombre', Role::TECHNICIAN)->value('rol_id'), 'empleado_id' => $record->tecnico_id]);
         $this->material = DB::table('materiales')->insertGetId(['codigo' => 'MAT-INS', 'nombre' => 'Fibra óptica',
-            'unidad_medida' => 'm', 'stock_actual' => '10.500', 'creado_por' => $this->manager->getKey()]);
+            'unidad_base' => 'm', 'stock_actual' => '10.500', 'creado_por' => $this->manager->getKey()]);
         $this->equipment = DB::table('equipos')->insertGetId(['codigo' => 'EQ-INS', 'nombre' => 'Router',
             'tipo' => 'Router', 'creado_por' => $this->manager->getKey()]);
         $this->signIn($this->tech);

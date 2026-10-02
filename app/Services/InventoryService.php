@@ -28,6 +28,11 @@ class InventoryService
     public function registerEquipment(array $data, User $user): Equipment
     {
         return DB::transaction(function () use ($data, $user) {
+            // Generar código automático si no se proporcionó
+            if (empty($data['codigo'])) {
+                $data['codigo'] = $this->generateEquipmentCode();
+            }
+
             // Crear equipo
             $equipment = $this->equipments->create(array_merge($data, [
                 'creado_por' => $user->getKey(),
@@ -61,6 +66,11 @@ class InventoryService
     public function registerMaterial(array $data, User $user): Material
     {
         return DB::transaction(function () use ($data, $user) {
+            // Generar código automático si no se proporcionó
+            if (empty($data['codigo'])) {
+                $data['codigo'] = $this->generateMaterialCode();
+            }
+
             // Crear material
             $material = $this->materials->create(array_merge($data, [
                 'creado_por' => $user->getKey(),
@@ -225,8 +235,15 @@ class InventoryService
             $imported = 0;
 
             foreach ($validRows as $row) {
+                $data = $row['data'];
+                
+                // Generar código automático si está vacío
+                if (empty($data['codigo'])) {
+                    $data['codigo'] = $this->generateEquipmentCode();
+                }
+
                 // Crear equipo
-                $equipment = $this->equipments->create(array_merge($row['data'], [
+                $equipment = $this->equipments->create(array_merge($data, [
                     'creado_por' => $user->getKey(),
                 ]));
 
@@ -295,5 +312,55 @@ class InventoryService
     public function deactivateMaterial(Material $material): Material
     {
         return $this->materials->deactivate($material);
+    }
+
+    /**
+     * Generar código automático para equipos
+     */
+    private function generateEquipmentCode(): string
+    {
+        $lastEquipment = Equipment::orderBy('equipo_id', 'desc')->first();
+        
+        if (!$lastEquipment) {
+            return 'EQ-0001';
+        }
+
+        // Extraer el número del último código
+        $lastCode = $lastEquipment->codigo;
+        
+        // Si el código sigue el formato EQ-XXXX, incrementar
+        if (preg_match('/^EQ-(\d+)$/', $lastCode, $matches)) {
+            $nextNumber = intval($matches[1]) + 1;
+            return 'EQ-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        }
+
+        // Si no sigue el formato, contar total de equipos + 1
+        $count = Equipment::count();
+        return 'EQ-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Generar código automático para materiales
+     */
+    private function generateMaterialCode(): string
+    {
+        $lastMaterial = Material::orderBy('material_id', 'desc')->first();
+        
+        if (!$lastMaterial) {
+            return 'MAT-0001';
+        }
+
+        // Extraer el número del último código
+        $lastCode = $lastMaterial->codigo;
+        
+        // Si el código sigue el formato MAT-XXXX, incrementar
+        if (preg_match('/^MAT-(\d+)$/', $lastCode, $matches)) {
+            $nextNumber = intval($matches[1]) + 1;
+            return 'MAT-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        }
+
+        // Si no sigue el formato, contar total de materiales + 1
+        $count = Material::count();
+        return 'MAT-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
     }
 }

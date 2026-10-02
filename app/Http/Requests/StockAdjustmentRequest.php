@@ -13,11 +13,21 @@ class StockAdjustmentRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'nuevo_stock' => ['required', 'numeric', 'decimal:0,3', 'min:0', 'max:999999999.999'],
+        $material = $this->route('material');
+        
+        $rules = [
             'justificacion' => ['required', 'string', 'min:10', 'max:500'],
             'observacion' => ['nullable', 'string', 'max:500'],
         ];
+
+        // Si el material usa inventario en empaques, solo permitir enteros
+        if ($material && $material->inventario_en_empaque) {
+            $rules['nuevo_stock'] = ['required', 'integer', 'min:0', 'max:999999999'];
+        } else {
+            $rules['nuevo_stock'] = ['required', 'numeric', 'decimal:0,3', 'min:0', 'max:999999999.999'];
+        }
+
+        return $rules;
     }
 
     public function attributes(): array

@@ -98,7 +98,7 @@
                         <td>{{ \App\Support\InventoryQuantity::format($m->cantidad) }}</td>
                         <td>{{ $m->cantidad_anterior !== null ? \App\Support\InventoryQuantity::format($m->cantidad_anterior) : '—' }}</td>
                         <td>{{ $m->cantidad_posterior !== null ? \App\Support\InventoryQuantity::format($m->cantidad_posterior) : '—' }}</td>
-                        <td>{{ $m->responsible->nombre_completo ?? '—' }}</td>
+                        <td>{{ $m->responsible->name ?? '—' }}</td>
                     </tr>
                     @empty
                     <tr>

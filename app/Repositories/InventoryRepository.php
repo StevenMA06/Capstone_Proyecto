@@ -22,7 +22,8 @@ class InventoryRepository
     public function materials(): Builder
     {
         return DB::table('materiales')->where('estado', 'ACTIVO')
-            ->select('codigo', 'nombre', 'unidad_medida', 'stock_actual', 'stock_minimo')
+            ->select('codigo', 'nombre', 'unidad_base', 'unidad_empaque', 'factor_conversion', 'inventario_en_empaque', 'stock_actual', 'stock_minimo')
+            ->selectRaw('CASE WHEN inventario_en_empaque = 1 THEN unidad_empaque ELSE unidad_base END as unidad_medida')
             ->orderBy('nombre')->orderBy('codigo');
     }
 

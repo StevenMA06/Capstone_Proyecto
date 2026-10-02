@@ -24,7 +24,7 @@ Schedule::command('contracts:finalize')->everyMinute()->withoutOverlapping();
 // AUTOMATIZACIÓN DE PAGOS Y CONTRATOS (RF-PAG-10, RF-PAG-11, RF-PAG-12)
 // ============================================================================
 
-// Actualizar estados de pagos: PENDIENTE → VENCIDO → ANULADO
+// Actualizar estados de pagos: PENDIENTE → VENCIDO → IMPAGO
 Schedule::command('payments:update-overdue')
     ->everyMinute()
     ->withoutOverlapping()
