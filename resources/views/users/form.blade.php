@@ -1,7 +1,7 @@
 @extends('users.layout')
 @section('management-content')
 <h2>{{ $account->exists ? 'Editar cuenta' : 'Registrar cuenta' }}</h2>
-<form class="account-form" method="POST" action="{{ $account->exists ? route('users.update', $account) : route('users.store') }}">
+@can('users.manage')<form class="account-form" method="POST" action="{{ $account->exists ? route('users.update', $account) : route('users.store') }}">
     @csrf
     @if($account->exists) @method('PUT') @endif
     <div><label for="nombre_usuario">Nombre de usuario *</label><input id="nombre_usuario" name="nombre_usuario" value="{{ old('nombre_usuario', $account->nombre_usuario) }}" required minlength="3" maxlength="60" pattern="[a-zA-Z0-9_.-]+" aria-describedby="username-help @error('nombre_usuario') nombre_usuario-error @enderror" @error('nombre_usuario') aria-invalid="true" @enderror><small id="username-help">Letras sin acentos, números, puntos, guiones o guiones bajos.</small>@error('nombre_usuario')<p id="nombre_usuario-error" class="field-error" role="alert">{{ $message }}</p>@enderror</div>
@@ -15,6 +15,6 @@
     <div><label for="new-password">{{ $account->exists ? 'Nueva contraseña (opcional)' : 'Contraseña *' }}</label><input id="new-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" @required(!$account->exists) aria-describedby="password-help @error('password') password-error @enderror" @error('password') aria-invalid="true" @enderror><small id="password-help">Mínimo 12 caracteres con letras y números. {{ $account->exists ? 'Déjala vacía para conservar la actual.' : '' }}</small>@error('password')<p id="password-error" class="field-error" role="alert">{{ $message }}</p>@enderror</div>
     <div><label for="password-confirmation">Confirmar contraseña {{ $account->exists ? '' : '*' }}</label><input id="password-confirmation" name="password_confirmation" type="password" autocomplete="new-password" maxlength="128" @required(!$account->exists)></div>
     <div class="form-actions"><button class="action-link" type="submit">{{ $account->exists ? 'Guardar cambios' : 'Registrar cuenta' }}</button><a class="secondary" href="{{ route('users.index') }}">Cancelar</a></div>
-</form>
+</form>@endcan
 @endsection
 

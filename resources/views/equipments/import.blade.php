@@ -7,7 +7,7 @@
         <section class="inventory-card">
             <h3><span>02</span> Cargar archivo</h3>
             <p>Cada equipo importado generará su movimiento de entrada en el Kardex.</p>
-            <form class="standard-form" method="POST" action="{{ route('equipments.import.process') }}" enctype="multipart/form-data">
+            @can('equipments.manage')<form class="standard-form" method="POST" action="{{ route('equipments.import.process') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="form-group">
                     <label for="archivo">Archivo Excel *</label>
@@ -20,12 +20,12 @@
                     <button type="submit" class="action-link">Validar archivo</button>
                     <a href="{{ route('equipments.index') }}" class="clear-link">Volver al listado</a>
                 </div>
-            </form>
+            </form>@endcan
         </section>
         <aside class="inventory-card">
             <h3><span>01</span> Preparar los datos</h3>
             <ol><li>Descarga la plantilla.</li><li>Completa los datos de tus equipos.</li><li>Conserva los encabezados originales.</li><li>Guarda y selecciona el archivo.</li></ol>
-            <a href="{{ route('equipments.template') }}" class="clear-link">Descargar plantilla Excel</a>
+            @can('equipments.manage')<a href="{{ route('equipments.template') }}" class="clear-link">Descargar plantilla Excel</a>@endcan
             <p>Usa códigos y números de serie únicos. La vista previa te indicará qué filas necesitan corrección.</p>
         </aside>
     </div>

@@ -8,7 +8,7 @@
     <div class="row-actions">
         <a class="secondary" href="{{ route('payments.index') }}">← Volver a pagos</a>
         @if($payment->canBeEdited())
-            <a class="action-link" href="{{ route('payments.edit', $payment) }}">Validar pago</a>
+            @can('payments.manage')<a class="action-link" href="{{ route('payments.edit', $payment) }}">Validar pago</a>@endcan
         @endif
         @if($payment->constancia_ruta && $payment->isCompleted())
             <a class="action-link" href="{{ route('payments.receipt', $payment) }}" target="_blank" title="Ver comprobante de pago">

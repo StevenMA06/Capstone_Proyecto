@@ -147,7 +147,7 @@
 </style>
 
 {{-- Formulario de validación --}}
-<form class="payment-validation-form" method="POST" action="{{ route('payments.update', $payment) }}" novalidate>
+@can('payments.manage')<form class="payment-validation-form" method="POST" action="{{ route('payments.update', $payment) }}" novalidate>
     @csrf
     @method('PUT')
     
@@ -216,7 +216,7 @@
         </button>
         <a class="btn-secondary" href="{{ route('payments.show', $payment) }}">Cancelar</a>
     </div>
-</form>
+</form>@endcan
 
 <style>
 .payment-validation-form {
@@ -410,7 +410,7 @@
                 </div>
             </div>
             
-            <form method="POST" action="{{ route('payments.cancel', $payment) }}" style="max-width: 600px;">
+            @can('payments.manage')<form method="POST" action="{{ route('payments.cancel', $payment) }}" style="max-width: 600px;">
                 @csrf @method('PATCH')
                 <div style="margin-bottom: 16px;">
                     <label for="observaciones_anular" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">
@@ -434,7 +434,7 @@
                     <i class="bi bi-x-circle-fill"></i>
                     Confirmar anulación
                 </button>
-            </form>
+            </form>@endcan
         </div>
     </details>
 </section>

@@ -26,6 +26,11 @@ class Role extends Model
 
     protected $fillable = ['nombre', 'descripcion', 'estado'];
 
+    protected static function booted(): void
+    {
+        static::created(fn (Role $role) => \App\Support\AccessCatalog::seedRole($role));
+    }
+
     public function isManagement(): bool
     {
         return in_array($this->nombre, [self::ADMIN, self::MANAGER], true);

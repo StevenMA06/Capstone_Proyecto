@@ -18,7 +18,7 @@ class UserRepository
 
     public function roles(bool $activeOnly = true): Collection
     {
-        return Role::query()->whereIn('nombre', Role::NAMES)->when($activeOnly, fn ($q) => $q->where('estado', 'ACTIVO'))->orderBy('nombre')->get();
+        return Role::query()->when($activeOnly, fn ($q) => $q->where('estado', 'ACTIVO'))->orderBy('nombre')->get();
     }
 
     public function employees(?User $account = null): Collection
@@ -43,13 +43,13 @@ class UserRepository
 
         return User::with(['role', 'employee'])
             ->when($search !== '', fn ($q) => $q->whereRaw("nombre_usuario LIKE ? ESCAPE '!'", [$pattern]))
-            ->when($role, fn ($q) => $q->where('rol_id', $role))
+            ->when($role, fn ($q) => $q->whereHas('roles', fn ($r) => $r->where('roles.rol_id', $role)))
             ->orderBy('nombre_usuario')->paginate(15)->withQueryString();
     }
 
     public function lockManagers(): Collection
     {
-        return User::with(['role', 'employee'])->whereHas('role', fn ($q) => $q->whereIn('nombre', [Role::ADMIN, Role::MANAGER]))
+        return User::with(['role', 'employee'])->whereHas('roles', fn ($q) => $q->whereIn('nombre', [Role::ADMIN, Role::MANAGER]))
             ->orderBy('usuario_id')->lockForUpdate()->get();
     }
 

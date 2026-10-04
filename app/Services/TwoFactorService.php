@@ -17,7 +17,7 @@ class TwoFactorService
 
     public function fingerprint(User $user): string
     {
-        return hash('sha256', implode('|', [$user->password_hash, $user->correo, $user->rol_id, $user->empleado_id]));
+        return hash('sha256', implode('|', [$user->password_hash, $user->correo, $user->roles()->where('estado', 'ACTIVO')->orderBy('roles.rol_id')->pluck('roles.rol_id')->join(','), $user->empleado_id]));
     }
 
     public function issue(User $user, ?array $pending = null): array

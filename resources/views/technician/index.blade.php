@@ -34,7 +34,7 @@
 <td data-label="Acciones"><div class="installation-row-actions">
 <a class="action-link secondary" href="{{ route('technician.show', $record->pedido_id) }}">Ver detalle</a>
 @if($record->tecnico_id && in_array($record->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO']))
-<form method="POST" action="{{ route('technician.start', $record->pedido_id) }}" data-installation-form>@csrf<button type="submit" class="action-link">Iniciar instalación</button><span class="installation-loading" role="status" hidden>Registrando inicio…</span></form>
+@can('technician.manage')<form method="POST" action="{{ route('technician.start', $record->pedido_id) }}" data-installation-form>@csrf<button type="submit" class="action-link">Iniciar instalación</button><span class="installation-loading" role="status" hidden>Registrando inicio…</span></form>@endcan
 @endif
 </div></td>
 </tr>

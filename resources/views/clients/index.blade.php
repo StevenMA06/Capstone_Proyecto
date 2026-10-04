@@ -15,7 +15,7 @@
     </form>
 </aside>
 <section class="client-list-panel" aria-labelledby="list-title">
-    <div class="management-toolbar"><div><h2 id="list-title">Listado de clientes</h2><p class="muted">{{ $clients->total() }} {{ $clients->total() === 1 ? 'cliente encontrado' : 'clientes encontrados' }}</p></div><a class="action-link" href="{{ route('clients.create') }}"><span aria-hidden="true">＋</span> Registrar cliente</a></div>
+    <div class="management-toolbar"><div><h2 id="list-title">Listado de clientes</h2><p class="muted">{{ $clients->total() }} {{ $clients->total() === 1 ? 'cliente encontrado' : 'clientes encontrados' }}</p></div>@can('clients.manage')<a class="action-link" href="{{ route('clients.create') }}"><span aria-hidden="true">＋</span> Registrar cliente</a>@endcan</div>
     <div class="table-scroll"><table class="users-table client-table"><caption class="sr-only">Clientes registrados</caption><thead><tr><th>Documento</th><th>Nombre completo</th><th>Teléfono</th><th>Dirección</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
     @forelse($clients as $client)
     <tr>
@@ -23,7 +23,7 @@
         <td><a class="client-name" href="{{ route('clients.show', $client) }}">{{ $client->nombres_razon_social }} {{ $client->apellidos }}</a></td>
         <td>{{ $client->telefono ?? '—' }}</td><td>{{ $client->direccion }}</td>
         <td><span class="state {{ $client->estado === 'ACTIVO' ? 'active' : 'inactive' }}">{{ $client->estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span></td>
-        <td><div class="row-actions"><a href="{{ route('clients.show', $client) }}" aria-label="Ver ficha de {{ $client->nombres_razon_social }}">Ver ficha</a><a href="{{ route('clients.edit', $client) }}" aria-label="Editar {{ $client->nombres_razon_social }}">Editar</a></div></td>
+        <td><div class="row-actions"><a href="{{ route('clients.show', $client) }}" aria-label="Ver ficha de {{ $client->nombres_razon_social }}">Ver ficha</a>@can('clients.manage')<a href="{{ route('clients.edit', $client) }}" aria-label="Editar {{ $client->nombres_razon_social }}">Editar</a>@endcan</div></td>
     </tr>
     @empty<tr><td colspan="6" class="empty-state">No se encontraron clientes con esos criterios.</td></tr>@endforelse
     </tbody></table></div>
