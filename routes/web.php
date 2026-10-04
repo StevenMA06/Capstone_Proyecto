@@ -53,7 +53,6 @@ Route::middleware(['auth', 'can:manage-employees'])->group(function (): void {
 Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
     Route::get('/installations', [OperationController::class, 'installations'])->name('installations.index');
     Route::get('/equipment', [OperationController::class, 'equipment'])->name('equipment.index');
-    Route::get('/materials', [OperationController::class, 'materials'])->name('materials.index');
     
     // Chatbot IA - Solo para Gerencia
     Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');
@@ -178,4 +177,12 @@ Route::middleware(['auth', 'can:view-office'])->group(function (): void {
 Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
     Route::view('/indicators', 'analytics.screen', ['screen' => 'indicators'])->name('indicators.index');
     Route::view('/bi', 'analytics.screen', ['screen' => 'bi'])->name('bi.index');
+});
+
+Route::middleware(['auth'])->group(function (): void {
+    Route::get('/roles', [\App\Http\Controllers\RoleAccessController::class, 'index'])->name('roles.index');
+    Route::post('/roles', [\App\Http\Controllers\RoleAccessController::class, 'store'])->name('roles.store');
+    Route::put('/roles/{role}', [\App\Http\Controllers\RoleAccessController::class, 'update'])->name('roles.update');
+    Route::get('/user-roles', [\App\Http\Controllers\RoleAccessController::class, 'assignments'])->name('user-roles.index');
+    Route::put('/user-roles/{user}', [\App\Http\Controllers\RoleAccessController::class, 'assign'])->name('user-roles.update');
 });

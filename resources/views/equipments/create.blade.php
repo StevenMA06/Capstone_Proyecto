@@ -2,7 +2,7 @@
 
 @section('equipments-content')
 <div class="form-layout">
-    <form class="standard-form" method="POST" action="{{ $equipment->exists ? route('equipments.update', $equipment) : route('equipments.store') }}" novalidate>
+    @can('equipments.manage')<form class="standard-form" method="POST" action="{{ $equipment->exists ? route('equipments.update', $equipment) : route('equipments.store') }}" novalidate>
         @csrf
         @if($equipment->exists)
             @method('PUT')
@@ -105,7 +105,7 @@
             <button type="submit" class="action-link">{{ $equipment->exists ? 'Actualizar equipo' : 'Registrar equipo' }}</button>
             <a href="{{ $equipment->exists ? route('equipments.show', $equipment) : route('equipments.index') }}" class="clear-link">Cancelar</a>
         </div>
-    </form>
+    </form>@endcan
 </div>
 
 <script>

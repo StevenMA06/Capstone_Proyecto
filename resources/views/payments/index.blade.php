@@ -239,7 +239,7 @@
                     <div class="row-actions">
                         <a href="{{ route('payments.show', $payment) }}" aria-label="Ver detalle del pago {{ $payment->codigo }}">Ver detalle</a>
                         @if($payment->estado === 'PENDIENTE' || $payment->estado === 'VENCIDO')
-                            <a href="{{ route('payments.edit', $payment) }}" aria-label="Validar pago {{ $payment->codigo }}">Validar pago</a>
+                            @can('payments.manage')<a href="{{ route('payments.edit', $payment) }}" aria-label="Validar pago {{ $payment->codigo }}">Validar pago</a>@endcan
                         @endif
                         @if($payment->constancia_ruta && $payment->estado === 'REALIZADO')
                             <a href="{{ route('payments.receipt', $payment) }}" target="_blank" aria-label="Ver comprobante del pago {{ $payment->codigo }}" title="Ver comprobante PDF">

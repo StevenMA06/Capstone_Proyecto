@@ -4,7 +4,7 @@
     <div><h2>Cliente #{{ $client->getKey() }} · {{ $client->nombres_razon_social }} {{ $client->apellidos }}</h2>
         <p>Estado: <span class="state {{ $client->estado === 'ACTIVO' ? 'active' : 'inactive' }}">{{ $client->estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span></p>
     </div>
-    <div class="row-actions"><a class="secondary" href="{{ route('clients.index') }}">Ver clientes</a><a class="action-link" href="{{ route('clients.edit', $client) }}">Editar cliente</a></div>
+    <div class="row-actions"><a class="secondary" href="{{ route('clients.index') }}">Ver clientes</a>@can('clients.manage')<a class="action-link" href="{{ route('clients.edit', $client) }}">Editar cliente</a>@endcan</div>
 </div>
 <dl class="account-detail">
     <div><dt>Documento</dt><dd>{{ $client->tipo_documento }} {{ $client->numero_documento }}</dd></div>
@@ -20,7 +20,7 @@
 <details class="client-deactivate">
     <summary>Inhabilitar cliente</summary>
     <p class="muted">El cliente pasará a inactivo. Sus datos, contratos, pagos e instalaciones seguirán disponibles para consulta.</p>
-    <form method="POST" action="{{ route('clients.deactivate', $client) }}">@csrf @method('PATCH')<button class="secondary danger" type="submit">Confirmar inhabilitación</button></form>
+    @can('clients.manage')<form method="POST" action="{{ route('clients.deactivate', $client) }}">@csrf @method('PATCH')<button class="secondary danger" type="submit">Confirmar inhabilitación</button></form>@endcan
 </details>
 @else
 <p class="notice success">Este cliente está inactivo. Sus datos e historiales permanecen disponibles.</p>

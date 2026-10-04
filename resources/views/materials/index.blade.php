@@ -74,9 +74,9 @@
                 <h2>Listado de materiales</h2>
                 <p class="muted">{{ $materials->total() }} {{ $materials->total() === 1 ? 'material encontrado' : 'materiales encontrados' }}</p>
             </div>
-            <a class="action-link" href="{{ route('materials.create') }}">
+            @can('materials.manage')<a class="action-link" href="{{ route('materials.create') }}">
                 <span>＋</span> Registrar material
-            </a>
+            </a>@endcan
         </div>
 
         <div class="table-scroll">
@@ -115,8 +115,8 @@
                         <td>
                             <div class="row-actions">
                                 <a href="{{ route('materials.show', $m) }}">Ver</a>
-                                <a href="{{ route('materials.entry', $m) }}">Ingreso</a>
-                                <a href="{{ route('materials.exit', $m) }}">Salida</a>
+                                @can('materials.manage')<a href="{{ route('materials.entry', $m) }}">Ingreso</a>@endcan
+                                @can('materials.manage')<a href="{{ route('materials.exit', $m) }}">Salida</a>@endcan
                             </div>
                         </td>
                     </tr>

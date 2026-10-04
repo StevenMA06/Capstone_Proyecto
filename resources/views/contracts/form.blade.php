@@ -12,7 +12,7 @@
         <p class="notice">Se necesita al menos un cliente, una zona y un Asistente de Ventas activos.</p>
     @endif
     @php($selectedClient = $clients->firstWhere('cliente_id', (int) old('cliente_id', $contract->cliente_id ?? 0)))
-    <form method="POST" @if ($contract) enctype="multipart/form-data" @endif
+    @can('contracts.manage')<form method="POST" @if ($contract) enctype="multipart/form-data" @endif
         action="{{ $contract ? route('contracts.update', $contract->contrato_id) : route('contracts.store') }}"
         class="account-form contracts-form" data-coverage="{{ $coverage->toJson() }}"
         data-current-plan="{{ $contract->plan_id ?? '' }}" data-current-price="{{ $contract->precio_contratado ?? '' }}">
@@ -158,5 +158,5 @@
                 class="secondary"
                 href="{{ $contract ? route('contracts.show', $contract->contrato_id) : route('contracts.index') }}">Cancelar</a>
         </div>
-    </form>
+    </form>@endcan
 @endsection

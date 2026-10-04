@@ -19,21 +19,24 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Mail::extend('brevo', fn () => new BrevoTransport((string) config('services.brevo.key')));
-        Gate::define('manage-users', fn (User $user): bool => $user->isManager());
-        Gate::define('manage-employees', fn (User $user): bool => $user->isManager());
-        Gate::define('edit-employee', fn (User $user, Employee $employee): bool => $user->isManager()
-            && ($user->isAdministrator() || ! $employee->accounts()->whereHas('role', fn ($q) => $q->where('nombre', Role::ADMIN))->exists()));
-        Gate::define('manage-plans', fn (User $user): bool => $user->isManager());
-        Gate::define('manage-zones', fn (User $user): bool => $user->isManager());
-        Gate::define('view-zones', fn (User $user): bool => $user->isManager() || $user->isOffice());
-        Gate::define('view-operations', fn (User $user): bool => $user->isManager());
-        Gate::define('view-office', fn (User $user): bool => $user->isManager() || $user->isOffice());
-        Gate::define('view-technician', fn (User $user): bool => $user->isManager() || $user->isTechnician());
-        Gate::define('edit-user', fn (User $user, User $account): bool => $user->isManager()
-            && ($account->role?->nombre !== Role::ADMIN || $user->isAdministrator()));
-        Gate::define('view-access-history', fn (User $user): bool => $user->isManager());
-        Gate::define('register-clients', fn (User $user): bool => $user->isManager() || $user->isOffice());
-        Gate::define('manage-payments', fn (User $user): bool => $user->isManager() || $user->isOffice());
+        foreach (array_keys(\App\Support\AccessCatalog::permissions()) as $code) {
+            Gate::define($code, fn (User $user): bool => $user->hasPermission($code));
+        }
+        $aliases = [
+            'manage-users' => ['users.view'], 'manage-employees' => ['employees.view'],
+            'manage-plans' => ['plans.manage'], 'manage-zones' => ['zones.manage'], 'view-zones' => ['zones.view'],
+            'view-operations' => ['installations.view', 'equipments.view', 'materials.view', 'chatbot.view', 'indicators.view', 'bi.view'],
+            'view-office' => ['sales.view', 'contracts.view', 'plans.view', 'payments.view', 'reports.view'],
+            'view-technician' => ['technician.view'], 'view-access-history' => ['access.view'],
+            'register-clients' => ['clients.view'], 'manage-payments' => ['payments.view'],
+        ];
+        foreach ($aliases as $ability => $permissions) {
+            Gate::define($ability, fn (User $user): bool => collect($permissions)->contains(fn ($p) => $user->hasPermission($p)));
+        }
+        Gate::define('edit-user', fn (User $user, User $account): bool => $user->hasPermission('users.manage')
+            && (! $account->hasRole(Role::ADMIN, false) || $user->isAdministrator()));
+        Gate::define('edit-employee', fn (User $user, Employee $employee): bool => $user->hasPermission('employees.manage')
+            && ($user->isAdministrator() || ! $employee->accounts()->whereHas('roles', fn ($q) => $q->where('nombre', Role::ADMIN))->exists()));
 
         Auth::provider('repository', fn ($app) => $app->make(RepositoryUserProvider::class));
     }

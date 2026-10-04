@@ -73,8 +73,8 @@
 <section class="client-list-panel" aria-labelledby="list-title">
     <div class="management-toolbar"><div><h2 id="list-title">Listado de equipos</h2><p class="muted">{{ $equipments->total() }} {{ $equipments->total() === 1 ? 'equipo encontrado' : 'equipos encontrados' }}</p></div>
     <div style="display: flex; gap: 0.5rem;">
-        <a class="action-link" href="{{ route('equipments.import') }}"><span aria-hidden="true">📁</span> Importar Excel</a>
-        <a class="action-link" href="{{ route('equipments.create') }}"><span aria-hidden="true">＋</span> Registrar equipo</a>
+        @can('equipments.manage')<a class="action-link" href="{{ route('equipments.import') }}"><span aria-hidden="true">📁</span> Importar Excel</a>@endcan
+        @can('equipments.manage')<a class="action-link" href="{{ route('equipments.create') }}"><span aria-hidden="true">＋</span> Registrar equipo</a>@endcan
     </div>
     </div>
     <div class="table-scroll"><table class="users-table client-table"><caption class="sr-only">Equipos registrados</caption><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Número de serie</th><th>Condición</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
@@ -86,7 +86,8 @@
         <td>{{ $equipment->numero_serie ?? '—' }}</td>
         <td><span class="state {{ in_array($equipment->condicion, ['NUEVO', 'BUENO']) ? 'active' : (in_array($equipment->condicion, ['MALO', 'MALOGRADO']) ? 'inactive' : '') }}">{{ ucfirst(strtolower($equipment->condicion)) }}</span></td>
         <td><span class="state {{ $equipment->estado === 'DISPONIBLE' ? 'active' : ($equipment->estado === 'INACTIVO' ? 'inactive' : '') }}" style="@if($equipment->estado === 'ASIGNADO') background: #dbeafe; color: #1e40af; @endif @if($equipment->estado === 'MANTENIMIENTO') background: #fef3c7; color: #92400e; @endif">{{ ucfirst(strtolower($equipment->estado)) }}</span></td>
-        <td><div class="row-actions"><a href="{{ route('equipments.show', $equipment) }}">Ver detalle</a>@if($equipment->estado !== 'ASIGNADO')<a href="{{ route('equipments.edit', $equipment) }}">Editar</a>@endif<a href="{{ route('equipments.kardex', $equipment) }}">Ver Kardex</a></div></td>
+        <td><div class="row-actions"><a href="{{ route('equipments.show', $equipment) }}">Ver detalle</a>@if($equipment->estado !== 'ASIGNADO')@can('equipments.manage')<a href="{{ route('equipments.edit', $equipment) }}">Editar</a>@endcan
+@endif<a href="{{ route('equipments.kardex', $equipment) }}">Ver Kardex</a></div></td>
     </tr>
     @empty<tr><td colspan="7" class="empty-state">No se encontraron equipos con esos criterios.</td></tr>@endforelse
     </tbody></table></div>

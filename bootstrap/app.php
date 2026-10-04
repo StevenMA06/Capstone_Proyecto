@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [ExpireEmployees::class, FinalizeContracts::class, EnsureAccountActive::class]);
+        $middleware->web(append: [ExpireEmployees::class, FinalizeContracts::class, EnsureAccountActive::class, \App\Http\Middleware\RequireModulePermission::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash(['code']);

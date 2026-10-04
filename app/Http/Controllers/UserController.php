@@ -52,7 +52,7 @@ class UserController extends Controller
     {
         Gate::authorize('edit-user', $user);
 
-        return view('users.form', ['account' => $user, 'roles' => $user->role->nombre === Role::ADMIN ? $this->repository->roles()->where('nombre', Role::ADMIN) : $this->assignableRoles(), 'employees' => $this->repository->employees($user)]);
+        return view('users.form', ['account' => $user, 'roles' => $user->hasRole(Role::ADMIN, false) ? $this->repository->roles()->where('nombre', Role::ADMIN) : $this->assignableRoles(), 'employees' => $this->repository->employees($user)]);
     }
 
     public function update(SaveUserRequest $request, User $user): RedirectResponse

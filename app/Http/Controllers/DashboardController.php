@@ -11,9 +11,11 @@ class DashboardController extends Controller
 {
     public function __invoke(Request $request, DashboardRepository $dashboard): View|RedirectResponse
     {
-        if ($request->user()->isTechnician()) {
+        if ($request->user()->hasPermission('technician.view') && ! $request->user()->hasPermission('dashboard.view')) {
             return redirect()->route('technician.index');
         }
+
+        if (! $request->user()->hasPermission('dashboard.view')) return view('access.home');
 
         return view('dashboard', [
             'clientCount' => $request->user()->can('register-clients') ? $dashboard->clients() : null,

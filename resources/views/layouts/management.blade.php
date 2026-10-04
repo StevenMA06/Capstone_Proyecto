@@ -15,10 +15,10 @@
 <body class="workspace-shell">
 <a class="skip-content" href="#module-content">Ir al contenido</a>
 <header class="workspace-topbar">
-    <a class="workspace-brand" href="{{ auth()->user()->isTechnician() ? route('technician.index') : route('dashboard') }}"><img class="brand-logo" src="{{ asset('images/lunnys-peru.png') }}" alt="Logo de Lunnys Perú"><span>Lunnys <strong>Perú</strong><small>PLATAFORMA DE GESTIÓN</small></span></a>
+    <a class="workspace-brand" href="{{ route('dashboard') }}"><img class="brand-logo" src="{{ asset('images/lunnys-peru.png') }}" alt="Logo de Lunnys Perú"><span>Lunnys <strong>Perú</strong><small>PLATAFORMA DE GESTIÓN</small></span></a>
     <div class="workspace-account">
         <span class="user-avatar" aria-hidden="true">{{ mb_substr(auth()->user()->name, 0, 1) }}</span>
-        <div class="user-label"><strong>{{ auth()->user()->name }}</strong><span>{{ auth()->user()->role->nombre }}</span></div>
+        <div class="user-label"><strong>{{ auth()->user()->name }}</strong><span>{{ auth()->user()->role_names }}</span></div>
         <form method="POST" action="{{ route('logout') }}">@csrf<button class="secondary" type="submit">Cerrar sesión</button></form>
     </div>
 </header>
@@ -26,43 +26,7 @@
     <aside class="workspace-sidebar" aria-label="Menú de módulos">
         <div class="module-menu">
             <nav aria-label="Navegación principal">
-                @can('view-office')<a class="{{ request()->routeIs('reports.*') ? 'nav-active' : '' }}" @if(request()->routeIs('reports.*')) aria-current="page" @endif href="{{ route('reports.index') }}">@include('layouts.module-icon', ['icon' => 'chart'])<span>Reportes</span></a>@endcan
-                @unless(auth()->user()->isTechnician())<a class="{{ request()->routeIs('dashboard') ? 'nav-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif href="{{ route('dashboard') }}">@include('layouts.module-icon', ['icon' => 'home'])<span>Dashboard</span></a>@endunless
-                @canany(['register-clients', 'view-office'])<p class="nav-section">Comercial</p>@endcanany
-                @can('register-clients')<a class="{{ request()->routeIs('clients.*') ? 'nav-active' : '' }}" @if(request()->routeIs('clients.*')) aria-current="page" @endif href="{{ route('clients.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Clientes</span></a>@endcan
-                @can('view-office')
-                @foreach(['plans' => ['Planes de servicio', 'file'], 'contracts' => ['Contratos', 'file'], 'sales' => ['Ventas', 'cart'], 'payments' => ['Pagos', 'money']] as $key => [$module, $icon])
-                    <a class="{{ request()->routeIs($key.'.*') ? 'nav-active' : '' }}" @if(request()->routeIs($key.'.*')) aria-current="page" @endif href="{{ route($key.'.index') }}">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></a>
-                @endforeach
-                @can('view-zones')<a class="{{ request()->routeIs('zones.*') ? 'nav-active' : '' }}" @if(request()->routeIs('zones.*')) aria-current="page" @endif href="{{ route('zones.index') }}">@include('layouts.module-icon', ['icon' => 'pin'])<span>Zonas de cobertura</span></a>@endcan
-                @endcan
-                @canany(['view-technician', 'view-operations'])<p class="nav-section">Operaciones</p>@endcanany
-                @can('view-technician')<a class="{{ request()->routeIs('technician.*') ? 'nav-active' : '' }}" @if(request()->routeIs('technician.*')) aria-current="page" @endif href="{{ route('technician.index') }}">@include('layouts.module-icon', ['icon' => 'tool'])<span>Panel técnico</span></a>@endcan
-                @can('view-operations')
-                <a class="{{ request()->routeIs('installations.*') ? 'nav-active' : '' }}" @if(request()->routeIs('installations.*')) aria-current="page" @endif href="{{ route('installations.index') }}">@include('layouts.module-icon', ['icon' => 'tool'])<span>Instalaciones</span></a>
-                @endcan
-                @unless(auth()->user()->isTechnician())
-                <p class="nav-section">Inventario</p>
-                <a class="{{ request()->routeIs('equipments.*') ? 'nav-active' : '' }}" @if(request()->routeIs('equipments.*')) aria-current="page" @endif href="{{ route('equipments.index') }}">@include('layouts.module-icon', ['icon' => 'router'])<span>Equipos</span></a>
-                <a class="{{ request()->routeIs('materials.*') ? 'nav-active' : '' }}" @if(request()->routeIs('materials.*')) aria-current="page" @endif href="{{ route('materials.index') }}">@include('layouts.module-icon', ['icon' => 'box'])<span>Materiales</span></a>
-                <a class="{{ request()->routeIs('kardex.*') ? 'nav-active' : '' }}" @if(request()->routeIs('kardex.*')) aria-current="page" @endif href="{{ route('kardex.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Kardex</span></a>
-                @endunless
-                @canany(['manage-employees', 'manage-users', 'view-access-history'])<p class="nav-section">Administración</p>@endcanany
-                @can('manage-employees')<a class="{{ request()->routeIs('employees.*') ? 'nav-active' : '' }}" @if(request()->routeIs('employees.*')) aria-current="page" @endif href="{{ route('employees.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Empleados</span></a>@endcan
-                @can('manage-users')<a class="{{ request()->routeIs('users.*') ? 'nav-active' : '' }}" @if(request()->routeIs('users.*')) aria-current="page" @endif href="{{ route('users.index') }}">@include('layouts.module-icon', ['icon' => 'users'])<span>Usuarios</span></a>@endcan
-                @can('view-access-history')<a class="{{ request()->routeIs('access.index') ? 'nav-active' : '' }}" @if(request()->routeIs('access.index')) aria-current="page" @endif href="{{ route('access.index') }}">@include('layouts.module-icon', ['icon' => 'file'])<span>Historial de accesos</span></a>@endcan
-                @can('view-operations')
-                <p class="nav-section">Inteligencia</p>
-                <a class="{{ request()->routeIs('indicators.*') ? 'nav-active' : '' }}" href="{{ route('indicators.index') }}">@include('layouts.module-icon', ['icon' => 'chart'])<span>Indicadores</span></a>
-                <a class="{{ request()->routeIs('bi.*') ? 'nav-active' : '' }}" href="{{ route('bi.index') }}">@include('layouts.module-icon', ['icon' => 'chart'])<span>Business Intelligence</span></a>
-                <a class="{{ request()->routeIs('chatbot.*') ? 'nav-active' : '' }}" @if(request()->routeIs('chatbot.*')) aria-current="page" @endif href="{{ route('chatbot.index') }}">@include('layouts.module-icon', ['icon' => 'chat'])<span>Chatbot IA</span></a>
-                @endcan
-                @can('view-operations')
-                <p class="nav-section nav-section-future">Próximamente</p>
-                @foreach(['Facturación' => 'file'] as $module => $icon)
-                    <span class="nav-pending" aria-disabled="true" title="{{ $module }}: próximamente">@include('layouts.module-icon', ['icon' => $icon])<span>{{ $module }}</span></span>
-                @endforeach
-                @endcan
+                @include('access.navigation')
             </nav>
         </div>
 

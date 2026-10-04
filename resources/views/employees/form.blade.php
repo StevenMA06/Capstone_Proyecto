@@ -1,7 +1,7 @@
 @extends('employees.layout')
 @section('employees-content')
 <h2>{{ $employee->exists ? 'Editar empleado' : 'Registrar empleado' }}</h2>
-<form class="account-form" method="POST" action="{{ $employee->exists ? route('employees.update', $employee) : route('employees.store') }}">
+@can('employees.manage')<form class="account-form" method="POST" action="{{ $employee->exists ? route('employees.update', $employee) : route('employees.store') }}">
 @csrf @if($employee->exists) @method('PUT') @endif
 <div><label for="tipo_documento">Tipo de documento *</label><select id="tipo_documento" name="tipo_documento" required @error('tipo_documento') aria-invalid="true" aria-describedby="tipo_documento-error" @enderror>@foreach(['DNI','CE','OTRO'] as $type)<option value="{{ $type }}" @selected(old('tipo_documento', $employee->tipo_documento ?? 'DNI') === $type)>{{ $type }}</option>@endforeach</select>@error('tipo_documento')<p id="tipo_documento-error" class="field-error">{{ $message }}</p>@enderror</div>
 @foreach([
@@ -24,6 +24,6 @@
     @error('cargo')<p id="cargo-error" class="field-error" role="alert">{{ $message }}</p>@enderror
 </div>
 <div class="form-actions"><button class="action-link" type="submit">{{ $employee->exists ? 'Guardar cambios' : 'Registrar empleado' }}</button><a class="secondary" href="{{ route('employees.index') }}">Cancelar</a></div>
-</form>
+</form>@endcan
 <p class="muted">Si el vínculo ya terminó, el empleado y sus cuentas se inhabilitan al guardar. Modificar las fechas no reactiva cuentas automáticamente.</p>
 @endsection

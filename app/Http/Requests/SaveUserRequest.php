@@ -13,6 +13,8 @@ class SaveUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $account = $this->route('user');
+        if ((! $account || (string) $account->rol_id !== (string) $this->input('rol_id')) && ! $this->user()?->hasPermission('user-roles.manage')) return false;
         return ($this->user()?->can('manage-users') ?? false)
             && (! $this->route('user') || $this->user()->can('edit-user', $this->route('user')));
     }
@@ -37,7 +39,7 @@ class SaveUserRequest extends FormRequest
         return [
             'nombre_usuario' => ['required', 'string', 'min:3', 'max:60', 'regex:/^[a-z0-9_.-]+$/', Rule::unique('usuarios', 'nombre_usuario')->ignore($user)],
             'correo' => ['required', 'email', 'max:150', Rule::unique('usuarios', 'correo')->ignore($user)],
-            'rol_id' => ['required', 'integer', Rule::exists('roles', 'rol_id')->where('estado', 'ACTIVO')->whereIn('nombre', $this->user()->isAdministrator() ? Role::NAMES : [Role::MANAGER, Role::OFFICE, Role::TECHNICIAN])],
+            'rol_id' => ['required', 'integer', Rule::exists('roles', 'rol_id')->where('estado', 'ACTIVO')->where(fn ($q) => $this->user()->isAdministrator() ? $q : $q->where('nombre', '<>', Role::ADMIN))],
             'empleado_id' => ['nullable', 'integer', $employeeRule, Rule::unique('usuarios', 'empleado_id')->ignore($user)],
             'password' => [$user ? 'nullable' : 'required', 'string', 'max:128', 'confirmed', Password::min(12)->letters()->numbers()],
         ];

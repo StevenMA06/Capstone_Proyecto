@@ -5,7 +5,7 @@
     <a class="secondary" href="{{ route('clients.index') }}">Ver clientes</a>
 </div>
 <p class="muted">Los campos marcados con * son obligatorios.</p>
-<form class="account-form" method="POST" action="{{ $client->exists ? route('clients.update', $client) : route('clients.store') }}" novalidate>
+@can('clients.manage')<form class="account-form" method="POST" action="{{ $client->exists ? route('clients.update', $client) : route('clients.store') }}" novalidate>
     @csrf
     @if($client->exists) @method('PUT') @endif
     <div>
@@ -48,6 +48,6 @@
         <button class="action-link" type="submit">{{ $client->exists ? 'Guardar cambios' : 'Registrar cliente' }}</button>
         <a class="secondary" href="{{ $client->exists ? route('clients.show', $client) : route('clients.index') }}">Cancelar</a>
     </div>
-</form>
+</form>@endcan
 <script src="{{ asset('js/clients.js') }}" defer></script>
 @endsection

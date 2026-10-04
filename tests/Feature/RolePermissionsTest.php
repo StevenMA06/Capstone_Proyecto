@@ -128,11 +128,12 @@ class RolePermissionsTest extends TestCase
         $this->assertDatabaseCount('usuarios', 2);
     }
 
-    public function test_unknown_roles_cannot_login_or_be_assigned(): void
+    public function test_custom_roles_can_login_without_implicit_permissions_and_be_assigned(): void
     {
         $role = Role::create(['nombre' => 'Rol desconocido', 'estado' => 'ACTIVO']);
         $unknown = User::factory()->create(['rol_id' => $role->getKey()]);
-        $this->assertFalse($unknown->canAccess());
-        $this->signIn($this->account(Role::ADMIN))->post('/users', ['nombre_usuario' => 'unknown', 'correo' => 'unknown@example.test', 'rol_id' => $role->getKey(), 'password' => 'ClaveSegura12345', 'password_confirmation' => 'ClaveSegura12345'])->assertSessionHasErrors('rol_id');
+        $this->assertTrue($unknown->canAccess());
+        $this->assertFalse($unknown->hasPermission('clients.view'));
+        $this->signIn($this->account(Role::ADMIN))->post('/users', ['nombre_usuario' => 'unknown', 'correo' => 'unknown@example.test', 'rol_id' => $role->getKey(), 'password' => 'ClaveSegura12345', 'password_confirmation' => 'ClaveSegura12345'])->assertSessionHasNoErrors();
     }
 }

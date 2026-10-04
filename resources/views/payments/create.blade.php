@@ -21,7 +21,7 @@
 <p class="muted">
     {{ $payment->exists ? 'Completa los datos del pago cuando el cliente realice el pago.' : 'Los campos marcados con * son obligatorios. El código se genera automáticamente.' }}
 </p>
-<form class="account-form" method="POST" action="{{ $payment->exists ? route('payments.update', $payment) : route('payments.store') }}" novalidate>
+@can('payments.manage')<form class="account-form" method="POST" action="{{ $payment->exists ? route('payments.update', $payment) : route('payments.store') }}" novalidate>
     @csrf
     @if($payment->exists) @method('PUT') @endif
     
@@ -134,7 +134,7 @@
         <button class="action-link" type="submit">{{ $payment->exists ? 'Guardar cambios' : 'Registrar pago' }}</button>
         <a class="secondary" href="{{ $payment->exists ? route('payments.show', $payment) : route('payments.index') }}">Cancelar</a>
     </div>
-</form>
+</form>@endcan
 @endif
 <script src="{{ asset('js/payments.js') }}" defer></script>
 @endsection

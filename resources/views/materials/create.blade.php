@@ -2,7 +2,7 @@
 
 @section('materials-content')
 <div class="form-layout">
-    <form class="standard-form" method="POST" action="{{ $material->exists ? route('materials.update', $material) : route('materials.store') }}" novalidate>
+    @can('materials.manage')<form class="standard-form" method="POST" action="{{ $material->exists ? route('materials.update', $material) : route('materials.store') }}" novalidate>
         @csrf
         @if($material->exists)
             @method('PUT')
@@ -198,7 +198,7 @@
             <button type="submit" class="action-link">{{ $material->exists ? 'Actualizar material' : 'Registrar material' }}</button>
             <a href="{{ $material->exists ? route('materials.show', $material) : route('materials.index') }}" class="clear-link">Cancelar</a>
         </div>
-    </form>
+    </form>@endcan
 </div>
 
 <script>

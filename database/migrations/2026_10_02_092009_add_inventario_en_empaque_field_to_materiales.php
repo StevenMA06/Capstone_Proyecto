@@ -21,6 +21,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('materiales', 'inventario_en_empaque')) return;
         Schema::table('materiales', function (Blueprint $table) {
             $table->boolean('inventario_en_empaque')->default(false)->after('factor_conversion');
         });

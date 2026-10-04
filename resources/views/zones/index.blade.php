@@ -30,7 +30,8 @@
         <div class="zones-filter-note">Las zonas inactivas se conservan en el historial y no aparecen al registrar contratos.</div>
     </aside>
     <section class="zones-results" aria-labelledby="zones-list-title">
-        <div class="management-toolbar"><div><h2 id="zones-list-title">Zonas registradas</h2><p class="zones-total">{{ $records->total() }} zonas encontradas</p></div>@can('manage-zones')<a class="action-link" href="{{ route('zones.create') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Registrar zona</a>@endcan</div>
+        <div class="management-toolbar"><div><h2 id="zones-list-title">Zonas registradas</h2><p class="zones-total">{{ $records->total() }} zonas encontradas</p></div>@can('manage-zones')@can('zones.manage')<a class="action-link" href="{{ route('zones.create') }}"><i class="bi bi-plus-lg" aria-hidden="true"></i> Registrar zona</a>@endcan
+@endcan</div>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Listado de zonas de cobertura">
             <table class="users-table zones-table"><caption class="sr-only">Zonas de cobertura registradas</caption><thead><tr><th>Zona</th><th>Ubicación</th><th>Descripción</th><th>Planes</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
             @forelse($records as $zone)<tr>
@@ -39,7 +40,8 @@
                 <td>{{ $zone->descripcion ?: 'Sin descripción' }}</td>
                 <td><strong>{{ $zone->active_plans_count }}</strong> disponibles</td>
                 <td><span class="state {{ $zone->estado === 'ACTIVA' ? 'active' : 'inactive' }}">{{ $zone->estado === 'ACTIVA' ? 'Activa' : 'Inactiva' }}</span></td>
-                <td><div class="row-actions"><a href="{{ route('zones.show', $zone) }}">Ver detalle</a>@can('manage-zones')<a href="{{ route('zones.edit', $zone) }}">Editar</a>@endcan</div></td>
+                <td><div class="row-actions"><a href="{{ route('zones.show', $zone) }}">Ver detalle</a>@can('manage-zones')@can('zones.manage')<a href="{{ route('zones.edit', $zone) }}">Editar</a>@endcan
+@endcan</div></td>
             </tr>@empty<tr><td colspan="6" class="empty-state">No se encontraron zonas con esos criterios.</td></tr>@endforelse
             </tbody></table>
         </div>
