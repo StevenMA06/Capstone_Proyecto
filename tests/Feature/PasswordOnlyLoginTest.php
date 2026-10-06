@@ -31,7 +31,7 @@ class PasswordOnlyLoginTest extends TestCase
         $this->assertDatabaseCount('codigos_acceso_2fa', 0);
         $this->assertDatabaseHas('historial_accesos', ['usuario_id' => $user->getKey(), 'resultado' => 'EXITOSO']);
         $this->assertDatabaseHas('sesiones_usuario', ['sesion_id' => session('login_session_id'), 'estado' => 'ACTIVA']);
-        $this->get('/dashboard')->assertOk();
+        $this->get('/dashboard')->assertRedirect();
         $this->get('/access-history')->assertForbidden();
         $this->post('/logout')->assertRedirect('/login');
         $this->assertGuest();

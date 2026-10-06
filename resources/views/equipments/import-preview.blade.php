@@ -42,15 +42,19 @@
     
     <div class="form-actions">
         @if(count($valid) > 0)
-        @can('equipments.manage')<form method="POST" action="{{ route('equipments.import.confirm') }}" style="display: inline;">
+        @can('equipments.manage')
+@routecan('equipments.import.confirm')<form method="POST" action="{{ route('equipments.import.confirm') }}" style="display: inline;">
             @csrf
             <button type="submit" class="action-link">Confirmar importación ({{ count($valid) }} {{ count($valid) === 1 ? 'equipo' : 'equipos' }})</button>
-        </form>@endcan
+        </form>@endroutecan
+@endcan
         @endif
-        @can('equipments.manage')<form method="POST" action="{{ route('equipments.import.cancel') }}" style="display: inline;">
+        @can('equipments.manage')
+@routecan('equipments.import.cancel')<form method="POST" action="{{ route('equipments.import.cancel') }}" style="display: inline;">
             @csrf
             <button type="submit" class="clear-link" style="cursor: pointer;">Cancelar</button>
-        </form>@endcan
+        </form>@endroutecan
+@endcan
     </div>
 </div>
 </div>

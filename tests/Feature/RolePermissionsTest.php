@@ -27,27 +27,21 @@ class RolePermissionsTest extends TestCase
         return UploadedFile::fake()->createWithContent('photo.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN9sAAAAASUVORK5CYII='));
     }
 
-    public function test_admin_and_manager_access_all_modules(): void
+    public function test_management_access_respects_the_matrix(): void
     {
-        foreach ([Role::ADMIN, Role::MANAGER] as $role) {
-            $this->signIn($this->account($role));
-            foreach (['dashboard', 'clients', 'users', 'access-history', 'plans', 'contracts', 'payments', 'equipment', 'materials', 'installations', 'technician'] as $path) {
-                $this->get('/'.$path)->assertOk();
-            }
-            $this->get('/users')->assertSee('Ver ficha')->assertSee('images/lunnys-peru.png');
-        }
+        $this->signIn($this->account(Role::ADMIN));
+        foreach (['dashboard/gerencia','dashboard/call-center','clients','users','employees','access-history','plans','contracts','payments','equipment','materials','installations','technician'] as $path) $this->get('/'.$path)->assertOk();
+        $this->get('/users')->assertSee('Ver ficha')->assertSee('images/lunnys-peru.png');
+        $this->signIn($this->account(Role::MANAGER));
+        foreach (['dashboard/gerencia','clients','users','plans','contracts','payments','equipment','materials','orders','executions'] as $path) $this->get('/'.$path)->assertOk();
+        foreach (['employees','access-history','dashboard/call-center','technician'] as $path) $this->get('/'.$path)->assertForbidden();
     }
 
     public function test_office_can_only_access_office_modules(): void
     {
         $this->signIn($this->account(Role::OFFICE));
-        foreach (['dashboard', 'clients', 'plans', 'contracts', 'payments'] as $path) {
-            $this->get('/'.$path)->assertOk();
-        }
-        foreach (['users', 'access-history', 'equipment', 'materials', 'installations', 'technician'] as $path) {
-            $this->get('/'.$path)->assertForbidden();
-        }
-        $this->get('/dashboard')->assertDontSee('href="'.route('technician.index').'"', false)->assertDontSee('equipment-dialog');
+        foreach (['dashboard/call-center','clients','plans','contracts','orders','executions','availability/equipment','availability/materials'] as $path) $this->get('/'.$path)->assertOk();
+        foreach (['users','access-history','equipment','materials','technician','payments','dashboard/gerencia'] as $path) $this->get('/'.$path)->assertForbidden();
     }
 
     public function test_owner_cannot_be_deactivated_demoted_or_deleted(): void
@@ -91,7 +85,7 @@ class RolePermissionsTest extends TestCase
         DB::table('pedidos_instalacion')->where('pedido_id', $assigned->pedido_id)->update(['estado' => 'PROGRAMADO']);
         $this->signIn($tech)->get('/dashboard')->assertRedirect('/technician');
         $this->get('/technician')->assertOk()->assertSee('TECH-I-0')->assertDontSee('TECH-I-3')->assertDontSee('href="'.route('clients.index').'"', false);
-        foreach (['clients', 'plans', 'contracts', 'payments', 'users', 'equipment', 'installations', 'access-history'] as $path) {
+        foreach (['clients', 'contracts', 'payments', 'users', 'equipment', 'installations', 'access-history'] as $path) {
             $this->get('/'.$path)->assertForbidden();
         }
         $this->get('/technician/installations/'.$unassigned->pedido_id)->assertNotFound();
@@ -108,21 +102,22 @@ class RolePermissionsTest extends TestCase
         $this->signIn($this->account(Role::TECHNICIAN))->get('/technician')->assertOk()->assertDontSee('TECH-I-0');
         $this->get($url)->assertNotFound();
         $this->get('/technician/installations/'.$assigned->pedido_id)->assertNotFound();
-        $this->signIn($this->account(Role::OFFICE))->get($url)->assertForbidden();
+        $this->signIn($this->account(Role::OFFICE))->get($url)->assertOk(); // Matrix allows consulting executions.
         $this->assertDatabaseCount('evidencias_instalacion', 1);
     }
 
     public function test_migration_preserves_legacy_accounts_and_disabled_access(): void
     {
-        $legacy = Role::create(['nombre' => 'Gerencia', 'estado' => 'ACTIVO']);
+        $legacy = Role::where('nombre', Role::MANAGER)->firstOrFail();
+        Role::where('nombre', Role::OFFICE)->update(['nombre' => 'Usuario de oficina']);
         $disabled = Role::create(['nombre' => 'Personal autorizado', 'estado' => 'INACTIVO']);
         $old = User::factory()->create(['rol_id' => $legacy->getKey()]);
         $blocked = User::factory()->create(['rol_id' => $disabled->getKey()]);
         $migration = require database_path('migrations/2026_09_14_000002_normalize_user_roles.php');
         $migration->up();
         $migration->up();
-        $this->assertSame(Role::MANAGER, $old->fresh()->role->nombre);
-        $this->assertSame(Role::OFFICE, $blocked->fresh()->role->nombre);
+        $this->assertSame('Gerente', $old->fresh()->role->nombre);
+        $this->assertSame('Usuario de oficina', $blocked->fresh()->role->nombre);
         $this->assertFalse($blocked->fresh()->canAccess());
         $this->assertSame(4, Role::where('estado', 'ACTIVO')->count());
         $this->assertDatabaseCount('usuarios', 2);

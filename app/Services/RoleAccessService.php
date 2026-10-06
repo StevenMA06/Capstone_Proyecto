@@ -16,16 +16,17 @@ class RoleAccessService
         return DB::transaction(function () use ($actor, $role, $data) {
             Role::orderBy('rol_id')->lockForUpdate()->get();
             $record = $role ? Role::findOrFail($role->getKey()) : new Role;
-            if ($record->exists && in_array($record->nombre, [Role::ADMIN, Role::MANAGER], true)) {
-                throw ValidationException::withMessages(['nombre' => 'Administrador y Gerente son roles protegidos con acceso completo.']);
+            if ($record->exists && $record->nombre === Role::ADMIN) {
+                throw ValidationException::withMessages(['nombre' => 'El rol Administrador está protegido y conserva acceso completo.']);
             }
             $before = $record->exists ? $this->snapshot($record) : null;
             $record->fill(collect($data)->only(['nombre', 'descripcion', 'estado'])->all())->save();
             $codes = $data['permissions'] ?? [];
             foreach ($codes as $code) {
-                if (str_ends_with($code, '.manage') || $code === 'technician.supervise') {
-                    $view = explode('.', $code)[0].'.view';
-                    if (! in_array($view, $codes)) throw ValidationException::withMessages(['permissions' => 'Para administrar o supervisar un módulo debes habilitar también su consulta.']);
+                if (!isset(AccessCatalog::permissions()[$code])) throw ValidationException::withMessages(['permissions' => 'Selecciona permisos válidos del catálogo.']);
+                if (AccessCatalog::reserved($code)) throw ValidationException::withMessages(['permissions' => 'Empleados e historial de accesos son exclusivos del Administrador.']);
+                foreach (AccessCatalog::dependencies($code) as $dependency) {
+                    if (! in_array($dependency, $codes, true)) throw ValidationException::withMessages(['permissions' => 'Habilita la consulta requerida para la acción seleccionada: '.AccessCatalog::permissions()[$code]['descripcion']]);
                 }
             }
             DB::table('rol_permiso')->where('rol_id', $record->getKey())->delete();
@@ -66,7 +67,7 @@ class RoleAccessService
     public function ensureAdministrator(): void
     {
         $available = User::where('estado', 'ACTIVO')->get()->contains(fn ($u) => $u->canAccess()
-            && $u->hasPermission('users.manage') && $u->hasPermission('roles.manage') && $u->hasPermission('user-roles.manage'));
+            && $u->hasPermission('users.update') && $u->hasPermission('roles.manage') && $u->hasPermission('user-roles.manage'));
         if (! $available) throw ValidationException::withMessages(['roles' => 'Debe quedar al menos una cuenta vigente capaz de administrar usuarios, roles y permisos.']);
     }
 

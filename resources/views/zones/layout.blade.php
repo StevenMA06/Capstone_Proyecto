@@ -3,7 +3,9 @@
 @push('styles')<link rel="stylesheet" href="{{ asset('css/zones.css') }}?v=1">@endpush
 @section('workspace-content')
 <section class="management zones-module">
-    <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><a href="{{ route('dashboard') }}">Inicio</a><span aria-hidden="true">/</span><a href="{{ route('zones.index') }}">Zonas de cobertura</a></nav>
+    <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><a href="{{ route('dashboard') }}">Inicio</a><span aria-hidden="true">/</span>
+@routecan('zones.index')<a href="{{ route('zones.index') }}">Zonas de cobertura</a>@endroutecan
+</nav>
     <header class="module-heading">
         <span class="eyebrow">COBERTURA COMERCIAL</span>
         <h1>Gestión de Zonas de Cobertura</h1>

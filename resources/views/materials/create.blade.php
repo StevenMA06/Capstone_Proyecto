@@ -2,7 +2,8 @@
 
 @section('materials-content')
 <div class="form-layout">
-    @can('materials.manage')<form class="standard-form" method="POST" action="{{ $material->exists ? route('materials.update', $material) : route('materials.store') }}" novalidate>
+    @can('materials.manage')
+@routecan($material->exists ? 'materials.update' : 'materials.store')<form class="standard-form" method="POST" action="{{ $material->exists ? route('materials.update', $material) : route('materials.store') }}" novalidate>
         @csrf
         @if($material->exists)
             @method('PUT')
@@ -182,7 +183,8 @@
             
             <div class="form-group">
                 <label for="estado">Estado *</label>
-                <select id="estado" name="estado">
+                @if($material->exists && !auth()->user()->hasPermission('materials.status'))<input type="hidden" name="estado" value="{{ $material->estado }}">@endif
+                <select id="estado" name="estado" @disabled($material->exists && !auth()->user()->hasPermission('materials.status'))>
                     @php
                         $estados = ['ACTIVO' => 'Activo', 'INACTIVO' => 'Inactivo'];
                     @endphp
@@ -196,9 +198,12 @@
         
         </section></div><div class="form-actions">
             <button type="submit" class="action-link">{{ $material->exists ? 'Actualizar material' : 'Registrar material' }}</button>
-            <a href="{{ $material->exists ? route('materials.show', $material) : route('materials.index') }}" class="clear-link">Cancelar</a>
+            
+@routecan('materials.show')<a href="{{ $material->exists ? route('materials.show', $material) : route('materials.index') }}" class="clear-link">Cancelar</a>@endroutecan
+
         </div>
-    </form>@endcan
+    </form>@endroutecan
+@endcan
 </div>
 
 <script>

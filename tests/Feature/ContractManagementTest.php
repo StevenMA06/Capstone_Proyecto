@@ -21,7 +21,7 @@ class ContractManagementTest extends TestCase
 
     private function records(): array
     {
-        $actor = User::factory()->create(['rol_id' => Role::where('nombre', Role::OFFICE)->value('rol_id')]);
+        $actor = User::factory()->create(['rol_id' => Role::where('nombre', Role::MANAGER)->value('rol_id')]);
         $client = Client::create([
             'tipo_documento' => 'DNI', 'numero_documento' => '76543210',
             'nombres_razon_social' => 'Ana', 'apellidos' => 'Pérez',
@@ -145,8 +145,8 @@ class ContractManagementTest extends TestCase
         $this->signIn($actor)->get('/contracts/create')->assertOk()
             ->assertViewHas('employees', fn ($employees) => $employees->pluck('empleado_id')->all() === [$contract->responsable_id])
             ->assertSee('value="'.$contract->responsable_id.'"', false)
-            ->assertDontSee('value="'.$technician->getKey().'"', false)
-            ->assertDontSee('value="'.$inactive->getKey().'"', false);
+            ->assertDontSee('Técnico Instalador')
+            ->assertDontSee('Asistente Inactivo');
 
         $data = [
             'cliente_id' => $client->getKey(), 'plan_id' => $contract->plan_id,
@@ -232,6 +232,22 @@ class ContractManagementTest extends TestCase
             'documento_pdf' => 'El archivo seleccionado está vacío (0 bytes). Vuelve a exportar el PDF firmado e inténtalo de nuevo.',
         ]);
         $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'pdf_contrato_ruta' => null]);
+    }
+
+    public function test_office_confirms_sale_without_permission_to_change_contract_terms(): void
+    {
+        [$manager,$client,$contract]=$this->records();
+        Storage::fake('local');
+        DB::table('contratos')->where('contrato_id',$contract->contrato_id)->update(['estado'=>'PENDIENTE','direccion_servicio'=>$client->direccion]);
+        $office=User::factory()->create(['rol_id'=>Role::where('nombre',Role::OFFICE)->value('rol_id')]);
+        $this->mock(ContractSignatureVerifier::class, fn ($mock) => $mock->shouldReceive('verify')->once()->andReturn(['status'=>'signed']));
+        $this->signIn($office)->post('/sales/contracts/'.$contract->contrato_id.'/confirm',[
+            'documento_pdf'=>UploadedFile::fake()->createWithContent('firmado.pdf', "%PDF-1.4\nDocumento firmado"),
+            'duracion_meses'=>1,'estado'=>'CANCELADO','precio_contratado'=>0,
+        ])->assertSessionHasNoErrors()->assertRedirect('/contracts/'.$contract->contrato_id);
+        $this->assertDatabaseHas('contratos',['contrato_id'=>$contract->contrato_id,'estado'=>'ACTIVO','duracion_meses'=>$contract->duracion_meses,'precio_contratado'=>$contract->precio_contratado]);
+        $this->assertDatabaseHas('ventas',['contrato_id'=>$contract->contrato_id,'estado'=>'CONFIRMADA']);
+        $this->put('/contracts/'.$contract->contrato_id,[])->assertForbidden();
     }
 
     public function test_active_contracts_finalize_after_the_last_day_by_request_or_scheduler(): void

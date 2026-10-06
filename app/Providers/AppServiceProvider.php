@@ -24,8 +24,8 @@ class AppServiceProvider extends ServiceProvider
         }
         $aliases = [
             'manage-users' => ['users.view'], 'manage-employees' => ['employees.view'],
-            'manage-plans' => ['plans.manage'], 'manage-zones' => ['zones.manage'], 'view-zones' => ['zones.view'],
-            'view-operations' => ['installations.view', 'equipments.view', 'materials.view', 'chatbot.view', 'indicators.view', 'bi.view'],
+            'manage-plans' => ['plans.create','plans.update','plans.status'], 'manage-zones' => ['zones.create','zones.update','zones.status'], 'view-zones' => ['zones.view'],
+            'view-operations' => ['orders.view', 'equipments.view', 'materials.view', 'chatbot.view', 'indicators.view', 'bi.view'],
             'view-office' => ['sales.view', 'contracts.view', 'plans.view', 'payments.view', 'reports.view'],
             'view-technician' => ['technician.view'], 'view-access-history' => ['access.view'],
             'register-clients' => ['clients.view'], 'manage-payments' => ['payments.view'],
@@ -33,10 +33,15 @@ class AppServiceProvider extends ServiceProvider
         foreach ($aliases as $ability => $permissions) {
             Gate::define($ability, fn (User $user): bool => collect($permissions)->contains(fn ($p) => $user->hasPermission($p)));
         }
-        Gate::define('edit-user', fn (User $user, User $account): bool => $user->hasPermission('users.manage')
+        Gate::define('edit-user', fn (User $user, User $account): bool => ($user->hasPermission('users.update') || $user->hasPermission('users.status'))
             && (! $account->hasRole(Role::ADMIN, false) || $user->isAdministrator()));
-        Gate::define('edit-employee', fn (User $user, Employee $employee): bool => $user->hasPermission('employees.manage')
+        Gate::define('edit-employee', fn (User $user, Employee $employee): bool => $user->isAdministrator()
             && ($user->isAdministrator() || ! $employee->accounts()->whereHas('roles', fn ($q) => $q->where('nombre', Role::ADMIN))->exists()));
+
+        foreach (['clients','plans','contracts','payments','zones','employees','users','equipments','materials','technician'] as $module) {
+            Gate::define($module.'.manage', fn (User $user) => collect(array_keys(\App\Support\AccessCatalog::permissions()))->contains(fn ($p) => str_starts_with($p, $module.'.') && !in_array(explode('.', $p)[1], ['view','assigned','availability','related','panel','supervise']) && $user->hasPermission($p)));
+        }
+        \Illuminate\Support\Facades\Blade::if('routecan', fn (string $name) => auth()->user()?->hasPermission(\App\Support\AccessCatalog::forRoute($name) ?? '') ?? false);
 
         Auth::provider('repository', fn ($app) => $app->make(RepositoryUserProvider::class));
     }

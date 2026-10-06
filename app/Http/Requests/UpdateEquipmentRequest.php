@@ -10,7 +10,7 @@ class UpdateEquipmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        return $this->user() !== null && ((string) $this->input('estado') === (string) $this->route('equipment')?->estado || $this->user()->hasPermission('equipments.status'));
     }
 
     public function rules(): array

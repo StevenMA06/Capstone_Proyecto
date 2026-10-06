@@ -9,6 +9,9 @@ class UpdatePaymentRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $payment=$this->route('payment');
+        if ($this->boolean('marcar_realizado') && !$this->user()?->hasPermission('payments.complete')) return false;
+        if ($this->filled('estado') && $this->input('estado') !== $payment?->estado) return false;
         return $this->user()?->can('manage-payments') ?? false;
     }
 

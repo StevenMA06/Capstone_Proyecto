@@ -74,7 +74,7 @@ class MaterialController extends Controller
     public function show(Material $material): View
     {
         $material->load('creator');
-        $movements = $this->kardex->getMaterialMovements($material->material_id);
+        $movements = (auth()->user()->hasPermission('kardex.view') ? $this->kardex->getMaterialMovements($material->material_id) : new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15));
 
         return view('materials.show', compact('material', 'movements'));
     }

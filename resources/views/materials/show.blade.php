@@ -1,8 +1,19 @@
 @extends('materials.layout')
 @section('materials-content')
-<div class="client-detail"><div class="detail-header"><div><h2>{{$material->nombre}}</h2><p class="muted">Código: {{$material->codigo}}</p></div><div class="detail-actions"><a class="clear-link" href="{{ route('materials.index') }}">Volver al listado</a>@can('materials.manage')<a href="{{route('materials.entry',$material)}}" class="action-link">Registrar ingreso</a>@endcan
-@can('materials.manage')<a href="{{route('materials.exit',$material)}}" class="action-link">Registrar salida</a>@endcan
-@can('materials.manage')<a href="{{route('materials.edit',$material)}}" class="action-link">Editar</a>@endcan<a href="{{route('materials.kardex',$material)}}" class="action-link">Ver Kardex</a></div></div>
+<div class="client-detail"><div class="detail-header"><div><h2>{{$material->nombre}}</h2><p class="muted">Código: {{$material->codigo}}</p></div><div class="detail-actions">
+@routecan('materials.index')<a class="clear-link" href="{{ route('materials.index') }}">Volver al listado</a>@endroutecan
+@can('materials.manage')
+@routecan('materials.entry')<a href="{{route('materials.entry',$material)}}" class="action-link">Registrar ingreso</a>@endroutecan
+@endcan
+@can('materials.manage')
+@routecan('materials.exit')<a href="{{route('materials.exit',$material)}}" class="action-link">Registrar salida</a>@endroutecan
+@endcan
+@can('materials.manage')
+@routecan('materials.edit')<a href="{{route('materials.edit',$material)}}" class="action-link">Editar</a>@endroutecan
+@endcan
+
+@routecan('materials.kardex')<a href="{{route('materials.kardex',$material)}}" class="action-link">Ver Kardex</a>@endroutecan
+</div></div>
 <div class="detail-grid"><div class="detail-card"><h3>Información del material</h3><dl><dt>Descripción</dt><dd>{{$material->descripcion??'—'}}</dd><dt>Unidad base</dt><dd>{{$material->unidad_base}}</dd>@if($material->usesPackaging())<dt>Unidad de empaque</dt><dd>{{$material->unidad_empaque}}</dd><dt>Contenido por empaque</dt><dd>{{number_format($material->factor_conversion, 2)}} {{$material->unidad_base}}</dd>@endif<dt>Stock actual</dt><dd><strong style="font-size:1.25rem;color:{{$material->isLowStock()?'#dc2626':'#059669'}};">
 @if($material->inventario_en_empaque)
 {{number_format($material->stock_actual, 0)}} {{$material->unidad_empaque}}

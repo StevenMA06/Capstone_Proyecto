@@ -14,7 +14,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'rol_id' => fn () => Role::firstOrCreate(['nombre' => 'Usuario de oficina'], ['estado' => 'ACTIVO'])->getKey(),
+            'rol_id' => fn () => Role::firstOrCreate(['nombre' => Role::OFFICE], ['estado' => 'ACTIVO'])->getKey(),
             'nombre_usuario' => fake()->unique()->userName(), 'correo' => fake()->unique()->safeEmail(),
             'password_hash' => Hash::make('ClaveSegura12345'), 'estado' => 'ACTIVO',
         ];

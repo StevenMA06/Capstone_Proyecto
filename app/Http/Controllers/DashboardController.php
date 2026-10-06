@@ -1,25 +1,27 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Repositories\DashboardRepository;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, DashboardRepository $dashboard): View|RedirectResponse
+    public function __invoke(Request $request)
     {
-        if ($request->user()->hasPermission('technician.view') && ! $request->user()->hasPermission('dashboard.view')) {
-            return redirect()->route('technician.index');
+        $user=$request->user();
+        foreach (['dashboard.view'=>'dashboard.management','office.view'=>'dashboard.office','technician.panel'=>'technician.index'] as $permission=>$route) {
+            if ($user->hasPermission($permission)) return redirect()->route($route);
         }
+        return view('access.home');
+    }
 
-        if (! $request->user()->hasPermission('dashboard.view')) return view('access.home');
+    public function management(Request $request, DashboardRepository $dashboard)
+    {
+        return view('dashboard',['clientCount'=>$dashboard->clients(),'summary'=>$dashboard->management()]);
+    }
 
-        return view('dashboard', [
-            'clientCount' => $request->user()->can('register-clients') ? $dashboard->clients() : null,
-            'summary' => $request->user()->isManager() ? $dashboard->management() : null,
-        ]);
+    public function office()
+    {
+        return view('access.office');
     }
 }

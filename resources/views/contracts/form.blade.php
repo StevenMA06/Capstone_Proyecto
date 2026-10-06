@@ -137,7 +137,9 @@
                 <div class="contract-saved-file" role="status">
                     <span class="contract-saved-file-icon" aria-hidden="true">✓</span>
                     <div><strong>PDF adjunto guardado</strong><span>{{ $contract->firma_revision === 'VERIFICADA' ? 'Firma del cliente detectada' : 'Firma pendiente de detectar' }}</span></div>
-                    <a href="{{ route('contracts.pdf', $contract->contrato_id) }}">Descargar adjunto</a>
+                    
+@routecan('contracts.pdf')<a href="{{ route('contracts.pdf', $contract->contrato_id) }}">Descargar adjunto</a>@endroutecan
+
                 </div>
             @elseif($contract->pdf_contrato_ruta)
                 <p class="contract-file-warning" role="alert">El PDF registrado no está disponible. Selecciona un archivo para reemplazarlo.</p>
@@ -154,9 +156,11 @@
         </div>
         @endif
         <div class="form-actions"><button class="action-link" type="submit"
-                @disabled(!$contract && ($plans->isEmpty() || $clients->isEmpty() || $zones->isEmpty() || $employees->isEmpty()))>{{ $contract ? 'Guardar cambios' : 'Guardar contrato' }}</button><a
+                @disabled(!$contract && ($plans->isEmpty() || $clients->isEmpty() || $zones->isEmpty() || $employees->isEmpty()))>{{ $contract ? 'Guardar cambios' : 'Guardar contrato' }}</button>
+@routecan('contracts.show')<a
                 class="secondary"
-                href="{{ $contract ? route('contracts.show', $contract->contrato_id) : route('contracts.index') }}">Cancelar</a>
+                href="{{ $contract ? route('contracts.show', $contract->contrato_id) : route('contracts.index') }}">Cancelar</a>@endroutecan
+
         </div>
     </form>@endcan
 @endsection

@@ -1,6 +1,8 @@
 @extends('employees.layout')
 @section('employees-content')
-<div class="management-toolbar"><h2>{{ $employee->full_name }}</h2>@can('edit-employee', $employee)@can('employees.manage')<a class="action-link" href="{{ route('employees.edit', $employee) }}">Editar empleado</a>@endcan
+<div class="management-toolbar"><h2>{{ $employee->full_name }}</h2>@can('edit-employee', $employee)@can('employees.manage')
+@routecan('employees.edit')<a class="action-link" href="{{ route('employees.edit', $employee) }}">Editar empleado</a>@endroutecan
+@endcan
 @endcan</div>
 <dl class="account-detail">
 <div><dt>Identificador</dt><dd>#{{ $employee->empleado_id }}</dd></div><div><dt>Documento</dt><dd>{{ $employee->tipo_documento }} {{ $employee->numero_documento }}</dd></div>
@@ -8,9 +10,15 @@
 <div><dt>Estado</dt><dd>{{ $employee->estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</dd></div><div><dt>Vínculo laboral</dt><dd>{{ $employee->hasEnded() ? 'Finalizado' : ($employee->fecha_ingreso && $employee->fecha_ingreso > \App\Models\Employee::today() ? 'Inicio pendiente' : 'Sin cese vencido') }}</dd></div>
 </dl>
 <h3>Cuentas asociadas</h3>
-@forelse($employee->accounts()->with('role')->get() as $account)<p><a class="clear-link" href="{{ route('users.show', $account) }}">{{ $account->nombre_usuario }}</a> · {{ $account->role?->nombre }} · {{ $account->estado }}</p>@empty<p>Este empleado no tiene una cuenta asociada.</p>@endforelse
+@forelse($employee->accounts()->with('role')->get() as $account)<p>
+@routecan('users.show')<a class="clear-link" href="{{ route('users.show', $account) }}">{{ $account->nombre_usuario }}</a>@endroutecan
+ · {{ $account->role?->nombre }} · {{ $account->estado }}</p>@empty<p>Este empleado no tiene una cuenta asociada.</p>@endforelse
 @can('edit-employee', $employee)
-<div class="status-box"><div><h3>{{ $employee->estado === 'ACTIVO' ? 'Inhabilitar empleado' : 'Habilitar empleado' }}</h3><p>La inhabilitación bloquea las cuentas asociadas y cierra sus sesiones. Se conserva la información histórica. Para habilitarlo, su fecha de cese no puede estar vencida; las cuentas se habilitan por separado en Usuarios.</p></div>@can('employees.manage')<form method="POST" action="{{ route('employees.status', $employee) }}">@csrf @method('PATCH')<input type="hidden" name="is_active" value="{{ $employee->estado === 'ACTIVO' ? '0' : '1' }}"><button class="secondary" type="submit">{{ $employee->estado === 'ACTIVO' ? 'Inhabilitar' : 'Habilitar' }}</button></form>@endcan</div>
+<div class="status-box"><div><h3>{{ $employee->estado === 'ACTIVO' ? 'Inhabilitar empleado' : 'Habilitar empleado' }}</h3><p>La inhabilitación bloquea las cuentas asociadas y cierra sus sesiones. Se conserva la información histórica. Para habilitarlo, su fecha de cese no puede estar vencida; las cuentas se habilitan por separado en Usuarios.</p></div>@can('employees.manage')
+@routecan('employees.status')<form method="POST" action="{{ route('employees.status', $employee) }}">@csrf @method('PATCH')<input type="hidden" name="is_active" value="{{ $employee->estado === 'ACTIVO' ? '0' : '1' }}"><button class="secondary" type="submit">{{ $employee->estado === 'ACTIVO' ? 'Inhabilitar' : 'Habilitar' }}</button></form>@endroutecan
+@endcan</div>
 @endcan
-<a class="secondary" href="{{ route('employees.index') }}">Volver al listado de empleados</a>
+
+@routecan('employees.index')<a class="secondary" href="{{ route('employees.index') }}">Volver al listado de empleados</a>@endroutecan
+
 @endsection

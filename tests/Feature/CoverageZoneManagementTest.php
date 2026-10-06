@@ -107,6 +107,7 @@ class CoverageZoneManagementTest extends TestCase
         $this->put('/zones/'.$zone->getKey(), $this->data())->assertForbidden();
         $this->patch('/zones/'.$zone->getKey().'/status', ['is_active' => false])->assertForbidden();
 
-        $this->signIn($this->actor(Role::TECHNICIAN))->get('/zones')->assertForbidden();
+        $this->signIn($this->actor(Role::TECHNICIAN))->get('/zones')->assertOk();
+        $this->post('/zones', $this->data())->assertForbidden();
     }
 }

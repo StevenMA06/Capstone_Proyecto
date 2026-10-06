@@ -128,7 +128,7 @@ class InstallationExecutionTest extends TestCase
             $this->post($this->url('start'))->assertSessionHasErrors('instalacion');
         }
         $this->assertDatabaseCount('ejecuciones_instalacion', 0);
-        $this->signIn($this->manager)->post($this->url('start', $this->other))->assertSessionHasErrors('instalacion');
+        $this->signIn($this->manager)->post($this->url('start', $this->other))->assertForbidden();
     }
 
     public function test_consumption_uses_cumulative_totals_and_kardex_without_duplicate_deductions(): void

@@ -101,7 +101,8 @@ class User extends Authenticatable
     public function hasPermission(string $code): bool
     {
         if (! $this->canAccess() || ! isset(\App\Support\AccessCatalog::permissions()[$code])) return false;
-        if ($this->isManager()) return true;
+        if ($this->isAdministrator()) return true;
+        if (\App\Support\AccessCatalog::reserved($code)) return false;
         return \Illuminate\Support\Facades\DB::table('usuario_rol as ur')
             ->join('roles as r', 'r.rol_id', '=', 'ur.rol_id')
             ->join('rol_permiso as rp', 'rp.rol_id', '=', 'r.rol_id')

@@ -17,7 +17,7 @@ class ClientManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function actor(string $name = 'Gerente'): User
+    private function actor(string $name = Role::MANAGER): User
     {
         $role = Role::firstOrCreate(['nombre' => $name], ['estado' => 'ACTIVO']);
 
@@ -168,7 +168,7 @@ class ClientManagementTest extends TestCase
     public function test_rf06_updates_all_profile_data_without_changing_identity_creator_or_state(): void
     {
         $creator = $this->actor();
-        $editor = $this->actor('Usuario de oficina');
+        $editor = $this->actor(Role::OFFICE);
         $client = $this->client($creator, ['estado' => 'INACTIVO']);
         $created = $client->fresh()->creado_en->toDateTimeString();
         $data = $this->data([
@@ -272,7 +272,7 @@ class ClientManagementTest extends TestCase
 
     public function test_guest_and_unapproved_role_cannot_access_any_client_operation(): void
     {
-        $actor = $this->actor('Técnico');
+        $actor = $this->actor(Role::TECHNICIAN);
         $client = $this->client($actor);
         foreach (['/clients', '/clients/create', '/clients/'.$client->getKey(), '/clients/'.$client->getKey().'/edit'] as $url) {
             $this->get($url)->assertRedirect('/login');
@@ -288,15 +288,15 @@ class ClientManagementTest extends TestCase
         $this->assertSame('ACTIVO', $client->fresh()->estado);
     }
 
-    public function test_authorized_personnel_can_list_consult_and_deactivate_clients(): void
+    public function test_office_can_list_consult_and_edit_but_cannot_deactivate_clients(): void
     {
-        $actor = $this->actor('Usuario de oficina');
+        $actor = $this->actor(Role::OFFICE);
         $client = $this->client($actor);
         $this->signIn($actor)->get('/clients')->assertOk();
         $this->get('/clients/'.$client->getKey())->assertOk()->assertSee('Activo');
         $this->get('/clients/'.$client->getKey().'/edit')->assertOk();
-        $this->patch('/clients/'.$client->getKey().'/deactivate')->assertRedirect();
-        $this->assertSame('INACTIVO', $client->fresh()->estado);
+        $this->patch('/clients/'.$client->getKey().'/deactivate')->assertForbidden();
+        $this->assertSame('ACTIVO', $client->fresh()->estado);
     }
 
     public function test_client_mutations_require_csrf_and_inactive_users_cannot_edit(): void

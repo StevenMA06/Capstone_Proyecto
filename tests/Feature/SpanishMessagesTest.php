@@ -42,7 +42,7 @@ class SpanishMessagesTest extends TestCase
 
     public function test_invalid_filters_and_removed_form_notices(): void
     {
-        $this->signIn(User::factory()->create(['rol_id' => \App\Models\Role::where('nombre', \App\Models\Role::MANAGER)->value('rol_id')]));
+        $this->signIn(User::factory()->create(['rol_id' => \App\Models\Role::where('nombre', \App\Models\Role::ADMIN)->value('rol_id')]));
         $this->get('/employees?page=abc')->assertSessionHasErrors([
             'page' => 'El campo página debe ser un número entero.',
         ]);

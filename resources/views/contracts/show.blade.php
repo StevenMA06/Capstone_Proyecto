@@ -3,8 +3,23 @@
 @section('contracts-description', 'Información y estado vigente del contrato.')
 @section('contracts-crumb', $contract->codigo)
 @section('contracts-content')
-<div class="contracts-detail-actions">@if($contract->estado !== 'CANCELADO')@can('contracts.manage')<a class="action-link" href="{{ route('contracts.edit', $contract->contrato_id) }}">Actualizar contrato</a>@endcan
-@endif @if($contract->estado !== 'CANCELADO' && ($contract->firma_revision !== 'VERIFICADA' || !$contract->pdf_contrato_ruta))<a class="secondary" href="{{ route('contracts.draft', $contract->contrato_id) }}">Descargar contrato para firma</a>@endif @if($contract->pdf_contrato_ruta)<a class="secondary" href="{{ route('contracts.pdf', $contract->contrato_id) }}">Descargar PDF adjunto</a>@endif<a class="secondary" href="{{ route('contracts.index') }}">Volver al listado</a></div>
+@can('sales.create')
+@if($contract->estado === 'PENDIENTE')
+<section class="contracts-panel"><h2>Registrar venta mediante contrato firmado</h2><p>Adjunta el PDF firmado para verificarlo y activar el contrato. No se modifican sus condiciones.</p>
+<form method="POST" enctype="multipart/form-data" action="{{ route('sales.confirm',$contract->contrato_id) }}">@csrf
+<label>Contrato firmado (PDF, máximo 10 MB)<input type="file" name="documento_pdf" accept="application/pdf" required></label><button class="action-link">Verificar firma y registrar venta</button></form></section>
+@endif
+@endcan
+<div class="contracts-detail-actions">@if($contract->estado !== 'CANCELADO')@can('contracts.manage')
+@routecan('contracts.edit')<a class="action-link" href="{{ route('contracts.edit', $contract->contrato_id) }}">Actualizar contrato</a>@endroutecan
+@endcan
+@endif @if($contract->estado !== 'CANCELADO' && ($contract->firma_revision !== 'VERIFICADA' || !$contract->pdf_contrato_ruta))
+@routecan('contracts.draft')<a class="secondary" href="{{ route('contracts.draft', $contract->contrato_id) }}">Descargar contrato para firma</a>@endroutecan
+@endif @if($contract->pdf_contrato_ruta)
+@routecan('contracts.pdf')<a class="secondary" href="{{ route('contracts.pdf', $contract->contrato_id) }}">Descargar PDF adjunto</a>@endroutecan
+@endif
+@routecan('contracts.index')<a class="secondary" href="{{ route('contracts.index') }}">Volver al listado</a>@endroutecan
+</div>
 <section class="contracts-panel"><h2>Datos del contrato</h2><dl class="contracts-detail">
     <div><dt>Código</dt><dd>{{ $contract->codigo }}</dd></div><div><dt>Cliente</dt><dd>{{ trim($contract->nombres_razon_social.' '.$contract->apellidos) }} · {{ $contract->tipo_documento }} {{ $contract->numero_documento }}</dd></div>
     <div><dt>Plan</dt><dd>{{ $contract->plan_nombre }} · {{ $contract->numero_plan }}</dd></div><div><dt>Precio mensual contratado</dt><dd>S/ {{ number_format($contract->precio_contratado, 2) }}</dd></div>
@@ -21,7 +36,9 @@
 <p>Documentos adjuntados durante la instalación. Su registro no sustituye la verificación del PDF ni activa automáticamente el contrato.</p>
 <div class="table-scroll"><table><thead><tr><th>Archivo</th><th>Observación</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>
 @forelse($fieldEvidences as $file)
-<tr><td>{{ $file->nombre_archivo }}</td><td>{{ $file->observacion }}</td><td>{{ $file->subido_en }}</td><td><a class="action-link secondary" href="{{ route('contracts.evidence', [$contract->contrato_id, $file->evidencia_contrato_id]) }}">Descargar evidencia</a></td></tr>
+<tr><td>{{ $file->nombre_archivo }}</td><td>{{ $file->observacion }}</td><td>{{ $file->subido_en }}</td><td>
+@routecan('contracts.evidence')<a class="action-link secondary" href="{{ route('contracts.evidence', [$contract->contrato_id, $file->evidencia_contrato_id]) }}">Descargar evidencia</a>@endroutecan
+</td></tr>
 @empty<tr><td colspan="4">Aún no hay evidencias adjuntadas desde instalaciones.</td></tr>@endforelse
 </tbody></table></div>
 @include('clients.pagination', ['records' => $fieldEvidences, 'label' => 'Paginación de evidencias del contrato'])
