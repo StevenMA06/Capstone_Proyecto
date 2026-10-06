@@ -17,7 +17,7 @@ class SaleManagementTest extends TestCase
 
     public function test_dashboard_combines_filters_updates_charts_and_links_to_contracts(): void
     {
-        $actor = User::factory()->create(['rol_id' => Role::where('nombre', Role::OFFICE)->value('rol_id')]);
+        $actor = User::factory()->create(['rol_id' => Role::where('nombre', Role::MANAGER)->value('rol_id')]);
         $ana = Client::create([
             'tipo_documento' => 'DNI', 'numero_documento' => '00000001',
             'nombres_razon_social' => 'Ana', 'apellidos' => 'Pérez',
@@ -62,7 +62,7 @@ class SaleManagementTest extends TestCase
 
     public function test_changing_signed_contract_terms_annuls_sale_until_it_is_confirmed_again(): void
     {
-        $actor = User::factory()->create(['rol_id' => Role::where('nombre', Role::OFFICE)->value('rol_id')]);
+        $actor = User::factory()->create(['rol_id' => Role::where('nombre', Role::MANAGER)->value('rol_id')]);
         $client = Client::create([
             'tipo_documento' => 'DNI', 'numero_documento' => '00000003',
             'nombres_razon_social' => 'Marta', 'apellidos' => 'Díaz',
@@ -96,7 +96,7 @@ class SaleManagementTest extends TestCase
 
     public function test_automatic_cancellation_for_non_payment_annuls_the_sale(): void
     {
-        $actor = User::factory()->create(['rol_id' => Role::where('nombre', Role::OFFICE)->value('rol_id')]);
+        $actor = User::factory()->create(['rol_id' => Role::where('nombre', Role::MANAGER)->value('rol_id')]);
         $client = Client::create([
             'tipo_documento' => 'DNI', 'numero_documento' => '00000004',
             'nombres_razon_social' => 'Rosa', 'apellidos' => 'López',

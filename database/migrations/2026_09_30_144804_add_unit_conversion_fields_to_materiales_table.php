@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::table('materiales', function (Blueprint $table) {
             // Renombrar unidad_medida a unidad_base
-            $table->renameColumn('unidad_medida', 'unidad_base');
+            if (Schema::hasColumn('materiales', 'unidad_medida') && ! Schema::hasColumn('materiales', 'unidad_base')) $table->renameColumn('unidad_medida', 'unidad_base');
             
             // Agregar campos nuevos
-            $table->string('unidad_empaque', 30)->nullable()->after('unidad_base');
-            $table->decimal('factor_conversion', 10, 3)->nullable()->after('unidad_empaque');
+            if (! Schema::hasColumn('materiales', 'unidad_empaque')) $table->string('unidad_empaque', 30)->nullable()->after('unidad_base');
+            if (! Schema::hasColumn('materiales', 'factor_conversion')) $table->decimal('factor_conversion', 10, 3)->nullable()->after('unidad_empaque');
         });
     }
 

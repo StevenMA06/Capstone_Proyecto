@@ -35,33 +35,32 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/session/status', SessionStatusController::class)->withoutMiddleware(EnsureAccountActive::class)->name('session.status');
-    Route::get('/access-history', AccessHistoryController::class)->middleware('can:view-access-history')->name('access.index');
+    Route::get('/access-history', AccessHistoryController::class)->name('access.index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
 });
 
-Route::middleware(['auth', 'can:manage-users'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::patch('/users/{user}/status', [UserController::class, 'status'])->name('users.status');
     Route::resource('users', UserController::class)->except('destroy');
 });
 
-Route::middleware(['auth', 'can:manage-employees'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::patch('/employees/{employee}/status', [EmployeeController::class, 'status'])->name('employees.status');
     Route::resource('employees', EmployeeController::class)->except('destroy');
 });
 
-Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::get('/installations', [OperationController::class, 'installations'])->name('installations.index');
     Route::get('/equipment', [OperationController::class, 'equipment'])->name('equipment.index');
-    Route::get('/materials', [OperationController::class, 'materials'])->name('materials.index');
     
-    // Chatbot IA - Solo para Gerencia
+    // Chatbot: acceso y consultas según los permisos efectivos.
     Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');
     Route::post('/chatbot/query', [ChatbotController::class, 'query'])->middleware('throttle:60,1')->name('chatbot.query');
     Route::post('/chatbot/new', [ChatbotController::class, 'newConversation'])->name('chatbot.new');
 });
 
-Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
     Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
     Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
@@ -79,23 +78,23 @@ Route::middleware(['auth', 'can:view-office'])->group(function (): void {
     Route::post('/contracts/{contract}/reactivate', [ContractController::class, 'reactivate'])->whereNumber('contract')->name('contracts.reactivate');
 });
 
-Route::middleware(['auth', 'can:manage-zones'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::patch('/zones/{zone}/status', [CoverageZoneController::class, 'status'])->name('zones.status');
     Route::resource('zones', CoverageZoneController::class)->only(['create', 'store', 'edit', 'update']);
 });
-Route::middleware(['auth', 'can:view-zones'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::resource('zones', CoverageZoneController::class)->only(['index', 'show']);
 });
 
-Route::middleware(['auth', 'can:manage-plans'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::patch('/plans/{plan}/status', [PlanController::class, 'status'])->name('plans.status');
     Route::resource('plans', PlanController::class)->only(['create', 'store', 'edit', 'update']);
 });
-Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::resource('plans', PlanController::class)->only(['index', 'show']);
 });
 
-Route::middleware(['auth', 'can:view-technician'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::get('/technician', [TechnicianController::class, 'index'])->name('technician.index');
     Route::post('/technician/installations/{pedido}/start', [TechnicianController::class, 'start'])->whereNumber('pedido')->name('technician.start');
     Route::post('/technician/installations/{pedido}/finish', [TechnicianController::class, 'finish'])->whereNumber('pedido')->name('technician.finish');
@@ -111,12 +110,12 @@ Route::middleware(['auth', 'can:view-technician'])->group(function (): void {
     Route::get('/technician/installations/{pedido}/evidence/{evidence}', [TechnicianController::class, 'download'])->whereNumber(['pedido', 'evidence'])->name('technician.evidence.download');
 });
 
-Route::middleware(['auth', 'can:register-clients'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::patch('/clients/{client}/deactivate', [ClientController::class, 'deactivate'])->name('clients.deactivate');
     Route::resource('clients', ClientController::class)->except('destroy');
 });
 
-Route::middleware(['auth', 'can:manage-payments'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::patch('/payments/{payment}/cancel', [PaymentController::class, 'cancel'])->name('payments.cancel');
     Route::patch('/payments/{payment}/complete', [PaymentController::class, 'complete'])->name('payments.complete');
     Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->whereNumber('payment')->name('payments.receipt');
@@ -177,12 +176,38 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/kardex', [KardexController::class, 'index'])->name('kardex.index');
 });
 
-Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::view('/reports', 'analytics.screen', ['screen' => 'reports'])->name('reports.index');
     // Exportación real pendiente; la entrega actual contiene solo pantallas de demostración.
 });
 
-Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::view('/indicators', 'analytics.screen', ['screen' => 'indicators'])->name('indicators.index');
     Route::view('/bi', 'analytics.screen', ['screen' => 'bi'])->name('bi.index');
 });
+
+Route::middleware(['auth'])->group(function (): void {
+    Route::get('/roles', [\App\Http\Controllers\RoleAccessController::class, 'index'])->name('roles.index');
+    Route::post('/roles', [\App\Http\Controllers\RoleAccessController::class, 'store'])->name('roles.store');
+    Route::put('/roles/{role}', [\App\Http\Controllers\RoleAccessController::class, 'update'])->name('roles.update');
+    Route::get('/user-roles', [\App\Http\Controllers\RoleAccessController::class, 'assignments'])->name('user-roles.index');
+    Route::put('/user-roles/{user}', [\App\Http\Controllers\RoleAccessController::class, 'assign'])->name('user-roles.update');
+});
+
+Route::middleware('auth')->group(function (): void {
+    Route::get('/dashboard/gerencia', [DashboardController::class, 'management'])->name('dashboard.management');
+    Route::get('/dashboard/call-center', [DashboardController::class, 'office'])->name('dashboard.office');
+    Route::get('/executions', [TechnicianController::class, 'index'])->name('executions.index');
+    Route::get('/assigned/contracts', [\App\Http\Controllers\ScopedAccessController::class, 'contracts'])->name('contracts.assigned');
+    Route::get('/assigned/equipment', [\App\Http\Controllers\ScopedAccessController::class, 'equipment'])->name('equipments.assigned');
+    Route::get('/assigned/kardex', [\App\Http\Controllers\ScopedAccessController::class, 'movements'])->name('kardex.related');
+    Route::get('/availability/equipment', [\App\Http\Controllers\ScopedAccessController::class, 'equipmentAvailability'])->name('equipments.availability');
+    Route::get('/availability/materials', [\App\Http\Controllers\ScopedAccessController::class, 'materialAvailability'])->name('materials.availability');
+    Route::get('/orders', [\App\Http\Controllers\InstallationOrderController::class, 'index'])->name('orders.index');
+    Route::get('/assigned/orders', [\App\Http\Controllers\InstallationOrderController::class, 'index'])->name('orders.assigned');
+    Route::post('/orders', [\App\Http\Controllers\InstallationOrderController::class, 'store'])->name('orders.store');
+    Route::patch('/orders/{pedido}/schedule', [\App\Http\Controllers\InstallationOrderController::class, 'schedule'])->whereNumber('pedido')->name('orders.schedule');
+    Route::patch('/orders/{pedido}/cancel', [\App\Http\Controllers\InstallationOrderController::class, 'cancel'])->whereNumber('pedido')->name('orders.cancel');
+});
+
+Route::post('/sales/contracts/{contract}/confirm', [SaleController::class, 'confirm'])->middleware('auth')->whereNumber('contract')->name('sales.confirm');

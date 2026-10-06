@@ -20,6 +20,10 @@ class PaymentRegistrationTest extends TestCase
     {
         $role = Role::firstOrCreate(['nombre' => $name], ['estado' => 'ACTIVO']);
 
+        // Payments are optional for Call Center; these registration scenarios explicitly grant them.
+        if ($name === Role::OFFICE) {
+            foreach (DB::table('permisos')->whereIn('codigo', ['payments.view','payments.create'])->pluck('permiso_id') as $id) DB::table('rol_permiso')->updateOrInsert(['rol_id'=>$role->getKey(),'permiso_id'=>$id],['permitido'=>true]);
+        }
         return User::factory()->create(['rol_id' => $role->getKey()]);
     }
 
@@ -27,7 +31,7 @@ class PaymentRegistrationTest extends TestCase
 
     private function activeContract(): Contract
     {
-        $creator = $this->userWithRole('Gerente');
+        $creator = $this->userWithRole(Role::MANAGER);
         
         $client = Client::create([
             'tipo_documento' => 'DNI',
@@ -101,7 +105,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_manager_registers_payment_with_only_required_information(): void
     {
-        $creator = $this->userWithRole('Gerente');
+        $creator = $this->userWithRole(Role::MANAGER);
         $data = $this->data();
         
         $response = $this->signIn($creator)->post('/payments', $data)
@@ -127,7 +131,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_office_user_registers_payment_with_all_optional_fields(): void
     {
-        $creator = $this->userWithRole('Usuario de oficina');
+        $creator = $this->userWithRole(Role::OFFICE);
         $data = $this->data([
             'fecha_pago' => now()->addDays(11)->format('Y-m-d'),
             'metodo_pago' => 'TRANSFERENCIA',
@@ -148,7 +152,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_payment_code_is_generated_automatically_with_unique_format(): void
     {
-        $creator = $this->userWithRole('Gerente');
+        $creator = $this->userWithRole(Role::MANAGER);
         $this->signIn($creator);
 
         $this->post('/payments', $this->data())->assertSessionHasNoErrors();
@@ -171,7 +175,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_payment_can_only_be_registered_for_active_contract(): void
     {
-        $creator = $this->userWithRole('Gerente');
+        $creator = $this->userWithRole(Role::MANAGER);
         $contract = $this->activeContract();
         
         $this->signIn($creator);
@@ -194,7 +198,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_amount_must_be_greater_than_zero(): void
     {
-        $this->signIn($this->userWithRole('Gerente'));
+        $this->signIn($this->userWithRole(Role::MANAGER));
 
         foreach ([0, -10, -0.01] as $invalid) {
             $this->post('/payments', $this->data(['monto' => $invalid]))
@@ -206,7 +210,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_due_date_must_be_today_or_future_when_creating(): void
     {
-        $this->signIn($this->userWithRole('Gerente'));
+        $this->signIn($this->userWithRole(Role::MANAGER));
 
         // Futuro: OK
         $this->post('/payments', $this->data(['fecha_vencimiento' => now()->addDays(10)->format('Y-m-d')]))
@@ -225,7 +229,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_payment_date_requires_payment_method(): void
     {
-        $this->signIn($this->userWithRole('Gerente'));
+        $this->signIn($this->userWithRole(Role::MANAGER));
 
         // fecha_pago sin metodo_pago: ERROR
         $this->post('/payments', $this->data([
@@ -244,7 +248,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_payment_date_cannot_be_before_due_date(): void
     {
-        $this->signIn($this->userWithRole('Gerente'));
+        $this->signIn($this->userWithRole(Role::MANAGER));
 
         $this->post('/payments', $this->data([
             'fecha_vencimiento' => now()->addDays(10)->format('Y-m-d'),
@@ -257,7 +261,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_period_format_must_be_yyyy_mm(): void
     {
-        $this->signIn($this->userWithRole('Gerente'));
+        $this->signIn($this->userWithRole(Role::MANAGER));
 
         foreach (['2026-13', '2026-00', '26-09', '2026/09', '202609'] as $invalid) {
             $this->post('/payments', $this->data(['periodo_servicio' => $invalid]))
@@ -273,7 +277,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_form_is_reachable_from_payments_index_for_authorized_roles(): void
     {
-        foreach (['Gerente', 'Usuario de oficina'] as $role) {
+        foreach ([Role::MANAGER, Role::OFFICE] as $role) {
             $this->signIn($this->userWithRole($role));
             $this->get('/payments')->assertOk()->assertSee('Registrar pago');
             $this->get('/payments/create')->assertOk()
@@ -290,7 +294,7 @@ class PaymentRegistrationTest extends TestCase
         $this->post('/payments', $this->data())->assertRedirect('/login');
 
         // Técnico no autorizado
-        $this->signIn($this->userWithRole('Técnico'));
+        $this->signIn($this->userWithRole(Role::TECHNICIAN));
         $this->get('/payments/create')->assertForbidden();
         $this->post('/payments', $this->data())->assertForbidden();
 
@@ -299,7 +303,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_inactive_account_cannot_register_payment(): void
     {
-        $creator = $this->userWithRole('Gerente');
+        $creator = $this->userWithRole(Role::MANAGER);
         $this->signIn($creator);
         $creator->update(['estado' => 'INACTIVO']);
 
@@ -309,8 +313,8 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_creator_and_state_cannot_be_supplied_by_browser(): void
     {
-        $creator = $this->userWithRole('Gerente');
-        $other = $this->userWithRole('Usuario de oficina');
+        $creator = $this->userWithRole(Role::MANAGER);
+        $other = $this->userWithRole(Role::OFFICE);
         
         $this->signIn($creator)->post('/payments', $this->data([
             'registrado_por' => $other->getKey(),
@@ -326,7 +330,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_input_preserves_form_on_validation_failure(): void
     {
-        $this->signIn($this->userWithRole('Gerente'))->from('/payments/create')
+        $this->signIn($this->userWithRole(Role::MANAGER))->from('/payments/create')
             ->post('/payments', $this->data(['monto' => -50, 'periodo_servicio' => 'invalid']))
             ->assertRedirect('/payments/create')
             ->assertSessionHasErrors(['monto', 'periodo_servicio'])
@@ -337,7 +341,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_unique_code_constraint_is_handled_gracefully(): void
     {
-        $creator = $this->userWithRole('Gerente');
+        $creator = $this->userWithRole(Role::MANAGER);
         $this->signIn($creator);
 
         // Crear primer pago
@@ -359,7 +363,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_all_payment_methods_are_supported(): void
     {
-        $this->signIn($this->userWithRole('Gerente'));
+        $this->signIn($this->userWithRole(Role::MANAGER));
 
         foreach (['EFECTIVO', 'TRANSFERENCIA', 'YAPE', 'PLIN', 'TARJETA', 'OTRO'] as $method) {
             $this->post('/payments', $this->data([
@@ -377,7 +381,7 @@ class PaymentRegistrationTest extends TestCase
 
     public function test_contract_must_exist(): void
     {
-        $this->signIn($this->userWithRole('Gerente'));
+        $this->signIn($this->userWithRole(Role::MANAGER));
 
         $this->post('/payments', $this->data(['contrato_id' => 999999]))
             ->assertSessionHasErrors('contrato_id');

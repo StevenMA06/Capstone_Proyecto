@@ -33,7 +33,7 @@ class ClientRegistrationTest extends TestCase
 
     public function test_manager_registers_client_with_only_required_information(): void
     {
-        $creator = $this->userWithRole('Gerente');
+        $creator = $this->userWithRole(Role::MANAGER);
         $response = $this->signIn($creator)->post('/clients', $this->data())
             ->assertSessionHasNoErrors()
             ->assertSessionHas('status');
@@ -60,14 +60,14 @@ class ClientRegistrationTest extends TestCase
             'provincia' => 'Trujillo', 'departamento' => 'La Libertad',
             'latitud' => '-8.1116000', 'longitud' => '-79.0287000',
         ]);
-        $this->signIn($this->userWithRole('Usuario de oficina'))->post('/clients', $data)
+        $this->signIn($this->userWithRole(Role::OFFICE))->post('/clients', $data)
             ->assertRedirect('/clients/'.Client::firstOrFail()->getKey())->assertSessionHasNoErrors();
         $this->assertDatabaseHas('clientes', $data);
     }
 
     public function test_all_document_types_with_required_contact_information_are_supported(): void
     {
-        $this->signIn($this->userWithRole('Gerente'));
+        $this->signIn($this->userWithRole(Role::MANAGER));
         foreach (['DNI', 'CE', 'RUC', 'OTRO'] as $type) {
             $number = $type === 'DNI' ? '00123456' : '00123456789';
             $data = $this->data([
@@ -85,8 +85,8 @@ class ClientRegistrationTest extends TestCase
 
     public function test_creator_state_and_identifier_cannot_be_supplied_by_browser(): void
     {
-        $creator = $this->userWithRole('Gerente');
-        $other = $this->userWithRole('Usuario de oficina');
+        $creator = $this->userWithRole(Role::MANAGER);
+        $other = $this->userWithRole(Role::OFFICE);
         $this->signIn($creator)->post('/clients', $this->data([
             'creado_por' => $other->getKey(), 'estado' => 'INACTIVO', 'cliente_id' => 999999,
             'creado_en' => '2000-01-01 00:00:00',
@@ -100,7 +100,7 @@ class ClientRegistrationTest extends TestCase
 
     public function test_surname_and_phone_cannot_be_missing_or_blank(): void
     {
-        $this->signIn($this->userWithRole('Gerente'));
+        $this->signIn($this->userWithRole(Role::MANAGER));
         foreach ([null, '', '   '] as $blank) {
             $this->post('/clients', $this->data(['apellidos' => $blank, 'telefono' => $blank]))
                 ->assertSessionHasErrors(['apellidos', 'telefono']);
@@ -110,7 +110,7 @@ class ClientRegistrationTest extends TestCase
 
     public function test_email_is_required_when_creating_and_updating_a_client(): void
     {
-        $this->signIn($this->userWithRole('Gerente'));
+        $this->signIn($this->userWithRole(Role::MANAGER));
         $this->post('/clients', $this->data())->assertSessionHasNoErrors();
         $client = Client::firstOrFail();
         foreach ([null, '', '   ', 'correo-invalido'] as $invalid) {
@@ -125,9 +125,8 @@ class ClientRegistrationTest extends TestCase
 
     public function test_form_is_reachable_from_dashboard_for_both_roles(): void
     {
-        foreach (['Gerente', 'Usuario de oficina'] as $role) {
-            $this->signIn($this->userWithRole($role))->get('/dashboard')->assertOk()
-                ->assertSee('Clientes registrados')->assertDontSee('Registrar cliente');
+        foreach ([Role::MANAGER, Role::OFFICE] as $role) {
+            $this->signIn($this->userWithRole($role))->get('/dashboard')->assertRedirect($role === Role::MANAGER ? '/dashboard/gerencia' : '/dashboard/call-center');
             $this->get('/clients')->assertOk()->assertSee('Registrar cliente');
             $this->get('/clients/create')->assertOk()->assertSee('Nombres o razón social')
                 ->assertSee('name="_token"', false)->assertSee('name="direccion"', false);
@@ -138,7 +137,7 @@ class ClientRegistrationTest extends TestCase
     {
         $this->get('/clients/create')->assertRedirect('/login');
         $this->post('/clients', $this->data())->assertRedirect('/login');
-        $this->signIn($this->userWithRole('Técnico'));
+        $this->signIn($this->userWithRole(Role::TECHNICIAN));
         $this->get('/dashboard')->assertRedirect('/technician');
         $this->get('/technician')->assertOk()->assertDontSee('Registrar cliente');
         $this->get('/clients/create')->assertForbidden();
@@ -148,7 +147,7 @@ class ClientRegistrationTest extends TestCase
 
     public function test_inactive_account_cannot_register(): void
     {
-        $creator = $this->userWithRole('Gerente');
+        $creator = $this->userWithRole(Role::MANAGER);
         $this->signIn($creator);
         $creator->update(['estado' => 'INACTIVO']);
         $this->post('/clients', $this->data())->assertRedirect('/login');
@@ -157,7 +156,7 @@ class ClientRegistrationTest extends TestCase
 
     public function test_input_must_fit_existing_schema_and_preserves_form_on_failure(): void
     {
-        $this->signIn($this->userWithRole('Gerente'))->from('/clients/create')
+        $this->signIn($this->userWithRole(Role::MANAGER))->from('/clients/create')
             ->post('/clients', $this->data(['numero_documento' => str_repeat('1', 21), 'latitud' => 91]))
             ->assertRedirect('/clients/create')->assertSessionHasErrors(['numero_documento', 'latitud'])
             ->assertSessionHasInput('nombres_razon_social', 'Ana María');
@@ -167,7 +166,7 @@ class ClientRegistrationTest extends TestCase
 
     public function test_existing_unique_constraint_is_handled_without_overwriting_client(): void
     {
-        $this->signIn($this->userWithRole('Gerente'))->post('/clients', $this->data())->assertSessionHasNoErrors();
+        $this->signIn($this->userWithRole(Role::MANAGER))->post('/clients', $this->data())->assertSessionHasNoErrors();
         $this->from('/clients/create')->post('/clients', $this->data(['nombres_razon_social' => 'Otro nombre']))
             ->assertRedirect('/clients/create')->assertSessionHasErrors('numero_documento')
             ->assertSessionHasInput('nombres_razon_social', 'Otro nombre');

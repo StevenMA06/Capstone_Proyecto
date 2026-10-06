@@ -28,8 +28,15 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
+        static::saved(function (User $user): void {
+            if ($user->wasRecentlyCreated || $user->wasChanged('rol_id')) {
+                $old = $user->getOriginal('rol_id');
+                if ($old && $old != $user->rol_id) $user->roles()->detach($old);
+                $user->roles()->syncWithoutDetaching([$user->rol_id]);
+            }
+        });
         static::deleting(function (User $user): void {
-            if ($user->role?->nombre === Role::ADMIN) {
+            if ($user->hasRole(Role::ADMIN, false)) {
                 throw ValidationException::withMessages(['account' => 'La cuenta Administrador no se puede eliminar.']);
             }
         });
@@ -57,28 +64,56 @@ class User extends Authenticatable
 
     public function canAccess(): bool
     {
-        return $this->estado === 'ACTIVO' && $this->role?->estado === 'ACTIVO' && in_array($this->role->nombre, Role::NAMES, true)
+        return $this->estado === 'ACTIVO' && $this->roles()->where('estado', 'ACTIVO')->exists()
             && ($this->empleado_id === null || ($this->employee?->isEligible() ?? false));
     }
 
     public function isManager(): bool
     {
-        return $this->canAccess() && $this->role->isManagement();
+        return $this->canAccess() && ($this->hasRole(Role::ADMIN) || $this->hasRole(Role::MANAGER));
     }
 
     public function isAdministrator(): bool
     {
-        return $this->canAccess() && $this->role->nombre === Role::ADMIN;
+        return $this->canAccess() && $this->hasRole(Role::ADMIN);
     }
 
     public function isOffice(): bool
     {
-        return $this->canAccess() && $this->role->nombre === Role::OFFICE;
+        return $this->canAccess() && $this->hasRole(Role::OFFICE);
     }
 
     public function isTechnician(): bool
     {
-        return $this->canAccess() && $this->role->nombre === Role::TECHNICIAN;
+        return $this->canAccess() && $this->hasRole(Role::TECHNICIAN);
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'usuario_rol', 'usuario_id', 'rol_id');
+    }
+
+    public function hasRole(string $name, bool $activeOnly = true): bool
+    {
+        return $this->roles()->where('nombre', $name)->when($activeOnly, fn ($q) => $q->where('estado', 'ACTIVO'))->exists();
+    }
+
+    public function hasPermission(string $code): bool
+    {
+        if (! $this->canAccess() || ! isset(\App\Support\AccessCatalog::permissions()[$code])) return false;
+        if ($this->isAdministrator()) return true;
+        if (\App\Support\AccessCatalog::reserved($code)) return false;
+        return \Illuminate\Support\Facades\DB::table('usuario_rol as ur')
+            ->join('roles as r', 'r.rol_id', '=', 'ur.rol_id')
+            ->join('rol_permiso as rp', 'rp.rol_id', '=', 'r.rol_id')
+            ->join('permisos as p', 'p.permiso_id', '=', 'rp.permiso_id')
+            ->where('ur.usuario_id', $this->getKey())->where('r.estado', 'ACTIVO')
+            ->where('p.estado', 'ACTIVO')->where('rp.permitido', true)->where('p.codigo', $code)->exists();
+    }
+
+    public function getRoleNamesAttribute(): string
+    {
+        return $this->roles()->where('estado', 'ACTIVO')->orderBy('nombre')->pluck('nombre')->join(', ');
     }
 
     public function getNameAttribute(): string

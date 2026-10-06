@@ -12,7 +12,7 @@ use Illuminate\Validation\Rules\Password;
 
 class CreateUser extends Command
 {
-    protected $signature = 'app:create-user {--username= : Nombre de usuario} {--role=Usuario de oficina : Nombre del rol activo}';
+    protected $signature = 'app:create-user {--username= : Nombre de usuario} {--role=Call Center : Nombre del rol activo}';
 
     protected $description = 'Crea una cuenta en usuarios sin contraseñas predeterminadas';
 

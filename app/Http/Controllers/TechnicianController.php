@@ -70,7 +70,8 @@ class TechnicianController extends Controller
                 $q->where('estado', 'DISPONIBLE')->orWhereIn('equipo_id', DB::table('pedido_equipos')->select('equipo_id')
                     ->where('pedido_id', $pedido)->where('estado_asignacion', 'ASIGNADO')->whereNull('fecha_devolucion'));
             })->orderBy('nombre')->get(),
-            'materials' => DB::table('materiales')->where('estado', 'ACTIVO')->orderBy('nombre')->get(),
+            'materials' => DB::table('materiales')->where('estado', 'ACTIVO')->select('materiales.*')
+                ->selectRaw('CASE WHEN inventario_en_empaque = 1 THEN unidad_empaque ELSE unidad_base END as unidad_medida')->orderBy('nombre')->get(),
             'usedEquipment' => DB::table('pedido_equipos as pe')->join('equipos as e', 'e.equipo_id', '=', 'pe.equipo_id')
                 ->where('pe.pedido_id', $pedido)->select('pe.*', 'e.codigo', 'e.nombre', 'e.numero_serie', 'e.marca', 'e.modelo')->get(),
             'usedMaterials' => DB::table('pedido_materiales as pm')->join('materiales as m', 'm.material_id', '=', 'pm.material_id')

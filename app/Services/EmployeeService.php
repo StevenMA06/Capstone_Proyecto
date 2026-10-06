@@ -13,6 +13,8 @@ class EmployeeService
     public function save(?Employee $employee, array $data): Employee
     {
         return DB::transaction(function () use ($employee, $data) {
+            \App\Models\Role::orderBy('rol_id')->lockForUpdate()->get();
+            $protect = $employee && $this->hasAccessAdministrator($employee);
             $record = $employee ? Employee::lockForUpdate()->findOrFail($employee->getKey()) : new Employee;
             $record->fill($data);
             if (! $record->exists) {
@@ -25,6 +27,7 @@ class EmployeeService
             if ($record->estado === 'INACTIVO') {
                 $this->disableAccounts($record);
             }
+            if ($protect) app(RoleAccessService::class)->ensureAdministrator();
 
             return $record;
         }, 3);
@@ -33,6 +36,8 @@ class EmployeeService
     public function setActive(Employee $employee, bool $active): void
     {
         DB::transaction(function () use ($employee, $active) {
+            \App\Models\Role::orderBy('rol_id')->lockForUpdate()->get();
+            $protect = $this->hasAccessAdministrator($employee);
             $record = Employee::lockForUpdate()->findOrFail($employee->getKey());
             if ($active && $record->hasEnded()) {
                 throw ValidationException::withMessages(['fecha_cese' => 'Actualiza la fecha de cese antes de habilitar al empleado.']);
@@ -42,6 +47,7 @@ class EmployeeService
             if (! $active) {
                 $this->disableAccounts($record);
             }
+            if ($protect) app(RoleAccessService::class)->ensureAdministrator();
         }, 3);
     }
 
@@ -76,5 +82,11 @@ class EmployeeService
             DB::table('codigos_acceso_2fa')->where('usuario_id', $user->getKey())->where('estado', 'VIGENTE')
                 ->update(['estado' => 'INVALIDADO', 'invalidado_en' => now()]);
         }
+    }
+
+    private function hasAccessAdministrator(Employee $employee): bool
+    {
+        return $employee->accounts()->get()->contains(fn ($u) => $u->hasPermission('users.update')
+            && $u->hasPermission('roles.manage') && $u->hasPermission('user-roles.manage'));
     }
 }

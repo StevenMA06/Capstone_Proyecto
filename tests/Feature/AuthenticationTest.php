@@ -49,7 +49,7 @@ class AuthenticationTest extends TestCase
         $this->assertDatabaseHas('historial_accesos', ['usuario_id' => $user->getKey(), 'resultado' => 'EXITOSO']);
         $this->assertDatabaseHas('sesiones_usuario', ['usuario_id' => $user->getKey(), 'estado' => 'ACTIVA']);
         $this->assertNotNull($user->fresh()->ultimo_acceso_en);
-        $this->get('/dashboard')->assertOk();
+        $this->get('/dashboard')->assertRedirect('/dashboard/call-center');
     }
 
     public function test_login_by_username_is_supported(): void
@@ -152,8 +152,8 @@ class AuthenticationTest extends TestCase
     {
         $this->freezeTime();
         $this->signIn(User::factory()->create());
-        $this->get('/dashboard')->assertOk();
-        $this->get('/dashboard')->assertOk();
+        $this->get('/dashboard')->assertRedirect('/dashboard/call-center');
+        $this->get('/dashboard')->assertRedirect('/dashboard/call-center');
         $this->get('/login')->assertRedirect('/dashboard');
         $this->get('/logout')->assertStatus(405);
     }

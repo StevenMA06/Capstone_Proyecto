@@ -63,7 +63,7 @@ class PlanNumberAndTimezoneTest extends TestCase
         $actor = $this->manager();
         $this->post('/login', ['email' => $actor->correo, 'password' => 'ClaveSegura12345'])->assertRedirect('/dashboard');
         $this->assertDatabaseHas('historial_accesos', ['usuario_id' => $actor->getKey(), 'fecha_hora' => '2026-09-17 21:30:00']);
-        $this->get('/access-history?date=2026-09-17')->assertOk()->assertSee('21:30:00')->assertSee($actor->nombre_usuario);
+        $this->signIn(User::factory()->create(['rol_id'=>Role::where('nombre',Role::ADMIN)->value('rol_id')]))->get('/access-history?date=2026-09-17')->assertOk()->assertSee('21:30:00')->assertSee($actor->nombre_usuario);
         $this->get('/access-history?date=2026-09-18')->assertOk()->assertSee('No se encontraron accesos');
     }
 }

@@ -271,9 +271,9 @@
                     Consulta información operativa, inventario e indicadores
                 </p>
             </div>
-            <button type="button" class="btn-new" id="btnNewConversation">
+            @can('chatbot.query')<button type="button" class="btn-new" id="btnNewConversation">
                 <i class="bi bi-arrow-clockwise"></i> Nueva conversación
-            </button>
+            </button>@endcan
         </div>
 
         <!-- Messages Area -->
@@ -285,10 +285,11 @@
             <div class="empty-state">
                 <div class="empty-state-icon"><i class="bi bi-chat-dots"></i></div>
                 <h2>¡Hola! Soy tu asistente de Gerencia</h2>
-                <p>Puedo ayudarte a consultar información sobre pagos, contratos, equipos, materiales, instalaciones y más. Haz una pregunta o selecciona una sugerencia.</p>
+                <p>Esta interfaz está en configuración. Las consultas todavía devuelven una respuesta de demostración.</p>
             </div>
         </div>
 
+        @can('chatbot.query')
         <!-- Input Area -->
         <div class="chatbot-input-area">
             <div class="chatbot-suggestions" id="suggestionsArea">
@@ -321,9 +322,11 @@
                 </button>
             </form>
         </div>
+        @endcan
     </div>
 </div>
 
+@can('chatbot.query')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const messagesArea = document.getElementById('messagesArea');
@@ -488,4 +491,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+@endcan
 @endsection

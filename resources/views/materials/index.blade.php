@@ -33,7 +33,8 @@
     <!-- Panel de Filtros -->
     <aside class="client-filter-panel">
         <h2>Filtros y buscador</h2>
-        <form class="filters client-filters" method="GET" action="{{ route('materials.index') }}">
+        
+@routecan('materials.index')<form class="filters client-filters" method="GET" action="{{ route('materials.index') }}">
             <div>
                 <label for="search">Código o nombre</label>
                 <input id="search" name="search" value="{{ request('search') }}" placeholder="Buscar material…">
@@ -62,9 +63,12 @@
 
             <div class="filter-buttons">
                 <button class="action-link" type="submit">Aplicar</button>
-                <a class="clear-link" href="{{ route('materials.index') }}">Limpiar</a>
+                
+@routecan('materials.index')<a class="clear-link" href="{{ route('materials.index') }}">Limpiar</a>@endroutecan
+
             </div>
-        </form>
+        </form>@endroutecan
+
     </aside>
 
     <!-- Panel de Listado -->
@@ -97,7 +101,9 @@
                     @forelse($materials as $m)
                     <tr>
                         <td><strong>{{ $m->codigo }}</strong></td>
-                        <td><a class="client-name" href="{{ route('materials.show', $m) }}">{{ $m->nombre }}</a></td>
+                        <td>
+@routecan('materials.show')<a class="client-name" href="{{ route('materials.show', $m) }}">{{ $m->nombre }}</a>@endroutecan
+</td>
                         <td>{{ $m->unidad_medida }}</td>
                         <td>
                             <strong style="color: {{ $m->isLowStock() ? '#dc2626' : '#059669' }};">
@@ -115,9 +121,15 @@
                         </td>
                         <td>
                             <div class="row-actions">
-                                <a href="{{ route('materials.show', $m) }}">Ver</a>
-                                <a href="{{ route('materials.entry', $m) }}">Ingreso</a>
-                                <a href="{{ route('materials.exit', $m) }}">Salida</a>
+                                
+@routecan('materials.show')<a href="{{ route('materials.show', $m) }}">Ver</a>@endroutecan
+
+                                @can('materials.manage')
+@routecan('materials.entry')<a href="{{ route('materials.entry', $m) }}">Ingreso</a>@endroutecan
+@endcan
+                                @can('materials.manage')
+@routecan('materials.exit')<a href="{{ route('materials.exit', $m) }}">Salida</a>@endroutecan
+@endcan
                             </div>
                         </td>
                     </tr>

@@ -5,7 +5,8 @@
 <div class="payment-status-stats">
     <div class="stats-header">
         <h2>Estadísticas de Pagos</h2>
-        <form method="GET" action="{{ route('payments.index') }}" class="month-filter-form">
+        
+@routecan('payments.index')<form method="GET" action="{{ route('payments.index') }}" class="month-filter-form">
             <label for="month-filter">Mes:</label>
             <select 
                 id="month-filter" 
@@ -35,7 +36,8 @@
                     </option>
                 @endforeach
             </select>
-        </form>
+        </form>@endroutecan
+
     </div>
     
     <div class="stats-grid">
@@ -80,7 +82,8 @@
                 $percentage = $totalPayments > 0 ? round(($count / $totalPayments) * 100) : 0;
                 $isFiltered = request('status') === $status;
             @endphp
-            <a 
+            
+@routecan('payments.index')<a 
                 href="{{ route('payments.index', array_merge(request()->except('status', 'page'), ['status' => $status])) }}" 
                 class="stat-card clickable {{ $isFiltered ? 'filtered' : '' }} {{ $status === 'PENDIENTE' || $status === 'VENCIDO' ? 'urgent' : '' }}"
                 style="border-left-color: {{ $config['color'] }};"
@@ -103,7 +106,8 @@
                 @if($isFiltered)
                     <span class="badge-filtered">🔍 Filtrado</span>
                 @endif
-            </a>
+            </a>@endroutecan
+
         @endforeach
     </div>
     
@@ -133,7 +137,8 @@
 <aside class="client-filter-panel" aria-labelledby="filter-title">
     <h2 id="filter-title">Filtros y buscador</h2>
     <p class="muted">Encuentra los pagos que necesitas.</p>
-    <form class="filters client-filters" method="GET" action="{{ route('payments.index') }}">
+    
+@routecan('payments.index')<form class="filters client-filters" method="GET" action="{{ route('payments.index') }}">
         <div>
             <label for="search">Cliente o documento</label>
             <input id="search" name="search" value="{{ request('search') }}" placeholder="Buscar por documento…" maxlength="180">
@@ -160,9 +165,12 @@
         </div>
         <div class="filter-buttons">
             <button class="action-link" type="submit">Aplicar filtros</button>
-            <a class="clear-link" href="{{ route('payments.index') }}">Limpiar filtros</a>
+            
+@routecan('payments.index')<a class="clear-link" href="{{ route('payments.index') }}">Limpiar filtros</a>@endroutecan
+
         </div>
-    </form>
+    </form>@endroutecan
+
 </aside>
 <section class="client-list-panel" aria-labelledby="list-title">
     <div class="management-toolbar">
@@ -170,7 +178,9 @@
             <h2 id="list-title">Listado de pagos</h2>
             <p class="muted">{{ $payments->total() }} {{ $payments->total() === 1 ? 'pago encontrado' : 'pagos encontrados' }}</p>
         </div>
-        {{-- Botón "Registrar pago" eliminado: los pagos se generan automáticamente al activar contratos --}}
+        @routecan('payments.create')
+        <a class="action-link" href="{{ route('payments.create') }}">Registrar pago</a>
+        @endroutecan
     </div>
     <div class="table-scroll">
         <table class="users-table client-table">
@@ -237,14 +247,20 @@
                 </td>
                 <td>
                     <div class="row-actions">
-                        <a href="{{ route('payments.show', $payment) }}" aria-label="Ver detalle del pago {{ $payment->codigo }}">Ver detalle</a>
+                        
+@routecan('payments.show')<a href="{{ route('payments.show', $payment) }}" aria-label="Ver detalle del pago {{ $payment->codigo }}">Ver detalle</a>@endroutecan
+
                         @if($payment->estado === 'PENDIENTE' || $payment->estado === 'VENCIDO')
-                            <a href="{{ route('payments.edit', $payment) }}" aria-label="Validar pago {{ $payment->codigo }}">Validar pago</a>
+                            @can('payments.manage')
+@routecan('payments.edit')<a href="{{ route('payments.edit', $payment) }}" aria-label="Validar pago {{ $payment->codigo }}">Validar pago</a>@endroutecan
+@endcan
                         @endif
                         @if($payment->constancia_ruta && $payment->estado === 'REALIZADO')
-                            <a href="{{ route('payments.receipt', $payment) }}" target="_blank" aria-label="Ver comprobante del pago {{ $payment->codigo }}" title="Ver comprobante PDF">
+                            
+@routecan('payments.receipt')<a href="{{ route('payments.receipt', $payment) }}" target="_blank" aria-label="Ver comprobante del pago {{ $payment->codigo }}" title="Ver comprobante PDF">
                                 <i class="bi bi-file-pdf-fill" style="color: #dc2626;"></i> Comprobante
-                            </a>
+                            </a>@endroutecan
+
                         @endif
                     </div>
                 </td>

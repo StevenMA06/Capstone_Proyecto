@@ -3,10 +3,18 @@
 <div class="client-detail">
     <div class="detail-header">
         <div><h2>{{ $equipment->nombre }}</h2><p class="muted">Código: {{ $equipment->codigo }} @if($equipment->numero_serie) | Serie: {{ $equipment->numero_serie }}@endif</p></div>
-        <div class="detail-actions"><a class="clear-link" href="{{ route('equipments.index') }}">Volver al listado</a>
-            @if($equipment->estado !== 'ASIGNADO')<a href="{{ route('equipments.edit', $equipment) }}" class="action-link">Editar</a>@endif
-            @if($equipment->estado !== 'INACTIVO' && $equipment->estado !== 'ASIGNADO')<form method="POST" action="{{ route('equipments.deactivate', $equipment) }}" style="display:inline;" onsubmit="return confirm('¿Inhabilitar este equipo?');"> @csrf @method('DELETE') <button type="submit" class="clear-link" style="cursor:pointer;">Inhabilitar</button></form>@endif
-            <a href="{{ route('equipments.kardex', $equipment) }}" class="action-link">Ver Kardex</a>
+        <div class="detail-actions">
+@routecan('equipments.index')<a class="clear-link" href="{{ route('equipments.index') }}">Volver al listado</a>@endroutecan
+
+            @if($equipment->estado !== 'ASIGNADO')@can('equipments.manage')
+@routecan('equipments.edit')<a href="{{ route('equipments.edit', $equipment) }}" class="action-link">Editar</a>@endroutecan
+@endcan
+@endif
+            @if($equipment->estado !== 'INACTIVO' && $equipment->estado !== 'ASIGNADO')@can('equipments.manage')<form method="POST" action="{{ route('equipments.deactivate', $equipment) }}" style="display:inline;" onsubmit="return confirm('¿Inhabilitar este equipo?');"> @csrf @method('DELETE') <button type="submit" class="clear-link" style="cursor:pointer;">Inhabilitar</button></form>@endcan
+@endif
+            
+@routecan('equipments.kardex')<a href="{{ route('equipments.kardex', $equipment) }}" class="action-link">Ver Kardex</a>@endroutecan
+
         </div>
     </div>
     

@@ -10,7 +10,7 @@ class UpdateMaterialRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        return $this->user() !== null && ((string) $this->input('estado') === (string) $this->route('material')?->estado || $this->user()->hasPermission('materials.status'));
     }
 
     public function rules(): array

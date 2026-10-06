@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Employee extends Model
 {
-    public const POSITIONS = ['Técnico de Campo', 'Asistente de ventas'];
+    public const POSITIONS = ['Técnico de Campo', 'Asistente de ventas', 'Jefe del Área de TI', 'Jefe de Instalación', 'Jefe de Almacén'];
 
     protected $table = 'empleados';
 

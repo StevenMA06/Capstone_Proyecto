@@ -125,8 +125,9 @@ class PlanManagementTest extends TestCase
         $this->post('/plans', $this->data())->assertForbidden();
         $this->put('/plans/'.$plan->getKey(), $this->data())->assertForbidden();
         $this->patch('/plans/'.$plan->getKey().'/status', ['is_active' => false])->assertForbidden();
-        $this->signIn($this->actor(Role::TECHNICIAN))->get('/plans')->assertForbidden();
-        $this->get('/plans/'.$plan->getKey())->assertForbidden();
+        $this->signIn($this->actor(Role::TECHNICIAN))->get('/plans')->assertOk();
+        $this->get('/plans/create')->assertForbidden();
+        $this->get('/plans/'.$plan->getKey())->assertOk();
     }
 
     public function test_contract_form_and_submission_only_allow_active_plans_and_snapshot_the_price(): void

@@ -2,7 +2,9 @@
 @section('payments-content')
 <div class="management-toolbar">
     <h2>{{ $payment->exists ? 'Editar pago #'.$payment->codigo : 'Registrar pago' }}</h2>
-    <a class="secondary" href="{{ route('payments.index') }}">Ver pagos</a>
+    
+@routecan('payments.index')<a class="secondary" href="{{ route('payments.index') }}">Ver pagos</a>@endroutecan
+
 </div>
 
 @if($payment->exists && $payment->estado === 'REALIZADO')
@@ -10,18 +12,23 @@
         <strong>⚠️ Este pago ya está realizado y no puede ser modificado.</strong>
         <p>Los pagos realizados son definitivos para mantener la integridad del historial financiero.</p>
     </div>
-    <a class="action-link" href="{{ route('payments.show', $payment) }}">Ver detalle del pago</a>
+    
+@routecan('payments.show')<a class="action-link" href="{{ route('payments.show', $payment) }}">Ver detalle del pago</a>@endroutecan
+
 @elseif($payment->exists && in_array($payment->estado, ['IMPAGO', 'ANULADO']))
     <div class="notice error" role="alert">
         <strong>⚠️ Este pago está {{ $payment->estado === 'IMPAGO' ? 'marcado como IMPAGO' : 'anulado' }} y no puede ser modificado.</strong>
         <p>{{ $payment->estado === 'IMPAGO' ? 'El pago superó el período de tolerancia de 7 días.' : 'El pago fue anulado por error administrativo.' }}</p>
     </div>
-    <a class="action-link" href="{{ route('payments.show', $payment) }}">Ver detalle del pago</a>
+    
+@routecan('payments.show')<a class="action-link" href="{{ route('payments.show', $payment) }}">Ver detalle del pago</a>@endroutecan
+
 @else
 <p class="muted">
     {{ $payment->exists ? 'Completa los datos del pago cuando el cliente realice el pago.' : 'Los campos marcados con * son obligatorios. El código se genera automáticamente.' }}
 </p>
-<form class="account-form" method="POST" action="{{ $payment->exists ? route('payments.update', $payment) : route('payments.store') }}" novalidate>
+@can('payments.manage')
+@routecan($payment->exists ? 'payments.update' : 'payments.store')<form class="account-form" method="POST" action="{{ $payment->exists ? route('payments.update', $payment) : route('payments.store') }}" novalidate>
     @csrf
     @if($payment->exists) @method('PUT') @endif
     
@@ -132,9 +139,12 @@
 
     <div class="form-actions">
         <button class="action-link" type="submit">{{ $payment->exists ? 'Guardar cambios' : 'Registrar pago' }}</button>
-        <a class="secondary" href="{{ $payment->exists ? route('payments.show', $payment) : route('payments.index') }}">Cancelar</a>
+        
+@routecan('payments.show')<a class="secondary" href="{{ $payment->exists ? route('payments.show', $payment) : route('payments.index') }}">Cancelar</a>@endroutecan
+
     </div>
-</form>
+</form>@endroutecan
+@endcan
 @endif
 <script src="{{ asset('js/payments.js') }}" defer></script>
 @endsection

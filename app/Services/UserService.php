@@ -25,7 +25,9 @@ class UserService
         return DB::transaction(function () use ($data) {
             $this->eligibleEmployee($data['empleado_id'] ?? null);
 
-            return $this->users->create($this->attributes($data) + ['estado' => 'ACTIVO']);
+            $user = $this->users->create($this->attributes($data) + ['estado' => 'ACTIVO']);
+            app(RoleAccessService::class)->audit(auth()->user(), 'ASIGNAR_ROLES', 'usuario', $user->getKey(), [], [$user->rol_id]);
+            return $user;
         }, 3);
     }
 
@@ -33,10 +35,13 @@ class UserService
     public function update(User $user, array $data): User
     {
         return DB::transaction(function () use ($user, $data): User {
+            Role::orderBy('rol_id')->lockForUpdate()->get();
+            $wasAccessAdmin = $user->hasPermission('users.update') && $user->hasPermission('roles.manage') && $user->hasPermission('user-roles.manage');
             $managers = $this->users->lockManagers();
             $locked = $this->users->lock($user->getKey());
+            $beforeRoles = $locked->roles()->pluck('roles.rol_id')->all();
             $role = Role::findOrFail($data['rol_id']);
-            if ($locked->role?->nombre === Role::ADMIN && $role->nombre !== Role::ADMIN) {
+            if ($locked->hasRole(Role::ADMIN, false) && $role->nombre !== Role::ADMIN) {
                 throw ValidationException::withMessages(['rol_id' => 'El rol Administrador no se puede cambiar.']);
             }
             $employee = $this->eligibleEmployee($data['empleado_id'] ?? null, $locked->estado !== 'ACTIVO' && (string) ($data['empleado_id'] ?? '') === (string) $locked->empleado_id);
@@ -44,6 +49,9 @@ class UserService
                 && (! $employee || $employee->estado === 'ACTIVO');
             $this->protectLastManager($locked, $willManage, $managers->filter(fn ($u) => $u->isManager())->count());
             $updated = $this->users->update($locked, $this->attributes($data));
+            $afterRoles = $updated->roles()->pluck('roles.rol_id')->all();
+            if ($beforeRoles !== $afterRoles) app(RoleAccessService::class)->audit(auth()->user(), 'ASIGNAR_ROLES', 'usuario', $updated->getKey(), $beforeRoles, $afterRoles);
+            if ($wasAccessAdmin) app(RoleAccessService::class)->ensureAdministrator();
             if (! empty($data['password']) || $updated->wasChanged(['rol_id', 'empleado_id'])) {
                 $this->users->revokeSessions($updated);
             }
@@ -55,16 +63,19 @@ class UserService
     public function setActive(User $user, bool $active): User
     {
         return DB::transaction(function () use ($user, $active): User {
+            Role::orderBy('rol_id')->lockForUpdate()->get();
+            $wasAccessAdmin = $user->hasPermission('users.update') && $user->hasPermission('roles.manage') && $user->hasPermission('user-roles.manage');
             $managers = $this->users->lockManagers();
             $locked = $this->users->lock($user->getKey());
             if ($active) {
                 $this->eligibleEmployee($locked->empleado_id);
             }
-            if ($locked->role?->nombre === Role::ADMIN && ! $active) {
+            if ($locked->hasRole(Role::ADMIN, false) && ! $active) {
                 throw ValidationException::withMessages(['rol_id' => 'La cuenta Administrador no se puede inhabilitar.']);
             }
             $this->protectLastManager($locked, $active, $managers->filter(fn ($u) => $u->isManager())->count());
             $updated = $this->users->update($locked, ['estado' => $active ? 'ACTIVO' : 'INACTIVO']);
+            if ($wasAccessAdmin) app(RoleAccessService::class)->ensureAdministrator();
             if (! $active) {
                 $this->users->revokeSessions($updated);
             }
@@ -89,7 +100,7 @@ class UserService
     private function protectLastManager(User $user, bool $willManage, int $managers): void
     {
         if ($user->isManager() && ! $willManage && $managers <= 1) {
-            throw ValidationException::withMessages(['rol_id' => 'Debe quedar al menos una cuenta activa de Administrador o Gerente.']);
+            throw ValidationException::withMessages(['rol_id' => 'Debe quedar al menos una cuenta activa de Administrador o Gerencia.']);
         }
     }
 

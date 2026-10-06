@@ -8,13 +8,17 @@ class Role extends Model
 {
     public const ADMIN = 'Administrador';
 
-    public const MANAGER = 'Gerente';
+    public const MANAGER = 'Gerencia';
 
-    public const OFFICE = 'Usuario de oficina';
+    public const OFFICE = 'Call Center';
 
-    public const TECHNICIAN = 'Técnico';
+    public const TECHNICIAN = 'Técnico de campo';
 
-    public const NAMES = [self::ADMIN, self::MANAGER, self::OFFICE, self::TECHNICIAN];
+    public const WAREHOUSE = 'Jefe de Almacén';
+    public const IT = 'Jefe de TI';
+    public const INSTALLATIONS = 'Jefe de Instalaciones';
+
+    public const NAMES = [self::ADMIN, self::MANAGER, self::OFFICE, self::TECHNICIAN, self::WAREHOUSE, self::IT, self::INSTALLATIONS];
 
     protected $table = 'roles';
 
@@ -25,6 +29,11 @@ class Role extends Model
     public const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = ['nombre', 'descripcion', 'estado'];
+
+    protected static function booted(): void
+    {
+        static::created(fn (Role $role) => \App\Support\AccessCatalog::seedRole($role));
+    }
 
     public function isManagement(): bool
     {

@@ -2,7 +2,9 @@
 @section('payments-content')
 <div class="management-toolbar">
     <h2>Validar pago</h2>
-    <a class="secondary" href="{{ route('payments.show', $payment) }}">← Cancelar</a>
+    
+@routecan('payments.show')<a class="secondary" href="{{ route('payments.show', $payment) }}">← Cancelar</a>@endroutecan
+
 </div>
 
 {{-- Información del pago (solo lectura) --}}
@@ -147,7 +149,8 @@
 </style>
 
 {{-- Formulario de validación --}}
-<form class="payment-validation-form" method="POST" action="{{ route('payments.update', $payment) }}" novalidate>
+@can('payments.manage')
+@routecan('payments.update')<form class="payment-validation-form" method="POST" action="{{ route('payments.update', $payment) }}" novalidate>
     @csrf
     @method('PUT')
     
@@ -155,7 +158,7 @@
     <input type="hidden" name="monto" value="{{ $payment->monto }}">
     <input type="hidden" name="periodo_servicio" value="{{ $payment->periodo_servicio }}">
     <input type="hidden" name="fecha_vencimiento" value="{{ $payment->fecha_vencimiento->format('Y-m-d') }}">
-    <input type="hidden" name="marcar_realizado" value="1">
+    <input type="hidden" name="marcar_realizado" value="{{ auth()->user()->hasPermission('payments.complete') ? 1 : 0 }}">
 
     <section class="form-section">
         <h3><i class="bi bi-cash-stack"></i> Datos del pago realizado</h3>
@@ -201,7 +204,7 @@
             </div>
         </div>
 
-        @if($payment->estado !== 'REALIZADO')
+        @if($payment->estado !== 'REALIZADO' && auth()->user()->hasPermission('payments.complete'))
         <div class="info-banner">
             <i class="bi bi-info-circle-fill"></i>
             <span>Al enviar este formulario, el pago se marcará como <strong>REALIZADO</strong> y se generará automáticamente el comprobante PDF.</span>
@@ -212,11 +215,14 @@
     <div class="form-actions">
         <button class="btn-primary" type="submit">
             <i class="bi bi-check-circle"></i>
-            Confirmar pago
+            {{ auth()->user()->hasPermission('payments.complete') ? 'Confirmar pago' : 'Guardar datos' }}
         </button>
-        <a class="btn-secondary" href="{{ route('payments.show', $payment) }}">Cancelar</a>
+        
+@routecan('payments.show')<a class="btn-secondary" href="{{ route('payments.show', $payment) }}">Cancelar</a>@endroutecan
+
     </div>
-</form>
+</form>@endroutecan
+@endcan
 
 <style>
 .payment-validation-form {
@@ -410,7 +416,8 @@
                 </div>
             </div>
             
-            <form method="POST" action="{{ route('payments.cancel', $payment) }}" style="max-width: 600px;">
+            @can('payments.manage')
+@routecan('payments.cancel')<form method="POST" action="{{ route('payments.cancel', $payment) }}" style="max-width: 600px;">
                 @csrf @method('PATCH')
                 <div style="margin-bottom: 16px;">
                     <label for="observaciones_anular" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">
@@ -434,7 +441,8 @@
                     <i class="bi bi-x-circle-fill"></i>
                     Confirmar anulación
                 </button>
-            </form>
+            </form>@endroutecan
+@endcan
         </div>
     </details>
 </section>

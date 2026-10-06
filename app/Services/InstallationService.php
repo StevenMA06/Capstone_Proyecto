@@ -14,7 +14,7 @@ class InstallationService
     public function assignments(User $user)
     {
         $query = DB::table('pedidos_instalacion');
-        if (! $user->isManager()) {
+        if (! $user->hasPermission('technician.supervise')) {
             $user->empleado_id ? $query->where('tecnico_id', $user->empleado_id) : $query->whereRaw('1 = 0');
         }
 

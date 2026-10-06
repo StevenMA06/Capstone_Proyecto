@@ -12,7 +12,7 @@
         <p class="notice">Se necesita al menos un cliente, una zona y un Asistente de Ventas activos.</p>
     @endif
     @php($selectedClient = $clients->firstWhere('cliente_id', (int) old('cliente_id', $contract->cliente_id ?? 0)))
-    <form method="POST" @if ($contract) enctype="multipart/form-data" @endif
+    @can('contracts.manage')<form method="POST" @if ($contract) enctype="multipart/form-data" @endif
         action="{{ $contract ? route('contracts.update', $contract->contrato_id) : route('contracts.store') }}"
         class="account-form contracts-form" data-coverage="{{ $coverage->toJson() }}"
         data-current-plan="{{ $contract->plan_id ?? '' }}" data-current-price="{{ $contract->precio_contratado ?? '' }}">
@@ -137,7 +137,9 @@
                 <div class="contract-saved-file" role="status">
                     <span class="contract-saved-file-icon" aria-hidden="true">✓</span>
                     <div><strong>PDF adjunto guardado</strong><span>{{ $contract->firma_revision === 'VERIFICADA' ? 'Firma del cliente detectada' : 'Firma pendiente de detectar' }}</span></div>
-                    <a href="{{ route('contracts.pdf', $contract->contrato_id) }}">Descargar adjunto</a>
+                    
+@routecan('contracts.pdf')<a href="{{ route('contracts.pdf', $contract->contrato_id) }}">Descargar adjunto</a>@endroutecan
+
                 </div>
             @elseif($contract->pdf_contrato_ruta)
                 <p class="contract-file-warning" role="alert">El PDF registrado no está disponible. Selecciona un archivo para reemplazarlo.</p>
@@ -154,9 +156,11 @@
         </div>
         @endif
         <div class="form-actions"><button class="action-link" type="submit"
-                @disabled(!$contract && ($plans->isEmpty() || $clients->isEmpty() || $zones->isEmpty() || $employees->isEmpty()))>{{ $contract ? 'Guardar cambios' : 'Guardar contrato' }}</button><a
+                @disabled(!$contract && ($plans->isEmpty() || $clients->isEmpty() || $zones->isEmpty() || $employees->isEmpty()))>{{ $contract ? 'Guardar cambios' : 'Guardar contrato' }}</button>
+@routecan('contracts.show')<a
                 class="secondary"
-                href="{{ $contract ? route('contracts.show', $contract->contrato_id) : route('contracts.index') }}">Cancelar</a>
+                href="{{ $contract ? route('contracts.show', $contract->contrato_id) : route('contracts.index') }}">Cancelar</a>@endroutecan
+
         </div>
-    </form>
+    </form>@endcan
 @endsection

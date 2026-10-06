@@ -4,13 +4,13 @@
 @section('workspace-content')
 <section class="overview">
     <header class="overview-heading">
-        <div><span class="eyebrow">RESUMEN DE TU OPERACIÓN</span><h1>{{ auth()->user()->isAdministrator() ? 'Panel de Administración' : (auth()->user()->isManager() ? 'Panel principal de Gerencia' : 'Panel de oficina') }}</h1>
+        <div><span class="eyebrow">RESUMEN DE TU OPERACIÓN</span><h1>{{ auth()->user()->isAdministrator() ? 'Panel de Administración' : 'Panel de Gerencia' }}</h1>
         <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><span>Inicio</span><span aria-hidden="true">/</span><span aria-current="page">Dashboard</span></nav></div>
         <p class="overview-greeting">Hola, <strong>{{ auth()->user()->name }}</strong><br><span>Bienvenido a Lunnys Perú</span></p>
     </header>
     <div class="overview-metrics">
         @if($clientCount !== null)
-        <a class="metric-card summary-metric" href="{{ route('clients.index') }}"><h2>Clientes registrados</h2><p class="metric-value">{{ number_format($clientCount) }}</p>@include('layouts.module-icon', ['icon' => 'users'])</a>
+        <a class="metric-card summary-metric" @can('clients.view') href="{{ route('clients.index') }}" @endcan><h2>Clientes registrados</h2><p class="metric-value">{{ number_format($clientCount) }}</p>@include('layouts.module-icon', ['icon' => 'users'])</a>
         @endif
         @if($summary !== null)
         @foreach([
@@ -18,7 +18,7 @@
             ['Pagos pendientes', 'payments', 'money'],
             ['Instalaciones en proceso', 'installations', 'tool'],
         ] as [$label, $key, $icon])
-        <a class="metric-card summary-metric" href="{{ route($key.'.index') }}"><h2>{{ $label }}</h2><p class="metric-value">{{ number_format($summary[$key]) }}</p>@include('layouts.module-icon', ['icon' => $icon])</a>
+        <a class="metric-card summary-metric" @if(auth()->user()->hasPermission(\App\Support\AccessCatalog::forRoute($key.'.index') ?? '')) href="{{ route($key.'.index') }}" @endif><h2>{{ $label }}</h2><p class="metric-value">{{ number_format($summary[$key]) }}</p>@include('layouts.module-icon', ['icon' => $icon])</a>
         @endforeach
         @foreach(['equipment' => 'Equipos', 'materials' => 'Materiales'] as $key => $label)
         <button type="button" class="metric-card inventory-trigger {{ $summary[$key.'Low'] ? 'metric-alert' : '' }}" data-inventory-open="{{ $key }}-dialog" aria-haspopup="dialog" aria-controls="{{ $key }}-dialog">
@@ -62,7 +62,7 @@
     @endif
     <section class="overview-shortcuts">
         @if($summary !== null)<div class="future-grid">
-            <a class="future-shortcut" href="{{ route('bi.index') }}">@include('layouts.module-icon', ['icon' => 'chart'])<div><strong>Business Intelligence</strong><span>Explorar el panel de demostración</span></div><span class="coming-soon">Ver pantalla</span></a>
+            @can('bi.view')<a class="future-shortcut" href="{{ route('bi.index') }}">@include('layouts.module-icon', ['icon' => 'chart'])<div><strong>Business Intelligence</strong><span>Explorar el panel de demostración</span></div><span class="coming-soon">Ver pantalla</span></a>@endcan
             <div class="future-shortcut" aria-disabled="true">@include('layouts.module-icon', ['icon' => 'chat'])<div><strong>Chatbot IA</strong><span>Asistencia para tu operación</span></div><span class="coming-soon">Próximamente</span></div>
         </div>@endif
     </section>
@@ -73,7 +73,7 @@
             @if($key === 'equipment')<p class="muted">Unidades disponibles para asignación, agrupadas por nombre, tipo, marca y modelo. Mínimo: {{ config('inventory.equipment_minimum') }} por grupo.</p>@endif
             @if($summary[$key.'Low'])<p class="stock-warning" role="status">⚠ Stock igual o inferior al mínimo: {{ $summary[$key.'Low'] }} {{ $key === 'equipment' ? ($summary[$key.'Low'] === 1 ? 'grupo de equipos' : 'grupos de equipos') : ($summary[$key.'Low'] === 1 ? 'material' : 'materiales') }}.</p>@endif
             @include('operations.inventory-table', ['records' => $summary[$key], 'kind' => $key])
-            <footer class="inventory-footer"><a class="action-link" href="{{ route($key.'.index') }}">Abrir {{ mb_strtolower($label) }} →</a></footer>
+            <footer class="inventory-footer"><a class="action-link" @if(auth()->user()->hasPermission(\App\Support\AccessCatalog::forRoute($key.'.index') ?? '')) href="{{ route($key.'.index') }}" @endif>Abrir {{ mb_strtolower($label) }} →</a></footer>
         </dialog>
         @endforeach
     @endif

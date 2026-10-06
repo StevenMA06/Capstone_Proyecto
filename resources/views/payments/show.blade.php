@@ -6,14 +6,20 @@
         <p class="muted">Código: {{ $payment->codigo }}</p>
     </div>
     <div class="row-actions">
-        <a class="secondary" href="{{ route('payments.index') }}">← Volver a pagos</a>
+        
+@routecan('payments.index')<a class="secondary" href="{{ route('payments.index') }}">← Volver a pagos</a>@endroutecan
+
         @if($payment->canBeEdited())
-            <a class="action-link" href="{{ route('payments.edit', $payment) }}">Validar pago</a>
+            @can('payments.manage')
+@routecan('payments.edit')<a class="action-link" href="{{ route('payments.edit', $payment) }}">Validar pago</a>@endroutecan
+@endcan
         @endif
         @if($payment->constancia_ruta && $payment->isCompleted())
-            <a class="action-link" href="{{ route('payments.receipt', $payment) }}" target="_blank" title="Ver comprobante de pago">
+            
+@routecan('payments.receipt')<a class="action-link" href="{{ route('payments.receipt', $payment) }}" target="_blank" title="Ver comprobante de pago">
                 <i class="bi bi-file-pdf"></i> Ver comprobante
-            </a>
+            </a>@endroutecan
+
         @endif
     </div>
 </div>
@@ -46,10 +52,12 @@
             <div>
                 <dt>Comprobante de pago</dt>
                 <dd>
-                    <a href="{{ route('payments.receipt', $payment) }}" target="_blank" class="action-link" style="display: inline-flex; align-items: center; gap: 6px;">
+                    
+@routecan('payments.receipt')<a href="{{ route('payments.receipt', $payment) }}" target="_blank" class="action-link" style="display: inline-flex; align-items: center; gap: 6px;">
                         <i class="bi bi-file-pdf-fill" style="color: #dc2626;"></i>
                         Descargar comprobante PDF
-                    </a>
+                    </a>@endroutecan
+
                 </dd>
             </div>
         @endif
