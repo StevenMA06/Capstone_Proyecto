@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\GeminiService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 
 class ChatbotController extends Controller
 {
+    public function __construct(private GeminiService $gemini) {}
+
     /**
      * Muestra la interfaz del chatbot
      */
@@ -26,10 +29,8 @@ class ChatbotController extends Controller
             'history' => 'nullable|array',
         ]);
 
-        // Por ahora devolvemos una respuesta de prueba
-        // Aquí se integrará con ChatbotService cuando esté configurado
-        
         $message = $request->input('message');
+        $history = $request->input('history', []);
         
         // Verificar si contiene palabras sospechosas (protección básica)
         if ($this->containsMaliciousContent($message)) {
@@ -40,13 +41,17 @@ class ChatbotController extends Controller
             ]);
         }
 
-        // Respuesta temporal mientras se configura la API de ChatGPT
-        return response()->json([
-            'success' => true,
-            'response' => 'El chatbot está en configuración. Por favor, espera mientras se completa la integración con la API de ChatGPT.',
-            'source' => 'Sistema',
-            'timestamp' => now()->toIso8601String()
-        ]);
+        // Verificar que Gemini esté configurado
+        if (!$this->gemini->isConfigured()) {
+            return response()->json([
+                'success' => false,
+                'response' => 'El chatbot no está configurado correctamente. Por favor, contacta al administrador.',
+                'source' => 'Sistema'
+            ]);
+        }
+
+        // Procesar la consulta con Gemini
+        return response()->json($this->gemini->query($message, $history));
     }
 
     /**

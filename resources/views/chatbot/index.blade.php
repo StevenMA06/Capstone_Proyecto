@@ -285,7 +285,7 @@
             <div class="empty-state">
                 <div class="empty-state-icon"><i class="bi bi-chat-dots"></i></div>
                 <h2>¡Hola! Soy tu asistente de Gerencia</h2>
-                <p>Esta interfaz está en configuración. Las consultas todavía devuelven una respuesta de demostración.</p>
+                <p>Puedo ayudarte a consultar información sobre clientes, contratos, pagos, equipos, materiales y más. ¡Pregúntame lo que necesites!</p>
             </div>
         </div>
 
