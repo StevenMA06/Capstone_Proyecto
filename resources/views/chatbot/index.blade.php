@@ -293,17 +293,23 @@
         <!-- Input Area -->
         <div class="chatbot-input-area">
             <div class="chatbot-suggestions" id="suggestionsArea">
-                <button type="button" class="suggestion-chip" data-query="¿Cuántos pagos vencidos hay?">
-                    ¿Cuántos pagos vencidos hay?
+                <button type="button" class="suggestion-chip" data-query="¿Cuántos pagos vencidos tenemos?">
+                    ¿Cuántos pagos vencidos tenemos?
                 </button>
-                <button type="button" class="suggestion-chip" data-query="¿Qué equipos están disponibles?">
-                    ¿Qué equipos están disponibles?
+                <button type="button" class="suggestion-chip" data-query="Dame información del equipo EQ-001">
+                    Información del equipo EQ-001
                 </button>
                 <button type="button" class="suggestion-chip" data-query="¿Hay materiales con stock crítico?">
                     ¿Hay materiales con stock crítico?
                 </button>
-                <button type="button" class="suggestion-chip" data-query="¿Cuántos contratos activos tenemos?">
-                    ¿Cuántos contratos activos tenemos?
+                <button type="button" class="suggestion-chip" data-query="Muéstrame los contratos activos">
+                    Contratos activos
+                </button>
+                <button type="button" class="suggestion-chip" data-query="¿Cuántos equipos están en mantenimiento?">
+                    Equipos en mantenimiento
+                </button>
+                <button type="button" class="suggestion-chip" data-query="Resumen general del negocio">
+                    Resumen general
                 </button>
             </div>
 
@@ -312,9 +318,9 @@
                 <textarea 
                     class="chatbot-input" 
                     id="messageInput" 
-                    placeholder="Escribe tu pregunta aquí..."
+                    placeholder="Pregunta lo que necesites: equipos, materiales, contratos, pagos..."
                     rows="1"
-                    maxlength="500"
+                    maxlength="1000"
                     required
                 ></textarea>
                 <button type="submit" class="btn-send" id="btnSend">

@@ -25,7 +25,7 @@ class ChatbotController extends Controller
     public function query(Request $request): JsonResponse
     {
         $request->validate([
-            'message' => 'required|string|max:500',
+            'message' => 'required|string|max:1000',
             'history' => 'nullable|array',
         ]);
 
@@ -71,16 +71,17 @@ class ChatbotController extends Controller
     private function containsMaliciousContent(string $input): bool
     {
         $maliciousPatterns = [
-            '/ignore\s+(previous|all|instructions)/i',
-            '/contraseña|password|passwd/i',
+            '/ignore\s+(previous|all|your)\s+instructions/i',
+            '/contraseña|password\s*(hash)?|passwd/i',
             '/api[_\s]?key/i',
-            '/token/i',
-            '/\.env/i',
-            '/database|sql/i',
+            '/secret[_\s]?key/i',
+            '/bearer\s+token/i',
+            '/\.env\s+file/i',
             '/drop\s+table/i',
             '/delete\s+from/i',
-            '/insert\s+into/i',
-            '/update\s+\w+\s+set/i',
+            '/truncate\s+table/i',
+            '/grant\s+all/i',
+            '/revoke\s+all/i',
         ];
         
         foreach ($maliciousPatterns as $pattern) {
