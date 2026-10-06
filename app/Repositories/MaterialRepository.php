@@ -155,4 +155,109 @@ class MaterialRepository
             'ok' => $total - $lowStock,
         ];
     }
+
+    /**
+     * Obtener todos los materiales activos para exportación
+     */
+    public function getAllForExport(): Collection
+    {
+        return Material::where('estado', 'ACTIVO')
+            ->orderBy('nombre')
+            ->orderBy('codigo')
+            ->get();
+    }
+
+    /**
+     * Validar filas de importación
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @return array{valid: array<int, array{row_number: int, data: array<string, mixed>}>, invalid: array<int, array{row_number: int, data: array<string, mixed>, errors: array<int, string>}>}
+     */
+    public function validateImportRows(array $rows): array
+    {
+        $valid = [];
+        $invalid = [];
+        $seenCodes = [];
+
+        foreach ($rows as $index => $row) {
+            $rowNumber = $index + 2; // +2 porque Excel empieza en 1 y tiene fila de encabezado
+            $errors = [];
+
+            // Validar código (requerido y único)
+            if (empty($row['codigo'])) {
+                $errors[] = 'El código es obligatorio.';
+            } else {
+                $codigo = $row['codigo'];
+                
+                // Verificar duplicados en el archivo
+                if (isset($seenCodes[$codigo])) {
+                    $errors[] = "Código duplicado en el archivo (fila {$seenCodes[$codigo]}).";
+                } else {
+                    $seenCodes[$codigo] = $rowNumber;
+                }
+            }
+
+            // Validar nombre (requerido)
+            if (empty($row['nombre'])) {
+                $errors[] = 'El nombre es obligatorio.';
+            }
+
+            // Validar unidad base (requerido)
+            if (empty($row['unidad_base'])) {
+                $errors[] = 'La unidad base es obligatoria.';
+            }
+
+            // Validar factor de conversión si hay unidad de empaque
+            if (!empty($row['unidad_empaque'])) {
+                if (empty($row['factor_conversion']) || !is_numeric($row['factor_conversion']) || $row['factor_conversion'] <= 0) {
+                    $errors[] = 'Si hay unidad de empaque, el factor de conversión debe ser mayor a 0.';
+                }
+            }
+
+            // Validar cantidad ingreso (debe ser numérico y >= 0)
+            if (!empty($row['cantidad_ingreso'])) {
+                if (!is_numeric($row['cantidad_ingreso']) || $row['cantidad_ingreso'] < 0) {
+                    $errors[] = 'La cantidad de ingreso debe ser un número mayor o igual a 0.';
+                }
+            }
+
+            // Validar stock mínimo (debe ser numérico y >= 0)
+            if (isset($row['stock_minimo']) && $row['stock_minimo'] !== '') {
+                if (!is_numeric($row['stock_minimo']) || $row['stock_minimo'] < 0) {
+                    $errors[] = 'El stock mínimo debe ser un número mayor o igual a 0.';
+                }
+            }
+
+            // Validar inventario en empaque (si/no)
+            if (!empty($row['inventario_en_empaque'])) {
+                $val = strtolower(trim($row['inventario_en_empaque']));
+                if (!in_array($val, ['si', 'sí', 'no', 's', 'n', 'yes', 'y'])) {
+                    $errors[] = 'Inventario en empaque debe ser "SI" o "NO".';
+                }
+            }
+
+            if (empty($errors)) {
+                $valid[] = [
+                    'row_number' => $rowNumber,
+                    'data' => $row,
+                ];
+            } else {
+                $invalid[] = [
+                    'row_number' => $rowNumber,
+                    'data' => $row,
+                    'errors' => $errors,
+                ];
+            }
+        }
+
+        return ['valid' => $valid, 'invalid' => $invalid];
+    }
+
+    /**
+     * Buscar material por código
+     */
+    public function findByCode(string $code): ?Material
+    {
+        return Material::where('codigo', $code)->first();
+    }
 }

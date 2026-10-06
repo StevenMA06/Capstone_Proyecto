@@ -166,6 +166,13 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/materials/{material}/adjustment', [MaterialController::class, 'adjustmentForm'])->whereNumber('material')->name('materials.adjustment');
     Route::post('/materials/{material}/adjustment', [MaterialController::class, 'storeAdjustment'])->whereNumber('material')->name('materials.adjustment.store');
 
+    // Importación masiva de Materiales
+    Route::get('/materials/import/form', [MaterialController::class, 'importForm'])->name('materials.import');
+    Route::get('/materials/import/template', [MaterialController::class, 'downloadTemplate'])->name('materials.template');
+    Route::post('/materials/import/process', [MaterialController::class, 'processImport'])->name('materials.import.process');
+    Route::post('/materials/import/confirm', [MaterialController::class, 'confirmImport'])->name('materials.import.confirm');
+    Route::post('/materials/import/cancel', [MaterialController::class, 'cancelImport'])->name('materials.import.cancel');
+
     // Kardex de Inventario (consulta únicamente)
     Route::get('/kardex', [KardexController::class, 'index'])->name('kardex.index');
 });

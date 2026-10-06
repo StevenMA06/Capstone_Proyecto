@@ -74,9 +74,10 @@
                 <h2>Listado de materiales</h2>
                 <p class="muted">{{ $materials->total() }} {{ $materials->total() === 1 ? 'material encontrado' : 'materiales encontrados' }}</p>
             </div>
-            <a class="action-link" href="{{ route('materials.create') }}">
-                <span>＋</span> Registrar material
-            </a>
+            <div style="display: flex; gap: 0.5rem;">
+                <a class="action-link" href="{{ route('materials.import') }}"><span aria-hidden="true">📁</span> Importar Excel</a>
+                <a class="action-link" href="{{ route('materials.create') }}"><span aria-hidden="true">＋</span> Registrar material</a>
+            </div>
         </div>
 
         <div class="table-scroll">

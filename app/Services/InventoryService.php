@@ -363,4 +363,96 @@ class InventoryService
         $count = Material::count();
         return 'MAT-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
     }
+
+    /**
+     * Importar materiales masivamente desde Excel
+     * Crea nuevos materiales y actualiza stock de existentes
+     *
+     * @param array<int, array{row_number: int, data: array<string, mixed>}> $validRows
+     * @return array{created: int, updated: int}
+     */
+    public function importMaterials(array $validRows, User $user): array
+    {
+        return DB::transaction(function () use ($validRows, $user) {
+            $created = 0;
+            $updated = 0;
+
+            foreach ($validRows as $row) {
+                $data = $row['data'];
+                
+                // Buscar si el material ya existe por código
+                $material = $this->materials->findByCode($data['codigo']);
+
+                if ($material) {
+                    // Material existe: solo actualizar stock si hay cantidad_ingreso
+                    if (!empty($data['cantidad_ingreso']) && $data['cantidad_ingreso'] > 0) {
+                        $cantidadAnterior = $material->stock_actual;
+                        $this->materials->incrementStock($material, $data['cantidad_ingreso']);
+                        $cantidadPosterior = $material->stock_actual;
+
+                        // Crear movimiento ENTRADA
+                        $this->inventory->createMovement([
+                            'tipo_movimiento' => 'ENTRADA',
+                            'equipo_id' => null,
+                            'material_id' => $material->material_id,
+                            'pedido_id' => null,
+                            'cantidad' => $data['cantidad_ingreso'],
+                            'cantidad_anterior' => $cantidadAnterior,
+                            'cantidad_posterior' => $cantidadPosterior,
+                            'justificacion' => null,
+                            'responsable_id' => $user->getKey(),
+                            'fecha_movimiento' => now(),
+                            'observacion' => "Importación Excel - Fila {$row['row_number']}",
+                        ]);
+
+                        $updated++;
+                    }
+                } else {
+                    // Material nuevo: crear con stock inicial
+                    $inventarioEnEmpaque = false;
+                    if (!empty($data['inventario_en_empaque'])) {
+                        $val = strtolower(trim($data['inventario_en_empaque']));
+                        $inventarioEnEmpaque = in_array($val, ['si', 'sí', 's', 'yes', 'y']);
+                    }
+
+                    $stockInicial = !empty($data['cantidad_ingreso']) ? (float)$data['cantidad_ingreso'] : 0;
+
+                    $material = $this->materials->create([
+                        'codigo' => $data['codigo'],
+                        'nombre' => $data['nombre'],
+                        'descripcion' => $data['descripcion'] ?? null,
+                        'unidad_base' => $data['unidad_base'],
+                        'unidad_empaque' => $data['unidad_empaque'] ?? null,
+                        'factor_conversion' => !empty($data['factor_conversion']) ? (float)$data['factor_conversion'] : null,
+                        'inventario_en_empaque' => $inventarioEnEmpaque,
+                        'stock_actual' => $stockInicial,
+                        'stock_minimo' => !empty($data['stock_minimo']) ? (float)$data['stock_minimo'] : 0,
+                        'estado' => 'ACTIVO',
+                        'creado_por' => $user->getKey(),
+                    ]);
+
+                    // Si tiene stock inicial, crear movimiento ENTRADA
+                    if ($stockInicial > 0) {
+                        $this->inventory->createMovement([
+                            'tipo_movimiento' => 'ENTRADA',
+                            'equipo_id' => null,
+                            'material_id' => $material->material_id,
+                            'pedido_id' => null,
+                            'cantidad' => $stockInicial,
+                            'cantidad_anterior' => 0,
+                            'cantidad_posterior' => $stockInicial,
+                            'justificacion' => null,
+                            'responsable_id' => $user->getKey(),
+                            'fecha_movimiento' => now(),
+                            'observacion' => "Importación Excel - Stock inicial - Fila {$row['row_number']}",
+                        ]);
+                    }
+
+                    $created++;
+                }
+            }
+
+            return ['created' => $created, 'updated' => $updated];
+        });
+    }
 }
