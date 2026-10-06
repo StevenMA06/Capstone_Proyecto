@@ -19,7 +19,7 @@ class PaymentManagementTest extends TestCase
     private static $contractCounter = 1;
     private static $paymentCounter = 1;
 
-    private function actor(string $name = 'Gerente'): User
+    private function actor(string $name = Role::MANAGER): User
     {
         $role = Role::firstOrCreate(['nombre' => $name], ['estado' => 'ACTIVO']);
 
@@ -377,7 +377,7 @@ class PaymentManagementTest extends TestCase
 
     public function test_unauthorized_roles_cannot_manage_payments(): void
     {
-        $technician = $this->actor('Técnico');
+        $technician = $this->actor(Role::TECHNICIAN);
         $actor = $this->actor();
         $payment = $this->payment($actor);
 

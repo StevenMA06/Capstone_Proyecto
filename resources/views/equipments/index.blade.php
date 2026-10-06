@@ -24,7 +24,8 @@
                 $percentage = $totalEquipments > 0 ? round(($count / $totalEquipments) * 100) : 0;
                 $isFiltered = request('estado') === $status;
             @endphp
-            <a 
+            
+@routecan('equipments.index')<a 
                 href="{{ route('equipments.index', array_merge(request()->except('estado', 'page'), ['estado' => $status])) }}" 
                 class="stat-card clickable {{ $isFiltered ? 'filtered' : '' }}"
                 style="border-left-color: {{ $config['color'] }};"
@@ -46,7 +47,8 @@
                 @if($isFiltered)
                     <span class="badge-filtered">🔍 Filtrado</span>
                 @endif
-            </a>
+            </a>@endroutecan
+
         @endforeach
     </div>
 </div>
@@ -55,7 +57,8 @@
 <aside class="client-filter-panel" aria-labelledby="filter-title">
     <h2 id="filter-title">Filtros y buscador</h2>
     <p class="muted">Encuentra el equipo que necesitas.</p>
-    <form class="filters client-filters" method="GET" action="{{ route('equipments.index') }}">
+    
+@routecan('equipments.index')<form class="filters client-filters" method="GET" action="{{ route('equipments.index') }}">
         <div><label for="search">Código, nombre o serie</label><input id="search" name="search" value="{{ request('search') }}" placeholder="Buscar equipo…" maxlength="180"><small>Código, nombre, tipo, marca o número de serie.</small></div>
         <fieldset><legend>Estado del equipo</legend>
             @foreach(['' => 'Todos los estados', 'DISPONIBLE' => 'Disponible', 'ASIGNADO' => 'Asignado', 'MANTENIMIENTO' => 'Mantenimiento', 'INACTIVO' => 'Inactivo'] as $value => $label)
@@ -67,27 +70,42 @@
                 <label class="state-option"><input type="radio" name="condicion" value="{{ $value }}" @checked((request('condicion') ?? '') === $value)><span>{{ $label }}</span></label>
             @endforeach
         </fieldset>
-        <div class="filter-buttons"><button class="action-link" type="submit">Aplicar filtros</button><a class="clear-link" href="{{ route('equipments.index') }}">Limpiar filtros</a></div>
-    </form>
+        <div class="filter-buttons"><button class="action-link" type="submit">Aplicar filtros</button>
+@routecan('equipments.index')<a class="clear-link" href="{{ route('equipments.index') }}">Limpiar filtros</a>@endroutecan
+</div>
+    </form>@endroutecan
+
 </aside>
 <section class="client-list-panel" aria-labelledby="list-title">
     <div class="management-toolbar"><div><h2 id="list-title">Listado de equipos</h2><p class="muted">{{ $equipments->total() }} {{ $equipments->total() === 1 ? 'equipo encontrado' : 'equipos encontrados' }}</p></div>
     <div style="display: flex; gap: 0.5rem;">
-        @can('equipments.manage')<a class="action-link" href="{{ route('equipments.import') }}"><span aria-hidden="true">📁</span> Importar Excel</a>@endcan
-        @can('equipments.manage')<a class="action-link" href="{{ route('equipments.create') }}"><span aria-hidden="true">＋</span> Registrar equipo</a>@endcan
+        @can('equipments.manage')
+@routecan('equipments.import')<a class="action-link" href="{{ route('equipments.import') }}"><span aria-hidden="true">📁</span> Importar Excel</a>@endroutecan
+@endcan
+        @can('equipments.manage')
+@routecan('equipments.create')<a class="action-link" href="{{ route('equipments.create') }}"><span aria-hidden="true">＋</span> Registrar equipo</a>@endroutecan
+@endcan
     </div>
     </div>
     <div class="table-scroll"><table class="users-table client-table"><caption class="sr-only">Equipos registrados</caption><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Número de serie</th><th>Condición</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
     @forelse($equipments as $equipment)
     <tr>
         <td><strong>{{ $equipment->codigo }}</strong></td>
-        <td><a class="client-name" href="{{ route('equipments.show', $equipment) }}">{{ $equipment->nombre }}</a><small class="table-subtitle">{{ $equipment->marca }} {{ $equipment->modelo }}</small></td>
+        <td>
+@routecan('equipments.show')<a class="client-name" href="{{ route('equipments.show', $equipment) }}">{{ $equipment->nombre }}</a>@endroutecan
+<small class="table-subtitle">{{ $equipment->marca }} {{ $equipment->modelo }}</small></td>
         <td>{{ $equipment->tipo }}</td>
         <td>{{ $equipment->numero_serie ?? '—' }}</td>
         <td><span class="state {{ in_array($equipment->condicion, ['NUEVO', 'BUENO']) ? 'active' : (in_array($equipment->condicion, ['MALO', 'MALOGRADO']) ? 'inactive' : '') }}">{{ ucfirst(strtolower($equipment->condicion)) }}</span></td>
         <td><span class="state {{ $equipment->estado === 'DISPONIBLE' ? 'active' : ($equipment->estado === 'INACTIVO' ? 'inactive' : '') }}" style="@if($equipment->estado === 'ASIGNADO') background: #dbeafe; color: #1e40af; @endif @if($equipment->estado === 'MANTENIMIENTO') background: #fef3c7; color: #92400e; @endif">{{ ucfirst(strtolower($equipment->estado)) }}</span></td>
-        <td><div class="row-actions"><a href="{{ route('equipments.show', $equipment) }}">Ver detalle</a>@if($equipment->estado !== 'ASIGNADO')@can('equipments.manage')<a href="{{ route('equipments.edit', $equipment) }}">Editar</a>@endcan
-@endif<a href="{{ route('equipments.kardex', $equipment) }}">Ver Kardex</a></div></td>
+        <td><div class="row-actions">
+@routecan('equipments.show')<a href="{{ route('equipments.show', $equipment) }}">Ver detalle</a>@endroutecan
+@if($equipment->estado !== 'ASIGNADO')@can('equipments.manage')
+@routecan('equipments.edit')<a href="{{ route('equipments.edit', $equipment) }}">Editar</a>@endroutecan
+@endcan
+@endif
+@routecan('equipments.kardex')<a href="{{ route('equipments.kardex', $equipment) }}">Ver Kardex</a>@endroutecan
+</div></td>
     </tr>
     @empty<tr><td colspan="7" class="empty-state">No se encontraron equipos con esos criterios.</td></tr>@endforelse
     </tbody></table></div>

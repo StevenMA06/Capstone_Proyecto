@@ -24,7 +24,7 @@ class EmployeeManagementTest extends TestCase
         $this->travelTo(now()->setTimezone('America/Lima')->setDate(2026, 9, 16)->setTime(12, 0));
     }
 
-    private function actor(string $role = Role::MANAGER): User
+    private function actor(string $role = Role::ADMIN): User
     {
         return User::factory()->create(['rol_id' => Role::where('nombre', $role)->value('rol_id')]);
     }
@@ -171,7 +171,7 @@ class EmployeeManagementTest extends TestCase
         $employee = Employee::create($this->data());
         $user = $this->actor(Role::OFFICE);
         $user->update(['empleado_id' => $employee->getKey()]);
-        $this->signIn($this->actor())->put('/employees/'.$employee->getKey(), $this->data(['fecha_cese' => '2026-09-15']))->assertSessionHasNoErrors();
+        $this->signIn($this->actor(Role::ADMIN))->put('/employees/'.$employee->getKey(), $this->data(['fecha_cese' => '2026-09-15']))->assertSessionHasNoErrors();
         $this->assertSame('INACTIVO', $user->fresh()->estado);
         $this->patch('/users/'.$user->getKey().'/status', ['is_active' => true])->assertSessionHasErrors('empleado_id');
         $this->get('/users/'.$user->getKey().'/edit')->assertOk()->assertSee('Se conserva la asociación histórica');
@@ -194,7 +194,7 @@ class EmployeeManagementTest extends TestCase
         $employee = Employee::create($this->data());
         $admin = $this->actor(Role::ADMIN);
         $admin->update(['empleado_id' => $employee->getKey()]);
-        $this->signIn($this->actor())->put('/employees/'.$employee->getKey(), $this->data(['fecha_cese' => '2026-09-15']))->assertForbidden();
+        $this->signIn($this->actor(Role::MANAGER))->put('/employees/'.$employee->getKey(), $this->data(['fecha_cese' => '2026-09-15']))->assertForbidden();
         $this->patch('/employees/'.$employee->getKey().'/status', ['is_active' => false])->assertForbidden();
         $this->assertSame('ACTIVO', $admin->fresh()->estado);
     }

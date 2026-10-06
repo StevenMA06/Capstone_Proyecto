@@ -36,7 +36,7 @@ class UserService
     {
         return DB::transaction(function () use ($user, $data): User {
             Role::orderBy('rol_id')->lockForUpdate()->get();
-            $wasAccessAdmin = $user->hasPermission('users.manage') && $user->hasPermission('roles.manage') && $user->hasPermission('user-roles.manage');
+            $wasAccessAdmin = $user->hasPermission('users.update') && $user->hasPermission('roles.manage') && $user->hasPermission('user-roles.manage');
             $managers = $this->users->lockManagers();
             $locked = $this->users->lock($user->getKey());
             $beforeRoles = $locked->roles()->pluck('roles.rol_id')->all();
@@ -64,7 +64,7 @@ class UserService
     {
         return DB::transaction(function () use ($user, $active): User {
             Role::orderBy('rol_id')->lockForUpdate()->get();
-            $wasAccessAdmin = $user->hasPermission('users.manage') && $user->hasPermission('roles.manage') && $user->hasPermission('user-roles.manage');
+            $wasAccessAdmin = $user->hasPermission('users.update') && $user->hasPermission('roles.manage') && $user->hasPermission('user-roles.manage');
             $managers = $this->users->lockManagers();
             $locked = $this->users->lock($user->getKey());
             if ($active) {
@@ -100,7 +100,7 @@ class UserService
     private function protectLastManager(User $user, bool $willManage, int $managers): void
     {
         if ($user->isManager() && ! $willManage && $managers <= 1) {
-            throw ValidationException::withMessages(['rol_id' => 'Debe quedar al menos una cuenta activa de Administrador o Gerente.']);
+            throw ValidationException::withMessages(['rol_id' => 'Debe quedar al menos una cuenta activa de Administrador o Gerencia.']);
         }
     }
 

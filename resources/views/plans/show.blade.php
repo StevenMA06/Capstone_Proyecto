@@ -1,6 +1,8 @@
 @extends('plans.layout')
 @section('plans-content')
-<div class="management-toolbar"><h2>Ficha del plan {{ $plan->numero_plan }}</h2>@can('manage-plans')@can('plans.manage')<a class="action-link" href="{{ route('plans.edit', $plan) }}">Editar plan</a>@endcan
+<div class="management-toolbar"><h2>Ficha del plan {{ $plan->numero_plan }}</h2>@can('manage-plans')@can('plans.manage')
+@routecan('plans.edit')<a class="action-link" href="{{ route('plans.edit', $plan) }}">Editar plan</a>@endroutecan
+@endcan
 @endcan</div>
 <dl class="account-detail">
     <div><dt>Identificador</dt><dd>#{{ $plan->plan_id }}</dd></div><div><dt>Número de plan</dt><dd>{{ $plan->numero_plan }}</dd></div>
@@ -12,7 +14,11 @@
 </dl>
 @can('manage-plans')
 <div class="status-box"><div><h3>{{ $plan->estado === 'ACTIVO' ? 'Inhabilitar plan' : 'Activar plan' }}</h3><p>Los planes inactivos se conservan para consulta y no se pueden seleccionar en contratos nuevos. Los contratos existentes mantienen su precio contratado.</p></div>
-@can('plans.manage')<form method="POST" action="{{ route('plans.status', $plan) }}">@csrf @method('PATCH')<input type="hidden" name="is_active" value="{{ $plan->estado === 'ACTIVO' ? '0' : '1' }}"><button type="submit" class="secondary">{{ $plan->estado === 'ACTIVO' ? 'Inhabilitar' : 'Activar' }}</button></form>@endcan</div>
+@can('plans.manage')
+@routecan('plans.status')<form method="POST" action="{{ route('plans.status', $plan) }}">@csrf @method('PATCH')<input type="hidden" name="is_active" value="{{ $plan->estado === 'ACTIVO' ? '0' : '1' }}"><button type="submit" class="secondary">{{ $plan->estado === 'ACTIVO' ? 'Inhabilitar' : 'Activar' }}</button></form>@endroutecan
+@endcan</div>
 @endcan
-<a class="secondary" href="{{ route('plans.index') }}">Volver al listado de planes</a>
+
+@routecan('plans.index')<a class="secondary" href="{{ route('plans.index') }}">Volver al listado de planes</a>@endroutecan
+
 @endsection

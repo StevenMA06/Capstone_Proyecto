@@ -2,10 +2,13 @@
 @section('clients-content')
 <div class="management-toolbar">
     <h2>{{ $client->exists ? 'Editar cliente #'.$client->getKey() : 'Registrar cliente' }}</h2>
-    <a class="secondary" href="{{ route('clients.index') }}">Ver clientes</a>
+    
+@routecan('clients.index')<a class="secondary" href="{{ route('clients.index') }}">Ver clientes</a>@endroutecan
+
 </div>
 <p class="muted">Los campos marcados con * son obligatorios.</p>
-@can('clients.manage')<form class="account-form" method="POST" action="{{ $client->exists ? route('clients.update', $client) : route('clients.store') }}" novalidate>
+@can('clients.manage')
+@routecan($client->exists ? 'clients.update' : 'clients.store')<form class="account-form" method="POST" action="{{ $client->exists ? route('clients.update', $client) : route('clients.store') }}" novalidate>
     @csrf
     @if($client->exists) @method('PUT') @endif
     <div>
@@ -46,8 +49,11 @@
     @endforeach
     <div class="form-actions">
         <button class="action-link" type="submit">{{ $client->exists ? 'Guardar cambios' : 'Registrar cliente' }}</button>
-        <a class="secondary" href="{{ $client->exists ? route('clients.show', $client) : route('clients.index') }}">Cancelar</a>
+        
+@routecan('clients.show')<a class="secondary" href="{{ $client->exists ? route('clients.show', $client) : route('clients.index') }}">Cancelar</a>@endroutecan
+
     </div>
-</form>@endcan
+</form>@endroutecan
+@endcan
 <script src="{{ asset('js/clients.js') }}" defer></script>
 @endsection

@@ -86,7 +86,7 @@ class EmployeeService
 
     private function hasAccessAdministrator(Employee $employee): bool
     {
-        return $employee->accounts()->get()->contains(fn ($u) => $u->hasPermission('users.manage')
+        return $employee->accounts()->get()->contains(fn ($u) => $u->hasPermission('users.update')
             && $u->hasPermission('roles.manage') && $u->hasPermission('user-roles.manage'));
     }
 }

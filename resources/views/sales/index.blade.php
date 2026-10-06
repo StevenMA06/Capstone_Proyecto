@@ -10,13 +10,17 @@
         </div>
     </header>
 
-    <form id="sales-filters" class="sales-filters" method="GET" action="{{ route('sales.index') }}">
+    
+@routecan('sales.index')<form id="sales-filters" class="sales-filters" method="GET" action="{{ route('sales.index') }}">
         <div><label for="cliente">Buscar cliente</label><input id="cliente" name="cliente" type="search" value="{{ $filters['cliente'] ?? '' }}" placeholder="Nombre o razón social" maxlength="180" data-sales-search></div>
         <div><label for="desde">Fecha inicio</label><input id="desde" name="desde" type="date" value="{{ $filters['desde'] ?? '' }}" data-sales-filter></div>
         <div><label for="hasta">Fecha fin</label><input id="hasta" name="hasta" type="date" value="{{ $filters['hasta'] ?? '' }}" data-sales-filter></div>
         <div><label for="empleado_id">Responsable</label><select id="empleado_id" name="empleado_id" data-sales-filter><option value="">Todos los empleados</option>@foreach($employees as $employee)<option value="{{ $employee->empleado_id }}" @selected((string) ($filters['empleado_id'] ?? '') === (string) $employee->empleado_id)>{{ $employee->nombres }} {{ $employee->apellidos }}</option>@endforeach</select></div>
-        <div class="sales-filter-actions"><button class="action-link" type="submit">Filtrar</button><a class="secondary" href="{{ route('sales.index') }}">Restablecer</a></div>
-    </form>
+        <div class="sales-filter-actions"><button class="action-link" type="submit">Filtrar</button>
+@routecan('sales.index')<a class="secondary" href="{{ route('sales.index') }}">Restablecer</a>@endroutecan
+</div>
+    </form>@endroutecan
+
 
     <div class="sales-kpis" aria-label="Resumen de ventas filtradas">
         <div class="sales-kpi"><span>Ventas encontradas</span><strong>{{ number_format($summary->quantity) }}</strong><small>Según los filtros seleccionados</small></div>
@@ -90,7 +94,11 @@
     <section class="sales-card sales-results" aria-labelledby="sales-results-title">
         <div class="sales-card-heading"><h2 id="sales-results-title">Ventas registradas</h2><p>{{ $sales->total() }} resultados · Cada venta enlaza con su contrato</p></div>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Listado de ventas"><table class="users-table sales-table"><caption class="sr-only">Ventas según los filtros aplicados</caption><thead><tr><th scope="col">Cliente</th><th scope="col">Contrato</th><th scope="col">Responsable</th><th scope="col">Estado de venta</th><th scope="col">Monto mensual</th><th scope="col">Fecha de venta</th><th scope="col">Detalle</th></tr></thead><tbody>
-            @forelse($sales as $sale)<tr><td><strong>{{ trim($sale->nombres_razon_social.' '.$sale->apellidos) }}</strong><small>{{ $sale->numero_documento }}</small></td><td><strong>{{ $sale->codigo }}</strong><small>Contrato {{ ucfirst(mb_strtolower($sale->contrato_estado)) }}</small></td><td>{{ $sale->empleado_nombres }} {{ $sale->empleado_apellidos }}</td><td><span class="sales-status sales-status-{{ strtolower($sale->venta_estado) }}">{{ ucfirst(mb_strtolower($sale->venta_estado)) }}</span></td><td>S/ {{ number_format($sale->monto, 2) }}</td><td>{{ \Carbon\CarbonImmutable::parse($sale->fecha_venta)->format('d/m/Y H:i') }}</td><td><div class="sales-row-actions"><a href="{{ route('contracts.show', $sale->contrato_id) }}">Ver contrato</a><a href="{{ route('contracts.pdf', $sale->contrato_id) }}">Descargar PDF</a></div></td></tr>
+            @forelse($sales as $sale)<tr><td><strong>{{ trim($sale->nombres_razon_social.' '.$sale->apellidos) }}</strong><small>{{ $sale->numero_documento }}</small></td><td><strong>{{ $sale->codigo }}</strong><small>Contrato {{ ucfirst(mb_strtolower($sale->contrato_estado)) }}</small></td><td>{{ $sale->empleado_nombres }} {{ $sale->empleado_apellidos }}</td><td><span class="sales-status sales-status-{{ strtolower($sale->venta_estado) }}">{{ ucfirst(mb_strtolower($sale->venta_estado)) }}</span></td><td>S/ {{ number_format($sale->monto, 2) }}</td><td>{{ \Carbon\CarbonImmutable::parse($sale->fecha_venta)->format('d/m/Y H:i') }}</td><td><div class="sales-row-actions">
+@routecan('contracts.show')<a href="{{ route('contracts.show', $sale->contrato_id) }}">Ver contrato</a>@endroutecan
+
+@routecan('contracts.pdf')<a href="{{ route('contracts.pdf', $sale->contrato_id) }}">Descargar PDF</a>@endroutecan
+</div></td></tr>
             @empty<tr><td colspan="7" class="empty-state">No se encontraron ventas con los filtros seleccionados.</td></tr>@endforelse
         </tbody></table></div>
         @include('clients.pagination', ['records' => $sales, 'label' => 'Paginación de ventas'])

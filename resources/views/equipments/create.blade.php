@@ -2,7 +2,8 @@
 
 @section('equipments-content')
 <div class="form-layout">
-    @can('equipments.manage')<form class="standard-form" method="POST" action="{{ $equipment->exists ? route('equipments.update', $equipment) : route('equipments.store') }}" novalidate>
+    @can('equipments.manage')
+@routecan($equipment->exists ? 'equipments.update' : 'equipments.store')<form class="standard-form" method="POST" action="{{ $equipment->exists ? route('equipments.update', $equipment) : route('equipments.store') }}" novalidate>
         @csrf
         @if($equipment->exists)
             @method('PUT')
@@ -82,7 +83,8 @@
             
             <div class="form-group">
                 <label for="estado">Estado *</label>
-                <select id="estado" name="estado" @if($equipment->estado === 'ASIGNADO') disabled @endif>
+                @if($equipment->exists && !auth()->user()->hasPermission('equipments.status'))<input type="hidden" name="estado" value="{{ $equipment->estado }}">@endif
+                <select id="estado" name="estado" @disabled($equipment->exists && !auth()->user()->hasPermission('equipments.status')) @if($equipment->estado === 'ASIGNADO') disabled @endif>
                     @foreach(['DISPONIBLE' => 'Disponible', 'ASIGNADO' => 'Asignado', 'MANTENIMIENTO' => 'Mantenimiento', 'INACTIVO' => 'Inactivo'] as $value => $label)
                         <option value="{{ $value }}" @selected(old('estado', $equipment->estado) === $value)>{{ $label }}</option>
                     @endforeach
@@ -103,9 +105,12 @@
         
         </section></div><div class="form-actions">
             <button type="submit" class="action-link">{{ $equipment->exists ? 'Actualizar equipo' : 'Registrar equipo' }}</button>
-            <a href="{{ $equipment->exists ? route('equipments.show', $equipment) : route('equipments.index') }}" class="clear-link">Cancelar</a>
+            
+@routecan('equipments.show')<a href="{{ $equipment->exists ? route('equipments.show', $equipment) : route('equipments.index') }}" class="clear-link">Cancelar</a>@endroutecan
+
         </div>
-    </form>@endcan
+    </form>@endroutecan
+@endcan
 </div>
 
 <script>

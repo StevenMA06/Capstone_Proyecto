@@ -65,7 +65,7 @@ class DynamicPermissionsTest extends TestCase
         $role = Role::where('nombre', 'Solo consulta')->firstOrFail();
         $this->get('/roles?role='.$role->getKey())->assertOk()->assertSee('Consulta del inventario');
         $this->post('/roles', ['nombre' => 'Solo consulta', 'descripcion' => 'Duplicado', 'estado' => 'ACTIVO'])->assertSessionHasErrors('nombre');
-        $this->post('/roles', ['nombre' => 'Inválido', 'descripcion' => 'Sin consulta', 'estado' => 'ACTIVO', 'permissions' => ['materials.manage']])->assertSessionHasErrors('permissions');
+        $this->post('/roles', ['nombre' => 'Inválido', 'descripcion' => 'Sin consulta', 'estado' => 'ACTIVO', 'permissions' => ['materials.create']])->assertSessionHasErrors('permissions');
         $this->assertDatabaseMissing('roles', ['nombre' => 'Inválido']);
         $adminRole = Role::where('nombre', Role::ADMIN)->firstOrFail();
         $this->put('/roles/'.$adminRole->getKey(), ['nombre' => Role::ADMIN, 'descripcion' => 'Cambio', 'estado' => 'INACTIVO'])->assertSessionHasErrors('nombre');
@@ -77,7 +77,7 @@ class DynamicPermissionsTest extends TestCase
     public function test_last_effective_administrator_cannot_remove_own_access(): void
     {
         $manager = $this->manager();
-        $role = $this->custom($manager, 'Administración delegada', ['users.view','users.manage','roles.view','roles.manage','user-roles.view','user-roles.manage']);
+        $role = $this->custom($manager, 'Administración delegada', ['users.view','users.update','users.status','roles.view','roles.manage','user-roles.view','user-roles.manage']);
         $user = User::factory()->create(['rol_id' => $role->getKey()]);
         $manager->update(['estado' => 'INACTIVO']);
         $this->signIn($user)->put('/roles/'.$role->getKey(), ['nombre' => $role->nombre, 'descripcion' => 'Cambio', 'estado' => 'INACTIVO', 'permissions' => []])->assertSessionHasErrors('roles');

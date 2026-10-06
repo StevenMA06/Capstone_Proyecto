@@ -56,10 +56,13 @@ class ClientController extends Controller
             'tab' => ['nullable', Rule::in(['contratos', 'pagos', 'instalaciones'])],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
-        $tab = $filters['tab'] ?? 'contratos';
-        $history = $this->clients->history($client, $tab);
+        $tabs = collect(['contratos'=>'contracts.view','pagos'=>'payments.view','instalaciones'=>'orders.view'])
+            ->filter(fn ($permission) => $request->user()->hasPermission($permission))->keys()->all();
+        $tab = $filters['tab'] ?? ($tabs[0] ?? null);
+        if ($tab !== null) abort_unless(in_array($tab,$tabs,true),403,'No tienes permiso para consultar este historial.');
+        $history = $tab ? $this->clients->history($client, $tab) : null;
 
-        return view('clients.show', compact('client', 'tab', 'history'));
+        return view('clients.show', compact('client', 'tab', 'history','tabs'));
     }
 
     public function edit(Client $client): View

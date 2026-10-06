@@ -72,7 +72,7 @@ class EquipmentController extends Controller
     public function show(Equipment $equipment): View
     {
         $equipment->load('creator');
-        $movements = $this->kardex->getEquipmentMovements($equipment->equipo_id);
+        $movements = (auth()->user()->hasPermission('kardex.view') ? $this->kardex->getEquipmentMovements($equipment->equipo_id) : new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15));
 
         return view('equipments.show', compact('equipment', 'movements'));
     }

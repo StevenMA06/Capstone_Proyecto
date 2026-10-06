@@ -1,6 +1,7 @@
 @extends('materials.layout')
 @section('materials-content')
-<div class="form-layout">@can('materials.manage')<form class="standard-form" method="POST" action="{{route('materials.exit.store',$material)}}">@csrf<h2>Registrar salida de material</h2><div class="inventory-grid"><section class="inventory-card"><h3>Datos del movimiento</h3>
+<div class="form-layout">@can('materials.manage')
+@routecan('materials.exit.store')<form class="standard-form" method="POST" action="{{route('materials.exit.store',$material)}}">@csrf<h2>Registrar salida de material</h2><div class="inventory-grid"><section class="inventory-card"><h3>Datos del movimiento</h3>
 @if($material->inventario_en_empaque)
 <div class="form-group">
 <label for="cantidad">Cantidad a retirar (en {{$material->unidad_empaque}}) *</label>
@@ -26,5 +27,8 @@
 @else
 <p class="muted">Stock actual: <strong style="color:{{$material->isLowStock()?'#dc2626':'#059669'}};">{{\App\Support\InventoryQuantity::format($material->stock_actual)}} {{$material->unidad_base}}</strong>@if($material->isLowStock())<span style="color:#dc2626;"> ⚠ Nivel bajo</span>@endif</p>
 @endif
-<p class="inventory-note">El movimiento quedará registrado en el Kardex con su fecha y responsable.</p></aside></div><div class="form-actions"><button type="submit" class="action-link">Confirmar salida</button><a href="{{route('materials.show',$material)}}" class="clear-link">Cancelar</a></div></form>@endcan</div>
+<p class="inventory-note">El movimiento quedará registrado en el Kardex con su fecha y responsable.</p></aside></div><div class="form-actions"><button type="submit" class="action-link">Confirmar salida</button>
+@routecan('materials.show')<a href="{{route('materials.show',$material)}}" class="clear-link">Cancelar</a>@endroutecan
+</div></form>@endroutecan
+@endcan</div>
 @endsection

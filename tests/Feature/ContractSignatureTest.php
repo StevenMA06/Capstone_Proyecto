@@ -33,7 +33,7 @@ class ContractSignatureTest extends TestCase
         }
         config()->set('contracts.signature_python', $python);
         Storage::fake('local');
-        $actor = User::factory()->create(['rol_id' => Role::where('nombre', Role::OFFICE)->value('rol_id')]);
+        $actor = User::factory()->create(['rol_id' => Role::where('nombre', Role::MANAGER)->value('rol_id')]);
         $client = Client::create([
             'tipo_documento' => 'DNI', 'numero_documento' => '76543210',
             'nombres_razon_social' => 'Ana', 'apellidos' => 'Pérez',
