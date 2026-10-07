@@ -1,0 +1,5 @@
+.workspace-shell .user-password-field { position: relative; }
+.workspace-shell .user-password-field input { padding-right: 52px; }
+.workspace-shell .user-password-field .password-toggle { position: absolute; right: 1px; top: 1px; bottom: 1px; width: 44px; padding: 0; border-radius: 6px; }
+.workspace-shell .user-password-field .password-toggle:hover { background: #edf5ef; }
+.workspace-shell .user-password-field .password-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
