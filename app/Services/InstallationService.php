@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class InstallationService
 {
+    public function __construct(private InstallationDriveService $drive) {}
+
     public function assignments(User $user)
     {
         $query = DB::table('pedidos_instalacion');
@@ -27,6 +29,15 @@ class InstallationService
         $record = ($lock ? $query->lockForUpdate() : $query)->first();
         abort_unless($record, 404);
 
+        return $record;
+    }
+
+    private function workOrder(User $user, int $id): object
+    {
+        $record = $this->find($user, $id, true);
+        if ($record->fase_flujo) {
+            abort_unless($user->empleado_id && (int) $record->tecnico_id === (int) $user->empleado_id, 403);
+        }
         return $record;
     }
 
@@ -48,7 +59,7 @@ class InstallationService
     public function start(User $user, int $id): void
     {
         DB::transaction(function () use ($user, $id) {
-            $record = $this->find($user, $id, true);
+            $record = $this->workOrder($user, $id);
             if ($record->estado === 'EN_PROCESO' && DB::table('ejecuciones_instalacion')->where('pedido_id', $id)->whereNotNull('inicio_en')->exists()) {
                 $this->running($record);
 
@@ -57,8 +68,17 @@ class InstallationService
             if (! in_array($record->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO', 'EN_PROCESO'], true)) {
                 $this->fail('instalacion', 'No se puede iniciar una instalación completada o cancelada.');
             }
+            if (DB::table('pedido_reprogramaciones')->where('pedido_id', $id)->where('estado', 'SOLICITADA')->exists()) {
+                $this->fail('instalacion', 'Espera la decisión de Gerencia sobre la nueva fecha antes de iniciar.');
+            }
+            if ($record->fase_flujo && ! in_array(DB::table('contratos')->where('contrato_id', $record->contrato_id)->value('estado'), ['PENDIENTE', 'ACTIVO'], true)) {
+                $this->fail('instalacion', 'El contrato está cancelado o finalizado. No se puede iniciar la instalación.');
+            }
             if (! $record->tecnico_id || ! Employee::eligible()->whereKey($record->tecnico_id)->exists()) {
                 $this->fail('instalacion', 'La instalación debe tener un técnico activo asignado.');
+            }
+            if ($record->fase_flujo && $record->fase_flujo !== 'CONFIRMADO') {
+                $this->fail('instalacion', 'Confirma primero la asignación técnica desde tu panel.');
             }
             $execution = DB::table('ejecuciones_instalacion')->where('pedido_id', $id)->first();
             if ($execution && ($execution->estado !== 'PENDIENTE' || $execution->inicio_en || $execution->fin_en)) {
@@ -68,20 +88,26 @@ class InstallationService
             DB::table('ejecuciones_instalacion')->updateOrInsert(['pedido_id' => $id], [
                 'tecnico_id' => $record->tecnico_id, 'inicio_en' => $time, 'estado' => 'EN_PROCESO', 'actualizado_en' => $time,
             ]);
-            DB::table('pedidos_instalacion')->where('pedido_id', $id)->update(['estado' => 'EN_PROCESO', 'actualizado_en' => $time]);
+            DB::table('pedidos_instalacion')->where('pedido_id', $id)->update(['estado' => 'EN_PROCESO',
+                'fase_flujo' => $record->fase_flujo ? 'EN_PROCESO' : null, 'actualizado_en' => $time]);
         }, 3);
+        app(InstallationCompletionService::class)->tryCompleteAfterDriveSync($id);
     }
 
     public function equipment(User $user, int $id, int $equipmentId): void
     {
         DB::transaction(function () use ($user, $id, $equipmentId) {
-            $this->running($this->find($user, $id, true));
+            $order = $this->workOrder($user, $id);
+            $this->running($order);
             $equipment = DB::table('equipos')->where('equipo_id', $equipmentId)->lockForUpdate()->first();
             if (! $equipment) {
                 $this->fail('equipo_id', 'El equipo seleccionado no existe.');
             }
             $assignment = DB::table('pedido_equipos')->where('equipo_id', $equipmentId)
                 ->whereIn('estado_asignacion', ['ASIGNADO', 'UTILIZADO'])->whereNull('fecha_devolucion')->first();
+            if ($order->fase_flujo && (! $assignment || (int) $assignment->pedido_id !== $id)) {
+                $this->fail('equipo_id', 'El equipo debe estar asignado a esta instalación por el responsable.');
+            }
             if ($assignment && (int) $assignment->pedido_id === $id && $assignment->estado_asignacion === 'UTILIZADO') {
                 return;
             }
@@ -106,7 +132,8 @@ class InstallationService
     public function material(User $user, int $id, int $materialId, string $total): void
     {
         DB::transaction(function () use ($user, $id, $materialId, $total) {
-            $this->running($this->find($user, $id, true));
+            $order = $this->workOrder($user, $id);
+            $this->running($order);
             $material = DB::table('materiales')->where('material_id', $materialId)->lockForUpdate()->first();
             if (! $material || $material->estado !== 'ACTIVO') {
                 $this->fail('material_id', 'Selecciona un material activo.');
@@ -117,6 +144,13 @@ class InstallationService
             $requested = $units($total);
             $previous = $units($assignment?->cantidad_utilizada ?? 0);
             $delta = $requested - $previous;
+            if (($material->inventario_en_empaque ?? false) && $requested % 1000 !== 0) {
+                $unit = $material->unidad_empaque ?: 'empaques';
+                $this->fail('cantidad_utilizada', 'Este material se controla por empaques completos. Registra un número entero de '.$unit.'.');
+            }
+            if ($order->fase_flujo && (! $assignment || $requested > $units($assignment->cantidad_asignada) - $units($assignment->cantidad_devuelta))) {
+                $this->fail('cantidad_utilizada', 'El consumo excede el material asignado a esta instalación.');
+            }
             if ($requested <= 0 || $delta < 0) {
                 $this->fail('cantidad_utilizada', 'El total debe ser positivo y no puede ser menor que el consumo ya registrado.');
             }
@@ -148,7 +182,7 @@ class InstallationService
     public function observation(User $user, int $id, ?string $text): void
     {
         DB::transaction(function () use ($user, $id, $text) {
-            $execution = $this->running($this->find($user, $id, true));
+            $execution = $this->running($this->workOrder($user, $id));
             DB::table('ejecuciones_instalacion')->where('ejecucion_id', $execution->ejecucion_id)
                 ->update(['observacion_tecnica' => $text, 'actualizado_en' => now('America/Lima')]);
         });
@@ -157,9 +191,10 @@ class InstallationService
     public function evidence(User $user, int $id, UploadedFile $file, ?string $description, bool $contract = false): void
     {
         $path = null;
+        $evidenceId = null;
         try {
-            DB::transaction(function () use ($user, $id, $file, $description, $contract, &$path) {
-                $record = $this->find($user, $id, true);
+            DB::transaction(function () use ($user, $id, $file, $description, $contract, &$path, &$evidenceId) {
+                $record = $this->workOrder($user, $id);
                 $execution = $this->running($record);
                 $path = $file->store($contract ? 'installation-contracts' : 'installation-evidence', 'local');
                 if (! $path) {
@@ -168,10 +203,10 @@ class InstallationService
                 $values = ['ruta_archivo' => $path, 'nombre_archivo' => mb_substr($file->getClientOriginalName(), 0, 255),
                     'mime_type' => $file->getMimeType(), 'subido_por' => $user->getKey(), 'subido_en' => now('America/Lima')];
                 if ($contract) {
-                    DB::table('evidencias_contrato')->insert($values + ['contrato_id' => $record->contrato_id,
+                    $evidenceId = DB::table('evidencias_contrato')->insertGetId($values + ['contrato_id' => $record->contrato_id,
                         'tipo' => 'CONTRATO_FIRMADO', 'observacion' => $description]);
                 } else {
-                    DB::table('evidencias_instalacion')->insert($values + ['pedido_id' => $id, 'ejecucion_id' => $execution->ejecucion_id,
+                    $evidenceId = DB::table('evidencias_instalacion')->insertGetId($values + ['pedido_id' => $id, 'ejecucion_id' => $execution->ejecucion_id,
                         'tipo' => 'FOTOGRAFIA_INSTALACION', 'descripcion' => $description]);
                 }
             });
@@ -181,20 +216,56 @@ class InstallationService
             }
             throw $error;
         }
+        $this->drive->sync($id, $contract ? 'CONTRATO' : 'FOTO', $evidenceId, $path,
+            mb_substr($file->getClientOriginalName(), 0, 255), $file->getMimeType());
     }
 
-    public function finish(User $user, int $id): void
+    public function syncPending(User $user, int $id): int
     {
-        DB::transaction(function () use ($user, $id) {
-            $record = $this->find($user, $id, true);
-            if ($record->estado === 'COMPLETADO') {
-                return;
+        $order = $this->find($user, $id);
+        $count = (int) $this->drive->syncVerifiedContract($id);
+        $pending = DB::table('evidencias_drive_instalacion')->where('pedido_id', $id)
+            ->where('estado', 'PENDIENTE')->whereIn('tipo', ['FOTO', 'CLIENTE'])->get();
+        foreach ($pending as $item) {
+            $record = DB::table('evidencias_instalacion')->where('pedido_id', $id)
+                ->where('evidencia_id', $item->evidencia_id)->first();
+            if ($record && Storage::disk('local')->exists($record->ruta_archivo)) {
+                $count += (int) $this->drive->sync($id, $item->tipo, $item->evidencia_id,
+                    $record->ruta_archivo, $record->nombre_archivo, $record->mime_type);
             }
-            $execution = $this->running($record);
-            $time = now('America/Lima');
-            DB::table('ejecuciones_instalacion')->where('ejecucion_id', $execution->ejecucion_id)
-                ->update(['estado' => 'COMPLETADA', 'fin_en' => $time, 'actualizado_en' => $time]);
-            DB::table('pedidos_instalacion')->where('pedido_id', $id)->update(['estado' => 'COMPLETADO', 'actualizado_en' => $time]);
-        }, 3);
+        }
+        return $count;
     }
+
+    public function incident(User $user, int $id, array $data, ?UploadedFile $evidence): void
+    {
+        $path = null;
+        try {
+            DB::transaction(function () use ($user, $id, $data, $evidence, &$path): void {
+                $this->running($this->workOrder($user, $id));
+                if ($data['recurso_tipo'] === 'EQUIPO' && ! DB::table('pedido_equipos')
+                    ->where('pedido_id', $id)->where('equipo_id', $data['recurso_id'] ?? 0)->exists()) {
+                    $this->fail('recurso_id', 'El equipo debe figurar en esta instalación.');
+                }
+                if ($data['recurso_tipo'] === 'MATERIAL' && ! DB::table('pedido_materiales')
+                    ->where('pedido_id', $id)->where('material_id', $data['recurso_id'] ?? 0)->exists()) {
+                    $this->fail('recurso_id', 'El material debe figurar en esta instalación.');
+                }
+                if ($evidence) {
+                    $path = $evidence->store('installation-incidents', 'local');
+                    if (! $path) $this->fail('evidencia', 'No se pudo guardar la evidencia.');
+                }
+                DB::table('incidencias_instalacion')->insert($data + [
+                    'pedido_id' => $id, 'registrado_por' => $user->getKey(),
+                    'evidencia_ruta' => $path,
+                    'evidencia_nombre' => $evidence ? mb_substr($evidence->getClientOriginalName(), 0, 255) : null,
+                    'registrado_en' => now('America/Lima'),
+                ]);
+            }, 3);
+        } catch (\Throwable $error) {
+            if ($path) Storage::disk('local')->delete($path);
+            throw $error;
+        }
+    }
+
 }

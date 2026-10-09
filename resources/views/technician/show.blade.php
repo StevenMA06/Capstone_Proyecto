@@ -1,49 +1,99 @@
 @extends('layouts.management')
 @section('title', 'Instalación '.$installation->codigo)
 
-@push('styles')<link rel="stylesheet" href="{{ asset('css/installations.css') }}?v=2"><script src="{{ asset('js/installations.js') }}?v=1" defer></script>@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/installations.css') }}?v=28"><script src="{{ asset('js/installations.js') }}?v=8" defer></script>@endpush
 @section('workspace-content')
 @php($running = $installation->estado === 'EN_PROCESO' && $execution?->inicio_en && $execution->estado === 'EN_PROCESO')
+@php($ownWork = (int) $installation->tecnico_id === (int) auth()->user()->empleado_id)
+@php($canWork = ! $installation->fase_flujo || $ownWork)
+@php($photoReady = $driveStatus->get('FOTO', collect())->contains('estado', 'CONFIRMADO'))
+@php($pendingEvidence = $driveStatus->flatten()->contains('estado', 'PENDIENTE'))
+@php($visitDate = $installation->fecha_programada ? \Illuminate\Support\Carbon::parse($installation->fecha_programada) : null)
 <a class="action-link secondary" href="{{ route(auth()->user()->hasPermission('technician.panel') ? 'technician.index' : 'executions.index') }}">← Volver al panel técnico</a>
 <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><a href="{{ route('dashboard') }}">Inicio</a><span aria-hidden="true">›</span><a href="{{ route(auth()->user()->hasPermission('technician.panel') ? 'technician.index' : 'executions.index') }}">Instalaciones</a><span aria-hidden="true">›</span><span aria-current="page">Ficha #{{ $installation->pedido_id }}</span></nav>
-<header class="installation-heading">
-    <div><p class="eyebrow">EJECUCIÓN DE INSTALACIONES</p><h1>Ficha #{{ $installation->pedido_id }} · {{ $installation->codigo }}</h1>
-    <p class="muted">{{ ucfirst(mb_strtolower(str_replace('_', ' ', $installation->estado))) }} · Programación: {{ $installation->fecha_programada ?? 'Sin programar' }}</p></div>
-    @if(in_array($installation->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO']) || ($installation->estado === 'EN_PROCESO' && ! $execution?->inicio_en))
+<header class="installation-heading installation-detail-heading">
+    <div><p class="eyebrow">EJECUCIÓN DE INSTALACIONES</p><h1>Ficha técnica #{{ $installation->pedido_id }}</h1><p class="installation-detail-code">{{ $installation->codigo }}</p></div>
+    <div class="installation-detail-heading-actions"><span class="installation-state state-{{ strtolower($installation->estado) }}">{{ ucfirst(mb_strtolower(str_replace('_', ' ', $installation->estado))) }}</span>
+    @if($installation->fase_flujo === 'ESPERANDO_CONFIRMACION_TECNICO' && (int) $installation->tecnico_id === (int) auth()->user()->empleado_id)
+    @routecan('technician.confirm')<form method="POST" action="{{ route('technician.confirm', $installation->pedido_id) }}">@csrf<button class="action-link" type="submit">Confirmar asignación</button></form>@endroutecan
+    @elseif(! $pendingReprogramming && $canWork && (!$installation->fase_flujo || $installation->fase_flujo === 'CONFIRMADO') && (in_array($installation->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO']) || ($installation->estado === 'EN_PROCESO' && ! $execution?->inicio_en)))
     @can('technician.manage')
 @routecan('technician.start')<form method="POST" action="{{ route('technician.start', $installation->pedido_id) }}" data-installation-form>@csrf<button class="action-link" type="submit">Iniciar instalación</button></form>@endroutecan
 @endcan
     @endif
+    </div>
 </header>
-@if(session('status'))<div class="success" role="status">{{ session('status') }}</div>@endif
+<div class="installation-visit-overview" aria-label="Visita acordada">
+    <div><small>Día de la visita</small><strong>{{ $visitDate ? ucfirst($visitDate->locale('es')->isoFormat('dddd')).' '.$visitDate->format('d/m/Y') : 'Por confirmar' }}</strong></div>
+    <div><small>Hora de inicio</small><strong>{{ $visitDate ? $visitDate->format('H:i') : 'Por confirmar' }}</strong></div>
+    <div><small>Franja horaria</small><strong>{{ $installation->franja_horaria ?: 'Por confirmar' }}</strong></div>
+</div>
+@if(session('status') && ! session('evidence_result'))<div class="success" role="status">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="field-error" role="alert"><strong>No se pudo guardar:</strong>@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
-<section class="installation-panel">
-    <h2>Información para el trabajo</h2>
-    <dl class="installation-details">
-        <div><dt>Cliente</dt><dd>{{ $client->nombres_razon_social ?? '' }} {{ $client->apellidos ?? '' }}</dd></div>
-        <div><dt>Teléfono</dt><dd>{{ $client->telefono ?? 'No registrado' }}</dd></div>
-        <div><dt>Dirección del servicio</dt><dd>{{ $contract->direccion_servicio ?? 'No registrada' }}</dd></div>
-        <div><dt>Referencia</dt><dd>{{ $client->referencia_direccion ?? 'Sin referencia' }}</dd></div>
-        <div><dt>Contrato / plan</dt><dd>{{ $contract->codigo ?? '—' }} · {{ $contract->plan_nombre ?? '—' }}</dd></div>
-        <div><dt>Técnico asignado</dt><dd>{{ $technician ? $technician->nombres.' '.$technician->apellidos : 'Sin asignar' }}</dd></div>
-        <div><dt>Inicio</dt><dd>{{ $execution?->inicio_en ?? 'Sin iniciar' }}</dd></div>
-        <div><dt>Finalización</dt><dd>{{ $execution?->fin_en ?? 'Sin finalizar' }}</dd></div>
-    </dl>
-    @if($installation->observaciones)<p>{{ $installation->observaciones }}</p>@endif
+@if($pendingReprogramming)<div class="order-change-note" role="status">Hay una solicitud de nueva fecha pendiente de Gerencia. La visita conserva la fecha actual y no se puede iniciar hasta que Gerencia decida.</div>@endif
+@if($installation->estado === 'REPROGRAMADO' && $installation->fecha_original)<div class="order-change-note" role="status"><strong>Visita reprogramada.</strong> Fecha inicial: {{ \Illuminate\Support\Carbon::parse($installation->fecha_original)->format('d/m/Y · H:i') }}.@if($latestApprovedReprogramming?->motivo_detalle ?? $installation->motivo_reprogramacion) Motivo: {{ $latestApprovedReprogramming?->motivo_detalle ?? $installation->motivo_reprogramacion }}.@endif Revisa la nueva fecha antes de confirmar o iniciar.</div>@endif
+@if($running)<div class="installation-next-step" role="status"><strong>Instalación en curso</strong><span>Registra los recursos utilizados y las fotos de campo. Entrega el contrato físico en la empresa; el personal de Contratos lo escaneará y verificará.</span></div>@endif
+@if($running)<div class="installation-readiness" aria-label="Requisitos para finalizar"><span class="{{ $photoReady ? 'is-ready' : '' }}">{{ $photoReady ? '✓' : '○' }} Foto {{ $photoReady ? 'confirmada' : 'pendiente' }}</span><span class="{{ $contractReady ? 'is-ready' : '' }}">{{ $contractReady ? '✓' : '○' }} Contrato {{ $contractReady ? 'confirmado' : 'pendiente' }}</span></div>@endif
+<nav class="installation-jump" aria-label="Secciones de la ficha" data-installation-tabs>
+    <a href="#instalacion-datos" data-installation-tab="datos" aria-controls="instalacion-datos"><strong>Datos</strong><small>Cliente y visita</small></a>
+    <a href="#instalacion-recursos" data-installation-tab="recursos" aria-controls="instalacion-recursos"><strong>Recursos</strong><small>Equipo y material</small></a>
+    <a href="#instalacion-incidencias" data-installation-tab="incidencias" aria-controls="instalacion-incidencias"><strong>Incidencias</strong><small>Si ocurrió algo</small></a>
+    <a href="#instalacion-evidencias" data-installation-tab="evidencias" aria-controls="instalacion-evidencias"><strong>Evidencias</strong><small>Fotos de campo y estado del contrato</small></a>
+    @if($running)<a href="#instalacion-cierre" data-installation-tab="cierre" aria-controls="instalacion-cierre"><strong>Cierre</strong><small>{{ $photoReady && $contractReady ? 'Disponible' : 'Pendiente' }}</small></a>@endif
+</nav>
+<details class="installation-panel installation-collapsible" id="instalacion-datos" data-installation-section="datos" tabindex="-1">
+    <summary>Información para el trabajo</summary>
+    <div class="installation-detail-sections">
+        <section class="installation-detail-block"><h3>Cliente y servicio</h3><dl class="installation-detail-grid">
+            <div><dt>Cliente</dt><dd>{{ trim(($client->nombres_razon_social ?? '').' '.($client->apellidos ?? '')) ?: 'No registrado' }}</dd></div>
+            <div><dt>Teléfono de contacto</dt><dd>{{ $client->telefono ?? 'No registrado' }}</dd></div>
+            <div class="installation-detail-wide"><dt>Dirección de instalación</dt><dd>{{ $contract->direccion_servicio ?? 'No registrada' }}</dd><span>Referencia: {{ $client->referencia_direccion ?? 'Sin referencia' }}</span></div>
+            <div><dt>Contrato</dt><dd>{{ $contract->codigo ?? 'No registrado' }}</dd></div>
+            <div><dt>Plan contratado</dt><dd>{{ $contract->plan_nombre ?? 'No registrado' }}</dd></div>
+        </dl></section>
+        <section class="installation-detail-block"><h3>Personas responsables</h3><dl class="installation-detail-grid installation-detail-people">
+            <div><dt>Técnico instalador</dt><dd>{{ $technician ? trim($technician->nombres.' '.$technician->apellidos) : 'Sin asignar' }}</dd><span>Ejecuta la visita</span></div>
+            <div><dt>Coordinación con el cliente</dt><dd>{{ $coordinator?->employee?->full_name ?? ($coordinator ? 'Sin empleado asociado' : 'Sin registrar') }}</dd><span>{{ $installation->canal_coordinacion ? ucfirst(mb_strtolower($installation->canal_coordinacion)).' · ' : '' }}{{ $coordinator ? 'Usuario: '.$coordinator->nombre_usuario : 'Aún no registrada' }}</span></div>
+            <div><dt>Responsable de asignación</dt><dd>{{ $assigner?->employee?->full_name ?? ($assigner ? 'Sin empleado asociado' : 'Sin registrar') }}</dd><span>{{ $assigner ? 'Usuario: '.$assigner->nombre_usuario : 'Aún no registrado' }}</span></div>
+        </dl></section>
+        <section class="installation-detail-block"><h3>Seguimiento</h3><dl class="installation-detail-grid installation-detail-timeline">
+            <div><dt>Inicio de la instalación</dt><dd>{{ $execution?->inicio_en ? \Illuminate\Support\Carbon::parse($execution->inicio_en)->format('d/m/Y · H:i') : 'Sin iniciar' }}</dd></div>
+            <div><dt>Finalización</dt><dd>{{ $execution?->fin_en ? \Illuminate\Support\Carbon::parse($execution->fin_en)->format('d/m/Y · H:i') : 'Sin finalizar' }}</dd></div>
+        </dl>@if($installation->observaciones)<p class="installation-detail-note"><strong>Observaciones del pedido</strong><span>{{ $installation->observaciones }}</span></p>@endif</section>
+    </div>
+</details>
+<section class="installation-panel" id="instalacion-incidencias" data-installation-section="incidencias" tabindex="-1">
+    <div class="installation-section-heading"><div><h2>Incidencias</h2><p class="muted">{{ $incidents->count() }} registradas</p></div></div>
+    <p class="installation-section-help">Si se avería o extravía un equipo, o se desperdicia material durante la visita, registra qué ocurrió y adjunta una evidencia para que el jefe pueda revisarlo.</p>
+    @if($running && $canWork)
+    @routecan('technician.incident')<details class="installation-inline-action" @if($errors->any()) open @endif><summary>Registrar incidencia</summary><form method="POST" action="{{ route('technician.incident', $installation->pedido_id) }}" enctype="multipart/form-data" class="installation-form">@csrf
+        <label>Tipo<select name="tipo" required><option value="">Selecciona</option><option value="AVERIA">Avería</option><option value="EXTRAVIO">Extravío</option><option value="DESPERDICIO">Desperdicio</option><option value="OTRO">Otro</option></select></label>
+        <label>Recurso afectado<select name="recurso_tipo" data-incident-type required><option value="">Selecciona</option><option value="EQUIPO" @selected(old('recurso_tipo') === 'EQUIPO')>Equipo</option><option value="MATERIAL" @selected(old('recurso_tipo') === 'MATERIAL')>Material</option><option value="OTRO" @selected(old('recurso_tipo') === 'OTRO')>Otro</option></select></label>
+        <label>Equipo o material afectado<select name="recurso_id" data-incident-resource><option value="">Selecciona un recurso utilizado</option>@foreach($usedEquipment as $item)<option value="{{ $item->equipo_id }}" data-resource-type="EQUIPO" @selected(old('recurso_tipo') === 'EQUIPO' && old('recurso_id') == $item->equipo_id)>{{ $item->codigo }} · {{ $item->nombre }}</option>@endforeach @foreach($usedMaterials as $item)<option value="{{ $item->material_id }}" data-resource-type="MATERIAL" @selected(old('recurso_tipo') === 'MATERIAL' && old('recurso_id') == $item->material_id)>{{ $item->codigo }} · {{ $item->nombre }}</option>@endforeach</select><small>Selecciona un recurso ya registrado; para «Otro» deja este campo vacío.</small></label>
+        <label>Descripción del recurso<input name="recurso_descripcion" maxlength="200" required value="{{ old('recurso_descripcion') }}"></label>
+        <label>Cantidad afectada<input name="cantidad" type="number" min="0.001" step="0.001" value="{{ old('cantidad') }}"></label>
+        <label>Causa<input name="causa" maxlength="500" required value="{{ old('causa') }}"></label>
+        <label>Observación<textarea name="observacion" maxlength="5000" required>{{ old('observacion') }}</textarea></label>
+        <label>Foto o PDF de evidencia<input name="evidencia" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"></label>
+        <button type="submit" class="action-link">Registrar incidencia</button>
+    </form></details>@endroutecan
+    @endif
+    <ul class="installation-files">@forelse($incidents as $incident)<li><strong>{{ $incident->tipo }} · {{ $incident->recurso_descripcion }}</strong><p>{{ $incident->causa }} — {{ $incident->observacion }}</p><small>{{ $incident->registrado_en }}</small>@if($incident->evidencia_ruta)<a class="action-link secondary" href="{{ route('technician.incident.download', [$installation->pedido_id, $incident->incidencia_id]) }}">Descargar evidencia</a>@endif</li>@empty<li>No hay incidencias registradas.</li>@endforelse</ul>
 </section>
-<div class="installation-grid">
+<div class="installation-grid" id="instalacion-recursos" data-installation-section="recursos" tabindex="-1">
 <section class="installation-panel">
     <h2>Equipos utilizados</h2>
-    @if($running)
+    <p class="installation-section-help">Registra el equipo que efectivamente usaste en esta instalación. La reserva previa se muestra en la lista.</p>
+    @if($running && $canWork)
     @can('technician.manage')
-@routecan('technician.equipment')<form method="POST" action="{{ route('technician.equipment', $installation->pedido_id) }}" class="installation-form">
+@routecan('technician.equipment')<details class="installation-inline-action" @if($errors->has('equipo_id')) open @endif><summary>Registrar equipo</summary><form method="POST" action="{{ route('technician.equipment', $installation->pedido_id) }}" class="installation-form">
         @csrf
         <label for="equipo_id">Equipo disponible o asignado a esta instalación</label>
         <select id="equipo_id" name="equipo_id" required><option value="">Selecciona un equipo</option>
             @foreach($equipment as $item)<option value="{{ $item->equipo_id }}" @selected(old('equipo_id') == $item->equipo_id)>{{ $item->codigo }} · {{ $item->nombre }}{{ $item->numero_serie ? ' · '.$item->numero_serie : '' }}</option>@endforeach
         </select>
         <button type="submit" class="action-link">Registrar equipo utilizado</button>
-    </form>@endroutecan
+    </form></details>@endroutecan
 @endcan
     @endif
     <div class="table-scroll"><table class="users-table installation-table"><thead><tr><th>Equipo</th><th>Serie / marca / modelo</th><th>Estado</th></tr></thead><tbody>
@@ -53,79 +103,87 @@
 </section>
 <section class="installation-panel">
     <h2>Materiales utilizados</h2>
-    @if($running)
+    <p class="installation-section-help">Actualiza el total acumulado utilizado. Se descontará únicamente la diferencia respecto del último registro.</p>
+    @if($running && $canWork)
     @can('technician.manage')
-@routecan('technician.material')<form method="POST" action="{{ route('technician.material', $installation->pedido_id) }}" class="installation-form">
+@routecan('technician.material')<details class="installation-inline-action" @if($errors->has('material_id') || $errors->has('cantidad_utilizada')) open @endif><summary>Registrar material</summary><form method="POST" action="{{ route('technician.material', $installation->pedido_id) }}" class="installation-form" data-consumption-form>
         @csrf
         <label for="material_id">Material</label><select id="material_id" name="material_id" required><option value="">Selecciona un material</option>
-        @foreach($materials as $item)<option value="{{ $item->material_id }}" @selected(old('material_id') == $item->material_id)>{{ $item->nombre }} · Stock: {{ \App\Support\InventoryQuantity::format($item->stock_actual) }} {{ $item->unidad_medida }}</option>@endforeach</select>
-        <label for="cantidad_utilizada">Total utilizado en esta instalación</label>
+        @foreach($materials as $item)<option value="{{ $item->material_id }}" data-packaging="{{ $item->inventario_en_empaque ? '1' : '0' }}" data-unit="{{ $item->unidad_medida }}" @selected(old('material_id') == $item->material_id)>{{ $item->nombre }} · Stock: {{ \App\Support\InventoryQuantity::format($item->stock_actual) }} {{ $item->unidad_medida }}@if($item->inventario_en_empaque && $item->factor_conversion) · {{ \App\Support\InventoryQuantity::format($item->stock_actual * $item->factor_conversion) }} {{ $item->unidad_base }}@endif</option>@endforeach</select>
+        <label for="cantidad_utilizada">Total acumulado utilizado</label>
         <input id="cantidad_utilizada" name="cantidad_utilizada" type="number" min="0.001" max="999999999.999" step="0.001" value="{{ old('cantidad_utilizada') }}" required aria-describedby="consumption-help">
-        <small id="consumption-help">Indica el total acumulado del material. Si ya registraste 5 y utilizaste 2 más, ingresa 7. Solo se descontará la diferencia.</small>
+        <small id="consumption-unit">Selecciona un material para ver su unidad de inventario.</small>
+        <small id="consumption-help">Indica el total acumulado en la unidad configurada en Inventario. Si el stock se maneja por cajas, registra cajas enteras. Solo se descontará lo adicional desde el último registro.</small>
         <button type="submit" class="action-link">Guardar consumo</button>
-    </form>@endroutecan
+    </form></details>@endroutecan
 @endcan
     @endif
     <div class="table-scroll"><table class="users-table installation-table"><thead><tr><th>Material / unidad</th><th>Asignada</th><th>Utilizada</th><th>Devuelta</th></tr></thead><tbody>
-    @forelse($usedMaterials as $item)<tr><td data-label="Material / unidad"><div>{{ $item->nombre }}<small>{{ $item->codigo }} · {{ $item->unidad_medida }}</small></div></td><td data-label="Asignada">{{ \App\Support\InventoryQuantity::format($item->cantidad_asignada) }}</td><td data-label="Utilizada">{{ \App\Support\InventoryQuantity::format($item->cantidad_utilizada) }} {{ $item->unidad_medida }}</td><td data-label="Devuelta">{{ \App\Support\InventoryQuantity::format($item->cantidad_devuelta) }}</td></tr>
+    @forelse($usedMaterials as $item)<tr><td data-label="Material / unidad"><div>{{ $item->nombre }}<small>{{ $item->codigo }} · {{ $item->unidad_medida }}</small></div></td><td data-label="Asignada">{{ \App\Support\InventoryQuantity::format($item->cantidad_asignada) }} {{ $item->unidad_medida }}</td><td data-label="Utilizada">{{ \App\Support\InventoryQuantity::format($item->cantidad_utilizada) }} {{ $item->unidad_medida }}</td><td data-label="Devuelta">{{ \App\Support\InventoryQuantity::format($item->cantidad_devuelta) }} {{ $item->unidad_medida }}</td></tr>
     @empty<tr><td colspan="4">Sin materiales registrados.</td></tr>@endforelse
     </tbody></table></div>
 </section>
 </div>
-<section class="installation-panel">
+<section class="installation-panel" data-installation-section="incidencias">
     <h2>Observación técnica</h2>
-    @if($running)@can('technician.manage')
-@routecan('technician.observation')<form method="POST" action="{{ route('technician.observation', $installation->pedido_id) }}" class="installation-form">@csrf
+    <p class="installation-section-help">Anota el trabajo realizado o un dato útil para futuras consultas. Las averías y pérdidas se registran en «Incidencias».</p>
+    @if($running && $canWork)@can('technician.manage')
+@routecan('technician.observation')<details class="installation-inline-action" @if($errors->has('observacion_tecnica')) open @endif><summary>{{ $execution?->observacion_tecnica ? 'Editar observación' : 'Agregar observación' }}</summary><form method="POST" action="{{ route('technician.observation', $installation->pedido_id) }}" class="installation-form">@csrf
     <label for="observacion_tecnica">Detalle del trabajo</label>
     <textarea id="observacion_tecnica" name="observacion_tecnica" rows="4" maxlength="5000">{{ old('observacion_tecnica', $execution?->observacion_tecnica) }}</textarea>
-    <button type="submit" class="action-link">Guardar observación</button></form>@endroutecan
+    <button type="submit" class="action-link">Guardar observación</button></form></details>@endroutecan
 @endcan
     @else<p class="installation-notes">{{ $execution?->observacion_tecnica ?? 'Sin observaciones técnicas.' }}</p>@endif
+    @if($running && $execution?->observacion_tecnica)<p class="installation-notes">{{ $execution->observacion_tecnica }}</p>@endif
 </section>
-<div class="installation-grid">
-@foreach([false, true] as $isContract)
-<section class="installation-panel">
-    <h2>{{ $isContract ? 'Evidencia del contrato firmado' : 'Evidencias fotográficas' }}</h2>
-    @if($running && auth()->user()->hasPermission($isContract ? 'technician.contractEvidence' : 'technician.evidence'))
-    <form method="POST" action="{{ route($isContract ? 'technician.contractEvidence' : 'technician.evidence.store', $installation->pedido_id) }}" enctype="multipart/form-data" class="installation-form">
+<div class="installation-grid" id="instalacion-evidencias" data-installation-section="evidencias" tabindex="-1">
+<section class="installation-panel" id="instalacion-fotos">
+    <h2>Fotos de campo</h2>
+    <p class="installation-section-help">Sube una fotografía clara de la instalación terminada. Debe confirmarse en Drive para poder cerrar el trabajo.</p>
+    <p class="installation-evidence-status {{ $photoReady ? 'is-ready' : '' }}">{{ $photoReady ? '✓ Foto de instalación confirmada en Drive' : 'Falta confirmar una foto de la instalación en Drive' }}</p>
+    @if(session('evidence_result') === 'FOTO')<p class="installation-inline-result" role="status">{{ session('status') }}</p>@endif
+    @if($running && $canWork && auth()->user()->hasPermission('technician.evidence'))
+    <details class="installation-inline-action" @if(session('evidence_result') === 'FOTO' || $errors->has('evidence')) open @endif><summary>Agregar foto de la instalación</summary><form method="POST" action="{{ route('technician.evidence.store', $installation->pedido_id) }}" enctype="multipart/form-data" class="installation-form" data-return-anchor="instalacion-fotos">
         @csrf
-        <label for="file-{{ (int) $isContract }}">{{ $isContract ? 'Contrato firmado' : 'Fotografía' }}</label>
-        <input id="file-{{ (int) $isContract }}" type="file" name="evidence" accept="{{ $isContract ? 'application/pdf,' : '' }}image/jpeg,image/png,image/webp" required data-evidence-input>
-        <figure class="installation-file-preview" hidden><img alt="Vista previa del archivo seleccionado"><figcaption aria-live="polite"></figcaption></figure>
-        <small>{{ $isContract ? 'PDF, JPG, PNG o WEBP' : 'JPG, PNG o WEBP' }} · Máximo 5 MB</small>
-        <label for="description-{{ (int) $isContract }}">Descripción</label>
-        <textarea id="description-{{ (int) $isContract }}" name="descripcion" maxlength="500" rows="2">{{ old('descripcion') }}</textarea>
-        @if($isContract)<small>Se vincula al contrato {{ $contract->codigo }}. La carga no verifica una firma digital ni activa el contrato automáticamente.</small>@endif
-        <button type="submit" class="action-link">Guardar {{ $isContract ? 'contrato firmado' : 'fotografía' }}</button>
-    </form>
-    @endif
-    @php($files = $isContract ? $contractEvidences : $evidences)
-    <ul class="installation-files">
-    @forelse($files as $file)
-    <li>
-    @if(in_array($file->mime_type, ['image/jpeg', 'image/png', 'image/webp']))
-    <a class="installation-photo-link" href="{{ route($isContract ? 'technician.contract.preview' : 'technician.evidence.preview', [$installation->pedido_id, $isContract ? $file->evidencia_contrato_id : $file->evidencia_id]) }}" target="_blank" rel="noopener"><img class="installation-photo" loading="lazy" src="{{ route($isContract ? 'technician.contract.preview' : 'technician.evidence.preview', [$installation->pedido_id, $isContract ? $file->evidencia_contrato_id : $file->evidencia_id]) }}" alt="Evidencia: {{ $file->nombre_archivo ?? 'Fotografía de instalación' }}"></a>
-    @endif
-    <a class="action-link secondary" href="{{ route($isContract ? 'technician.contract.download' : 'technician.evidence.download', [$installation->pedido_id, $isContract ? $file->evidencia_contrato_id : $file->evidencia_id]) }}">Descargar {{ $file->nombre_archivo ?? 'evidencia' }}</a>
-    <p>{{ $isContract ? $file->observacion : $file->descripcion }}</p><small>{{ $file->subido_en }}</small></li>
-    @empty<li>Aún no hay evidencias.</li>@endforelse
-    </ul>
-    @include('clients.pagination', ['records' => $files, 'label' => $isContract ? 'Paginación de contratos firmados' : 'Paginación de fotografías'])
+        <p class="installation-section-help">Esta evidencia quedará asociada al pedido y será necesaria para finalizarlo.</p>
+        <label for="file-photo">Fotografía</label><div class="installation-file-choices" data-evidence-picker hidden><button class="action-link" type="button" data-open-camera aria-controls="file-photo">Abrir cámara</button><button class="action-link secondary" type="button" data-open-files aria-controls="file-photo">Elegir de la galería</button></div>
+        <input id="file-photo" type="file" name="evidence" accept="image/jpeg,image/png,image/webp" required data-evidence-input><figure class="installation-file-preview" hidden><img alt="Vista previa del archivo seleccionado"><figcaption aria-live="polite"></figcaption></figure><small>JPG, PNG o WEBP · Máximo 5 MB</small>
+        <label for="description-photo">Descripción (opcional)</label><textarea id="description-photo" name="descripcion" maxlength="500" rows="2">{{ old('descripcion') }}</textarea>
+        <button type="submit" class="action-link">Guardar fotografía</button>
+    </form></details>@endif
+    <ul class="installation-files">@forelse($evidences as $file)<li><strong>{{ $file->tipo === 'COMPROBANTE_CLIENTE' ? 'Comprobante con el cliente' : 'Instalación terminada' }}</strong><a class="installation-photo-link" href="{{ route('technician.evidence.preview', [$installation->pedido_id, $file->evidencia_id]) }}" target="_blank" rel="noopener"><img class="installation-photo" loading="lazy" src="{{ route('technician.evidence.preview', [$installation->pedido_id, $file->evidencia_id]) }}" alt="{{ $file->tipo === 'COMPROBANTE_CLIENTE' ? 'Comprobante con el cliente' : 'Foto de instalación' }}"></a><a class="action-link secondary" href="{{ route('technician.evidence.download', [$installation->pedido_id, $file->evidencia_id]) }}">Descargar {{ $file->nombre_archivo ?? 'fotografía' }}</a><p>{{ $file->descripcion }}</p><small>{{ $file->subido_en }}</small></li>@empty<li>Aún no hay fotografías.</li>@endforelse</ul>
+    @include('clients.pagination', ['records' => $evidences, 'label' => 'Paginación de fotografías'])
 </section>
-@endforeach
+<section class="installation-panel" id="instalacion-contrato">
+    <h2>Contrato físico</h2>
+    <p class="installation-section-help">Al volver a la empresa, entrega el contrato físico al personal de Contratos. Ellos lo escanean, verifican la firma y lo suben una sola vez desde su sección.</p>
+    <p class="installation-evidence-status {{ $contractReady ? 'is-ready' : '' }}">{{ $contractReady ? '✓ PDF firmado verificado en Contratos y confirmado en Drive' : ($contract?->firma_revision === 'VERIFICADA' ? 'Firma verificada; falta confirmar el PDF en Drive' : 'Pendiente de escaneo y verificación de firma en Contratos') }}</p>
+    @routecan('contracts.show')<a class="action-link secondary" href="{{ route('contracts.show', $installation->contrato_id) }}">Ver contrato {{ $contract->codigo }}</a>@endroutecan
+</section>
 </div>
+@if($running && ($pendingEvidence || ($contract?->firma_revision === 'VERIFICADA' && ! $contractReady)))
+<div class="installation-drive-help installation-panel" data-installation-section="evidencias">
+    <strong>Hay archivos pendientes de confirmar en Google Drive</strong>
+    <p>El cierre seguirá bloqueado hasta que Drive confirme la foto de instalación y el PDF firmado que se subió en Contratos.</p>
+    @if($driveConfigured && $canWork)
+        @routecan('technician.syncEvidence')<form method="POST" action="{{ route('technician.syncEvidence', $installation->pedido_id) }}" data-return-anchor="instalacion-evidencias">@csrf<button type="submit" class="action-link secondary">Reintentar envío a Drive</button></form>@endroutecan
+    @elseif(! $driveConfigured)
+        <p class="installation-drive-action">La carpeta de Drive aún no está vinculada. Informa al responsable del sistema; podrás reintentar el envío cuando termine esa configuración.</p>
+    @endif
+    @if(session('evidence_result') === 'DRIVE')<p class="installation-inline-result" role="status">{{ session('status') }}</p>@endif
+</div>
+@endif
 @if($running)
-<section class="installation-panel installation-finish">
-    <h2>Finalizar instalación</h2>
-    <p>Comprueba los equipos, consumos y evidencias antes de finalizar. Al completar la instalación, esta ficha quedará disponible para consulta.</p>
-    @can('technician.manage')
-@routecan('technician.finish')<form method="POST" action="{{ route('technician.finish', $installation->pedido_id) }}" data-installation-form data-confirm-finish>@csrf<button type="submit" class="action-link">Finalizar instalación</button></form>@endroutecan
-@endcan
-    <dialog id="installation-finish-confirm" class="installation-confirm" aria-labelledby="finish-confirm-title" aria-describedby="finish-confirm-description">
-        <h2 id="finish-confirm-title">¿Finalizar esta instalación?</h2>
-        <p id="finish-confirm-description">Se registrará la hora actual y la ficha quedará disponible únicamente para consulta. Revisa los consumos y las evidencias antes de continuar.</p>
-        <div class="installation-filter-actions"><button type="button" class="action-link secondary" data-cancel-finish autofocus>Seguir revisando</button><button type="button" class="action-link" data-accept-finish>Confirmar finalización</button></div>
-    </dialog>
+<section class="installation-panel installation-finish" id="instalacion-cierre" data-installation-section="cierre" tabindex="-1">
+    <h2>Cierre automático</h2>
+    <p>El sistema cerrará el pedido cuando confirme en Google Drive la foto de la instalación y el contrato firmado que el personal de Contratos escanea y verifica.</p>
+    <div class="installation-readiness" role="status">
+        <p class="installation-evidence-status {{ $photoReady ? 'is-ready' : '' }}">{{ $photoReady ? '✓ Foto de la instalación confirmada en Drive' : 'Pendiente: subir la foto de la instalación y confirmar su envío a Drive' }}</p>
+        <p class="installation-evidence-status {{ $contractReady ? 'is-ready' : '' }}">{{ $contractReady ? '✓ Contrato firmado verificado y confirmado en Drive' : ($contract?->firma_revision === 'VERIFICADA' ? 'Pendiente: confirmar en Drive el contrato firmado' : 'Pendiente: el personal de Contratos debe escanear y verificar el contrato firmado') }}</p>
+    </div>
+    @if($photoReady && $contractReady)
+        <p class="installation-inline-result" role="status">Las dos evidencias están confirmadas. El sistema está registrando el cierre del pedido.</p>
+    @endif
 </section>
 @elseif($installation->estado !== 'COMPLETADO')
 <p class="muted">Inicia la instalación para registrar el trabajo, el consumo y las evidencias.</p>

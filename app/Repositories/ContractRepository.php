@@ -11,7 +11,7 @@ class ContractRepository
 {
     public const SALES_ASSISTANT_CARGO = 'Asistente de Ventas';
 
-    public function finalizeExpired(string $today): int
+    public function finalizeExpired(string $today, ?callable $beforeFinalize = null): int
     {
         // Obtener contratos que serán finalizados
         $contractsToFinalize = Contract::query()
@@ -20,7 +20,8 @@ class ContractRepository
             ->get();
 
         foreach ($contractsToFinalize as $contract) {
-            DB::transaction(function () use ($contract, $today) {
+            DB::transaction(function () use ($contract, $today, $beforeFinalize) {
+                if ($beforeFinalize) $beforeFinalize($contract);
                 // Actualizar estado del contrato
                 $contract->update(['estado' => 'FINALIZADO']);
 

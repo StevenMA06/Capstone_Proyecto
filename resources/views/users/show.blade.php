@@ -7,7 +7,7 @@
 <dl class="account-detail">
     <div><dt>Identificador</dt><dd>#{{ $account->usuario_id }}</dd></div>
     <div><dt>Nombre de usuario</dt><dd>{{ $account->nombre_usuario }}</dd></div>
-    <div><dt>Empleado / nombre visible</dt><dd>{{ $account->name }}</dd></div>
+    <div><dt>Empleado / nombre visible</dt><dd>{{ $account->employee?->full_name ?? 'Sin empleado asociado' }}</dd></div>
     <div><dt>Correo electrónico</dt><dd>{{ $account->correo }}</dd></div>
     <div><dt>Rol</dt><dd>{{ $account->role_names }}</dd></div>
     <div><dt>Estado</dt><dd><span class="state {{ ($account->estado === 'ACTIVO') ? 'active' : 'inactive' }}">{{ ($account->estado === 'ACTIVO') ? 'Activo' : ucfirst(strtolower($account->estado)) }}</span></dd></div>

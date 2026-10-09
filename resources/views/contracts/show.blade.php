@@ -29,11 +29,11 @@
     @if($contract->estado === 'CANCELADO')<div><dt>Motivo de cancelación</dt><dd>{{ $contract->motivo_cancelacion ?: 'No registrado' }}</dd></div>@endif
 </dl>
 @if($contract->estado === 'CANCELADO')<p class="contract-status-help">Este contrato está cancelado y se conserva únicamente para consulta. Si el cliente desea volver, utiliza el flujo de reactivación.</p>@endif
-@if($contract->estado === 'PENDIENTE')<p class="contract-status-help">Descarga el contrato para firma y sube el PDF firmado desde «Actualizar contrato». La activación se realiza automáticamente al verificarlo.</p>@endif
+@if($contract->estado === 'PENDIENTE')<p class="contract-status-help">Cuando el técnico entregue el contrato físico firmado en la empresa, escanéalo y sube el PDF desde «Actualizar contrato» o «Verificar firma y registrar venta». La firma se comprueba aquí y el contrato se activa automáticamente al validarla.</p>@endif
 </section>
 <section class="contracts-panel">
-<h2>Evidencias del contrato firmado</h2>
-<p>Documentos adjuntados durante la instalación. Su registro no sustituye la verificación del PDF ni activa automáticamente el contrato.</p>
+<h2>Archivos de campo anteriores</h2>
+<p>Consulta las imágenes del contrato que se hayan cargado antes de este cambio de flujo. El documento válido se escanea y verifica en Contratos.</p>
 <div class="table-scroll"><table><thead><tr><th>Archivo</th><th>Observación</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>
 @forelse($fieldEvidences as $file)
 <tr><td>{{ $file->nombre_archivo }}</td><td>{{ $file->observacion }}</td><td>{{ $file->subido_en }}</td><td>

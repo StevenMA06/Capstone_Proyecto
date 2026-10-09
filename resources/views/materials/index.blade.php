@@ -80,9 +80,11 @@
             </div>
             <div style="display: flex; gap: 0.5rem;">
                 <a class="action-link" href="{{ route('materials.import') }}"><span aria-hidden="true">📁</span> Importar Excel</a>
-                <a class="action-link" href="{{ route('materials.create') }}"><span aria-hidden="true">＋</span> Registrar material</a>
+                @routecan('materials.create')<a class="action-link" href="{{ route('materials.create') }}"><span aria-hidden="true">＋</span> Registrar material</a>@endroutecan
             </div>
         </div>
+
+        <p class="muted">Las cantidades solicitadas y preparadas para instalaciones quedan reservadas. El stock físico disminuye cuando se registra el consumo; aquí también puedes ver cuánto sigue libre para otras solicitudes.</p>
 
         <div class="table-scroll">
             <table class="users-table client-table">
@@ -106,12 +108,16 @@
 </td>
                         <td>{{ $m->unidad_medida }}</td>
                         <td>
-                            <strong style="color: {{ $m->isLowStock() ? '#dc2626' : '#059669' }};">
+                            <strong style="color: {{ $m->stock_libre <= $m->stock_minimo ? '#dc2626' : '#059669' }};">
                                 {{ \App\Support\InventoryQuantity::format($m->stock_actual) }}
                             </strong>
-                            @if($m->isLowStock())
-                            <small class="table-subtitle" style="color: #dc2626;">⚠ Bajo</small>
-                            @endif
+                            <small class="table-subtitle">{{ $m->unidad_medida }} físico</small>
+                            @if($m->inventario_en_empaque && $m->factor_conversion)<small class="table-subtitle">Equivale a {{ \App\Support\InventoryQuantity::format($m->stock_actual * $m->factor_conversion) }} {{ $m->unidad_base }}</small>@endif
+                            <small class="table-subtitle">Reservado: {{ \App\Support\InventoryQuantity::format($m->reservado_pedido) }} {{ $m->unidad_medida }}</small>
+                            @if($m->inventario_en_empaque && $m->factor_conversion && $m->reservado_pedido > 0)<small class="table-subtitle">{{ \App\Support\InventoryQuantity::format($m->reservado_pedido * $m->factor_conversion) }} {{ $m->unidad_base }} reservadas</small>@endif
+                            <small class="table-subtitle" style="color: {{ $m->stock_libre <= $m->stock_minimo ? '#dc2626' : '#059669' }};">Libre: {{ \App\Support\InventoryQuantity::format($m->stock_libre) }} {{ $m->unidad_medida }}</small>
+                            @if($m->inventario_en_empaque && $m->factor_conversion)<small class="table-subtitle">{{ \App\Support\InventoryQuantity::format($m->stock_libre * $m->factor_conversion) }} {{ $m->unidad_base }} libres</small>@endif
+                            @if($m->stock_libre <= $m->stock_minimo)<small class="table-subtitle" style="color: #dc2626;">⚠ Disponible bajo</small>@endif
                         </td>
                         <td>{{ \App\Support\InventoryQuantity::format($m->stock_minimo) }}</td>
                         <td>

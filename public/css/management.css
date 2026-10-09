@@ -5,11 +5,13 @@
 .workspace-brand strong { color: #148053; }
 .workspace-brand small { display: block; font-size: 9px; letter-spacing: 1.8px; color: #6b8275; margin-top: 5px; }
 .brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: #087846; color: #fff; font-size: 29px; font-weight: bold; }
-.workspace-account { display: flex; align-items: center; gap: 12px; }
-.user-avatar { display: grid; place-items: center; height: 38px; width: 38px; border-radius: 50%; background: #e8f2ec; color: #167345; font-weight: bold; flex-shrink: 0; }
-.user-label { display: grid; gap: 5px; min-width: 90px; max-width: 220px; overflow-wrap: anywhere; font-size: 13px; }
-.user-label span { color: #74857b; font-size: 11px; }
-.workspace-account form { margin-left: 15px; }
+.workspace-account { display: flex; align-items: center; justify-content: flex-end; gap: 18px; margin-left: auto; }
+.workspace-account-summary { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.workspace-account-avatar { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; background: #e8f2ec; color: #087846; font-size: 13px; font-weight: 700; text-transform: uppercase; }
+.workspace-account-identity { display: grid; gap: 2px; min-width: 0; line-height: 1.2; }
+.workspace-account-identity strong { max-width: 180px; overflow: hidden; color: #243b33; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-account-identity small { max-width: 220px; overflow: hidden; color: #65786e; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-account form { margin: 0; }
 .workspace-account .secondary { font-size: 12px; padding: 10px 13px; }
 .workspace-body { display: flex; flex: 1; min-width: 0; }
 .workspace-sidebar { width: 236px; flex-shrink: 0; padding: 20px var(--workspace-inset) 28px; background: #f8f9f7; border-right: 1px solid #dce1db; position: sticky; top: 0; align-self: flex-start; height: 100dvh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #c4cbc3 transparent; }
@@ -86,9 +88,8 @@
 @media (max-width: 680px) {
     .workspace-topbar { height: auto; min-height: 76px; padding: 15px var(--workspace-inset); flex-wrap: wrap; gap: 16px; }
     .workspace-brand { font-size: 20px; }
-    .workspace-account { width: 100%; }
-    .workspace-account form { margin-left: auto; }
-    .user-label { max-width: 170px; }
+    .workspace-account { width: 100%; gap: 12px; }
+    .workspace-account-summary { margin-right: auto; }
     .workspace-body { flex-direction: column; }
     .workspace-sidebar { width: 100%; height: auto; max-height: 320px; position: static; border-right: 0; border-bottom: 1px solid #dce1db; padding: 12px var(--workspace-inset); }
     .module-menu nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }

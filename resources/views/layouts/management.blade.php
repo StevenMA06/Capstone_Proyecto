@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Gestión de clientes') · Lunnys Perú</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=4">
-    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=11">
+    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=13">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @include('layouts.session-monitor')
     @stack('styles')
@@ -17,8 +17,13 @@
 <header class="workspace-topbar">
     <a class="workspace-brand" href="{{ route('dashboard') }}"><img class="brand-logo" src="{{ asset('images/lunnys-peru.png') }}" alt="Logo de Lunnys Perú"><span>Lunnys <strong>Perú</strong><small>PLATAFORMA DE GESTIÓN</small></span></a>
     <div class="workspace-account">
-        <span class="user-avatar" aria-hidden="true">{{ mb_substr(auth()->user()->name, 0, 1) }}</span>
-        <div class="user-label"><strong>{{ auth()->user()->name }}</strong><span>{{ auth()->user()->role_names }}</span></div>
+        @auth
+            @php($account = auth()->user())
+            <div class="workspace-account-summary" aria-label="Cuenta {{ $account->nombre_usuario }} · {{ $account->role_names ?: 'Sin rol asignado' }}">
+                <span class="workspace-account-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($account->nombre_usuario ?: '?', 0, 1)) }}</span>
+                <span class="workspace-account-identity"><strong>{{ $account->nombre_usuario }}</strong><small>{{ $account->role_names ?: 'Sin rol asignado' }}</small></span>
+            </div>
+        @endauth
         <form method="POST" action="{{ route('logout') }}">@csrf<button class="secondary" type="submit">Cerrar sesión</button></form>
     </div>
 </header>

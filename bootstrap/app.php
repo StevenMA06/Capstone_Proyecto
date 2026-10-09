@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // VS Code Dev Tunnels forwards requests through the local loopback proxy.
+        // Honor its public host and HTTPS headers so login and asset URLs stay on the tunnel.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
         $middleware->web(append: [ExpireEmployees::class, FinalizeContracts::class, EnsureAccountActive::class, \App\Http\Middleware\RequireModulePermission::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -6,6 +6,7 @@
 @section('workspace-content')
 @php
     $commercial = [
+        ['office.coordination.index', 'Coordinar visitas', 'tool', 'Registra la fecha acordada con el cliente y da inicio al pedido de instalación.'],
         ['clients.index', 'Clientes', 'users', 'Consulta las fichas de clientes y sus datos de contacto.'],
         ['contracts.index', 'Contratos', 'file', 'Revisa los servicios contratados y la información de cada contrato.'],
         ['sales.index', 'Ventas', 'cart', 'Consulta las ventas y da seguimiento a la atención comercial.'],
