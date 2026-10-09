@@ -53,6 +53,7 @@ class AccessCatalog
             'equipments.import' => ['Importar equipos', 'Descargar la plantilla, previsualizar, confirmar o cancelar una importación de equipos.'],
             'equipments.availability' => ['Consultar disponibilidad', 'Ver nombres y cantidades disponibles por tipo, marca y modelo; no muestra fichas ni movimientos.'],
             'equipments.assigned' => ['Consultar asignaciones', 'Ver únicamente equipos vinculados a pedidos asignados al empleado.'],
+            'materials.import' => ['Importar materiales', 'Descargar la plantilla, previsualizar, confirmar o cancelar una importación de materiales.'],
             'materials.availability' => ['Consultar disponibilidad', 'Ver materiales activos, su unidad y stock disponible; no muestra fichas ni movimientos.'],
             'materials.entry' => ['Registrar entrada', 'Registrar ingresos de material y su movimiento automático en Kardex.'],
             'materials.exit' => ['Registrar salida', 'Registrar salidas de material y su movimiento automático en Kardex.'],
@@ -165,6 +166,7 @@ class AccessCatalog
             return null;
         }
         if ($module === 'equipments' && (str_starts_with($action, 'import') || $action === 'template')) return 'equipments.import';
+        if ($module === 'materials' && (str_starts_with($action, 'import') || $action === 'template')) return 'materials.import';
         if ($module === 'materials' && in_array(explode('.', $action)[0], ['entry','exit','adjustment'])) return 'materials.'.explode('.', $action)[0];
         if ($module === 'contracts' && str_starts_with($action, 'reactivate')) return 'contracts.reactivate';
         if (in_array($name, ['orders.reprogram.approve', 'orders.reprogram.reject'], true)) return 'orders.approve';

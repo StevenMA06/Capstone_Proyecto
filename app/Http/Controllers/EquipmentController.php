@@ -121,50 +121,199 @@ class EquipmentController extends Controller
     }
 
     /**
-     * Descargar plantilla Excel
+     * Descargar plantilla Excel mejorada
      */
     public function downloadTemplate(): StreamedResponse
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Equipos');
+
+        // Estilos para encabezados
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 12,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '047857'], // Verde oscuro
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+        ];
+
+        $exampleStyle = [
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'D1FAE5'], // Verde claro
+            ],
+        ];
 
         // Encabezados
         $headers = [
-            'codigo (opcional)',
-            'numero_serie',
-            'nombre',
-            'tipo',
-            'marca',
-            'modelo',
-            'condicion',
-            'estado',
-            'observaciones',
+            'A' => ['text' => 'Código', 'width' => 15, 'comment' => 'Opcional. Si se deja vacío, se genera automáticamente (ej: EQ-001)'],
+            'B' => ['text' => 'Número de Serie *', 'width' => 20, 'comment' => 'Obligatorio. Debe ser único'],
+            'C' => ['text' => 'Nombre *', 'width' => 25, 'comment' => 'Obligatorio. Nombre descriptivo del equipo'],
+            'D' => ['text' => 'Tipo *', 'width' => 18, 'comment' => 'Obligatorio. Ej: Router, Switch, ONT, Cable, etc.'],
+            'E' => ['text' => 'Marca', 'width' => 15, 'comment' => 'Opcional. Ej: TP-Link, Cisco, Huawei'],
+            'F' => ['text' => 'Modelo', 'width' => 18, 'comment' => 'Opcional. Ej: Archer C6, WS-C2960'],
+            'G' => ['text' => 'Condición', 'width' => 15, 'comment' => 'NUEVO, BUENO, REGULAR, MALO o MALOGRADO. Por defecto: BUENO'],
+            'H' => ['text' => 'Estado', 'width' => 15, 'comment' => 'DISPONIBLE, ASIGNADO, MANTENIMIENTO o INACTIVO. Por defecto: DISPONIBLE'],
+            'I' => ['text' => 'Observaciones', 'width' => 30, 'comment' => 'Opcional. Notas adicionales'],
         ];
 
-        $col = 'A';
-        foreach ($headers as $header) {
-            $sheet->setCellValue($col . '1', $header);
-            $sheet->getStyle($col . '1')->getFont()->setBold(true);
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-            $col++;
+        // Aplicar encabezados
+        foreach ($headers as $col => $header) {
+            $sheet->setCellValue($col . '1', $header['text']);
+            $sheet->getColumnDimension($col)->setWidth($header['width']);
+            $sheet->getStyle($col . '1')->applyFromArray($headerStyle);
+            
+            // Agregar comentarios
+            $sheet->getComment($col . '1')->getText()->createTextRun($header['comment']);
+            $sheet->getComment($col . '1')->setWidth('300px');
+            $sheet->getComment($col . '1')->setHeight('80px');
         }
 
-        // Fila de ejemplo
-        $sheet->setCellValue('A2', '');  // Vacío para mostrar que es opcional
-        $sheet->setCellValue('B2', 'SN123456');
-        $sheet->setCellValue('C2', 'Router TP-Link');
-        $sheet->setCellValue('D2', 'Router');
-        $sheet->setCellValue('E2', 'TP-Link');
-        $sheet->setCellValue('F2', 'Archer C6');
-        $sheet->setCellValue('G2', 'NUEVO');
-        $sheet->setCellValue('H2', 'DISPONIBLE');
-        $sheet->setCellValue('I2', 'Ejemplo de observación');
+        // Ajustar altura del encabezado
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        // Ejemplos (3 filas)
+        $examples = [
+            ['', 'SN123456789', 'Router WiFi AC1200', 'Router', 'TP-Link', 'Archer C6', 'NUEVO', 'DISPONIBLE', 'Para instalación residencial'],
+            ['EQ-CUSTOM-01', 'SN987654321', 'Switch Gigabit 24 puertos', 'Switch', 'Cisco', 'WS-C2960X', 'BUENO', 'DISPONIBLE', 'Rack principal'],
+            ['', 'ONT-2024-001', 'ONT GPON HG8145V5', 'ONT', 'Huawei', 'HG8145V5', 'NUEVO', 'DISPONIBLE', 'Cliente nuevo - Sector A'],
+        ];
+
+        $row = 2;
+        foreach ($examples as $example) {
+            $col = 'A';
+            foreach ($example as $value) {
+                $sheet->setCellValue($col . $row, $value);
+                $col++;
+            }
+            $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray($exampleStyle);
+            $row++;
+        }
+
+        // Validación de datos para condición
+        $condicionValidation = $sheet->getCell('G5')->getDataValidation();
+        $condicionValidation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+        $condicionValidation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
+        $condicionValidation->setAllowBlank(false);
+        $condicionValidation->setShowInputMessage(true);
+        $condicionValidation->setShowErrorMessage(true);
+        $condicionValidation->setShowDropDown(true);
+        $condicionValidation->setErrorTitle('Valor inválido');
+        $condicionValidation->setError('Debe seleccionar: NUEVO, BUENO, REGULAR, MALO o MALOGRADO');
+        $condicionValidation->setPromptTitle('Condición del equipo');
+        $condicionValidation->setPrompt('Seleccione la condición física');
+        $condicionValidation->setFormula1('"NUEVO,BUENO,REGULAR,MALO,MALOGRADO"');
+
+        // Validación de datos para estado
+        $estadoValidation = $sheet->getCell('H5')->getDataValidation();
+        $estadoValidation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+        $estadoValidation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
+        $estadoValidation->setAllowBlank(false);
+        $estadoValidation->setShowInputMessage(true);
+        $estadoValidation->setShowErrorMessage(true);
+        $estadoValidation->setShowDropDown(true);
+        $estadoValidation->setErrorTitle('Valor inválido');
+        $estadoValidation->setError('Debe seleccionar: DISPONIBLE, ASIGNADO, MANTENIMIENTO o INACTIVO');
+        $estadoValidation->setPromptTitle('Estado del equipo');
+        $estadoValidation->setPrompt('Seleccione el estado operativo');
+        $estadoValidation->setFormula1('"DISPONIBLE,ASIGNADO,MANTENIMIENTO,INACTIVO"');
+
+        // Copiar validaciones a más filas (hasta la fila 100)
+        for ($i = 5; $i <= 100; $i++) {
+            $sheet->getCell('G' . $i)->setDataValidation(clone $condicionValidation);
+            $sheet->getCell('H' . $i)->setDataValidation(clone $estadoValidation);
+        }
+
+        // Hoja de instrucciones
+        $instructionsSheet = $spreadsheet->createSheet(1);
+        $instructionsSheet->setTitle('📖 Instrucciones');
+        
+        $titleStyle = [
+            'font' => [
+                'bold' => true,
+                'size' => 16,
+                'color' => ['rgb' => '047857'],
+            ],
+        ];
+
+        $sectionStyle = [
+            'font' => [
+                'bold' => true,
+                'size' => 12,
+                'color' => ['rgb' => '059669'],
+            ],
+        ];
+
+        $instructionsSheet->setCellValue('A1', '📦 GUÍA DE IMPORTACIÓN DE EQUIPOS');
+        $instructionsSheet->getStyle('A1')->applyFromArray($titleStyle);
+        $instructionsSheet->getRowDimension(1)->setRowHeight(30);
+
+        $instructions = [
+            ['', ''],
+            ['✅ PASO 1: Preparar los datos', ''],
+            ['', '• Usa la pestaña "Equipos" para ingresar los datos'],
+            ['', '• Las filas 2-4 contienen ejemplos que puedes eliminar o modificar'],
+            ['', '• Los campos marcados con * son obligatorios'],
+            ['', ''],
+            ['📝 PASO 2: Completar columnas', ''],
+            ['', 'Código: Opcional. Si lo dejas vacío, se generará automáticamente (EQ-001, EQ-002...)'],
+            ['', 'Número de Serie: OBLIGATORIO. Debe ser único. Ej: SN123456789'],
+            ['', 'Nombre: OBLIGATORIO. Descripción del equipo. Ej: Router WiFi AC1200'],
+            ['', 'Tipo: OBLIGATORIO. Categoría del equipo. Ej: Router, Switch, ONT, Módem'],
+            ['', 'Marca: Opcional. Fabricante. Ej: TP-Link, Cisco, Huawei'],
+            ['', 'Modelo: Opcional. Modelo específico. Ej: Archer C6, WS-C2960'],
+            ['', 'Condición: Usa el menú desplegable. Valores: NUEVO, BUENO, REGULAR, MALO, MALOGRADO'],
+            ['', 'Estado: Usa el menú desplegable. Valores: DISPONIBLE, ASIGNADO, MANTENIMIENTO, INACTIVO'],
+            ['', 'Observaciones: Opcional. Cualquier nota relevante'],
+            ['', ''],
+            ['💾 PASO 3: Guardar y cargar', ''],
+            ['', '• Guarda el archivo en formato .xlsx'],
+            ['', '• Ve a la sección "Importar Equipos" en el sistema'],
+            ['', '• Carga el archivo y revisa la vista previa'],
+            ['', '• Confirma la importación'],
+            ['', ''],
+            ['⚠️ IMPORTANTE:', ''],
+            ['', '• Cada equipo importado generará automáticamente su entrada en el Kardex'],
+            ['', '• Los códigos duplicados serán rechazados'],
+            ['', '• Los números de serie deben ser únicos'],
+            ['', '• Puedes importar máximo 500 equipos por archivo'],
+        ];
+
+        $row = 2;
+        foreach ($instructions as $instruction) {
+            $instructionsSheet->setCellValue('A' . $row, $instruction[0]);
+            if (!empty($instruction[1])) {
+                $instructionsSheet->setCellValue('B' . $row, $instruction[1]);
+            }
+            
+            if (!empty($instruction[0]) && (str_starts_with($instruction[0], '✅') || str_starts_with($instruction[0], '📝') || str_starts_with($instruction[0], '💾') || str_starts_with($instruction[0], '⚠️'))) {
+                $instructionsSheet->getStyle('A' . $row)->applyFromArray($sectionStyle);
+            }
+            
+            $instructionsSheet->getRowDimension($row)->setRowHeight(20);
+            $row++;
+        }
+
+        $instructionsSheet->getColumnDimension('A')->setWidth(5);
+        $instructionsSheet->getColumnDimension('B')->setWidth(90);
+
+        // Volver a la hoja principal
+        $spreadsheet->setActiveSheetIndex(0);
 
         $writer = new Xlsx($spreadsheet);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
-        }, 'plantilla_equipos.xlsx', [
+        }, 'plantilla_equipos_' . now()->format('Y-m-d') . '.xlsx', [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }

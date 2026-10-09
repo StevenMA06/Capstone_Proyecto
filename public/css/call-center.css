@@ -1,0 +1,32 @@
+.workspace-shell .call-center-home { max-width: 1240px; margin: 0 auto; padding: 4px 0 32px; color: #233b34; }
+.call-center-home .cc-breadcrumb { display: flex; gap: 10px; font-size: 12px; color: #62766e; margin-bottom: 28px; }
+.call-center-home .cc-heading { padding-bottom: 28px; border-bottom: 1px solid #dce5df; margin-bottom: 30px; }
+.call-center-home .cc-eyebrow { margin: 0 0 9px; color: #26754e; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.call-center-home h1 { margin: 0 0 10px; font-size: clamp(26px, 3vw, 34px); line-height: 1.2; letter-spacing: -.025em; }
+.call-center-home .cc-heading > p:last-child { margin: 0; color: #60736a; font-size: 15px; }
+.call-center-home .cc-section { margin-top: 30px; }
+.call-center-home .cc-section-heading { margin-bottom: 18px; }
+.call-center-home h2 { margin: 0 0 6px; font-size: 19px; line-height: 1.4; }
+.call-center-home .cc-section-heading p { margin: 0; color: #63766e; font-size: 13px; }
+.call-center-home .cc-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.call-center-home .cc-module-card { display: flex; flex-direction: column; align-items: flex-start; padding: 24px; border: 1px solid #dce5df; border-radius: 10px; background: #fff; color: inherit; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+.call-center-home .cc-module-card:hover { border-color: #83af96; box-shadow: 0 3px 12px #244c3310; }
+.call-center-home .cc-card-icon { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 18px; border-radius: 8px; background: #edf5ef; color: #23734c; }
+.call-center-home .module-icon { width: 24px; height: 24px; flex-shrink: 0; }
+.call-center-home .cc-card-copy { display: flex; flex-direction: column; gap: 9px; flex: 1; }
+.call-center-home .cc-card-copy strong { font-size: 17px; line-height: 1.4; }
+.call-center-home .cc-card-copy > span { font-size: 13px; line-height: 1.65; color: #62736a; }
+.call-center-home .cc-card-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding-top: 17px; margin-top: 20px; border-top: 1px solid #edf1ee; color: #17643e; font-size: 13px; font-weight: 600; }
+.call-center-home .cc-card-link > span, .call-center-home .cc-arrow { font-size: 20px; line-height: 1; }
+.call-center-home .cc-support-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.call-center-home .cc-support-link { display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #dce5df; border-radius: 8px; text-decoration: none; color: inherit; background: #fff; }
+.call-center-home .cc-support-link:hover { border-color: #83af96; background: #fafcfb; }
+.call-center-home .cc-support-icon { color: #3c7655; display: flex; }
+.call-center-home .cc-support-link strong { display: block; font-size: 14px; }
+.call-center-home .cc-support-link small { display: block; margin-top: 5px; color: #63766e; font-size: 12px; line-height: 1.5; }
+.call-center-home .cc-arrow { margin-left: auto; color: #3c7655; }
+.call-center-home a:focus-visible { outline: 3px solid #23734c; outline-offset: 4px; }
+.call-center-home .cc-empty { padding: 28px; border: 1px solid #dce5df; border-radius: 10px; background: #fff; }
+.call-center-home .cc-empty p { color: #63766e; margin-bottom: 0; }
+@media (max-width: 1100px) { .call-center-home .cc-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .call-center-home .cc-card-grid, .call-center-home .cc-support-grid { grid-template-columns: minmax(0, 1fr); } .call-center-home .cc-module-card { padding: 20px; } .call-center-home .cc-heading { margin-bottom: 24px; padding-bottom: 24px; } .call-center-home .cc-breadcrumb { margin-bottom: 22px; } }

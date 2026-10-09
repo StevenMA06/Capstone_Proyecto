@@ -125,37 +125,52 @@ class GeminiService
             }
         }
 
-        // Buscar contrato específico por ID
+        // Buscar contrato específico por ID (sin datos del cliente)
         if (preg_match('/contrato[\s#-]*(\d+)/i', $query, $matches)) {
             $contratoId = $matches[1];
-            $contrato = Contract::with(['client', 'plan'])->find($contratoId);
+            $contrato = Contract::with('plan')->find($contratoId);
             if ($contrato) {
                 $context['contrato_especifico'] = [
                     'contrato_id' => $contrato->contrato_id,
-                    'cliente' => $contrato->client->nombres_razon_social . ' ' . ($contrato->client->apellidos ?? ''),
                     'plan' => $contrato->plan->nombre ?? 'N/A',
                     'estado' => $contrato->estado,
                     'fecha_inicio' => $contrato->fecha_inicio?->format('Y-m-d'),
                     'fecha_fin' => $contrato->fecha_fin?->format('Y-m-d'),
                     'monto_mensual' => $contrato->monto_mensual,
+                    'nota' => 'Por privacidad, no se muestra información del cliente asociado'
                 ];
             }
         }
 
-        // Contexto específico según palabras clave
+        // Contexto específico según palabras clave (PROTEGIDO - solo estadísticas)
         if (preg_match('/cliente|clientes/i', $query)) {
-            $context['clientes_recientes'] = Client::where('estado', 'ACTIVO')
-                ->orderBy('creado_en', 'desc')
-                ->take(5)
-                ->get(['cliente_id', 'numero_documento', 'nombres_razon_social', 'apellidos', 'telefono', 'estado'])
-                ->toArray();
+            // NO mostrar datos personales de clientes (DNI, teléfonos, direcciones)
+            // Solo estadísticas agregadas
+            $context['info_clientes'] = [
+                'total' => Client::count(),
+                'activos' => Client::where('estado', 'ACTIVO')->count(),
+                'inactivos' => Client::where('estado', 'INACTIVO')->count(),
+                'con_contrato' => Client::has('contract')->count(),
+                'nota' => '⚠️ Por privacidad, no se muestran datos personales de clientes (nombres, DNI, teléfonos, direcciones)'
+            ];
         }
 
         if (preg_match('/contrato|contratos|plan|planes/i', $query)) {
-            $context['contratos_activos'] = Contract::with(['client', 'plan'])
+            // Mostrar contratos sin información personal del cliente
+            $context['contratos_activos'] = Contract::with('plan')
                 ->where('estado', 'ACTIVO')
                 ->take(5)
-                ->get(['contrato_id', 'cliente_id', 'plan_id', 'fecha_inicio', 'fecha_fin', 'monto_mensual', 'estado'])
+                ->get(['contrato_id', 'plan_id', 'fecha_inicio', 'fecha_fin', 'monto_mensual', 'estado'])
+                ->map(function($c) {
+                    return [
+                        'contrato_id' => $c->contrato_id,
+                        'plan' => $c->plan->nombre ?? 'N/A',
+                        'fecha_inicio' => $c->fecha_inicio?->format('Y-m-d'),
+                        'fecha_fin' => $c->fecha_fin?->format('Y-m-d'),
+                        'monto_mensual' => $c->monto_mensual,
+                        'estado' => $c->estado,
+                    ];
+                })
                 ->toArray();
         }
 
@@ -189,10 +204,20 @@ class GeminiService
         }
 
         if (preg_match('/empleado|empleados|personal|técnico|tecnicos/i', $query)) {
-            $context['empleados_activos'] = Employee::where('estado', 'ACTIVO')
-                ->take(10)
-                ->get(['empleado_id', 'nombres', 'apellidos', 'tipo_identificacion', 'numero_identificacion', 'cargo', 'estado'])
+            // NO mostrar datos personales de empleados (DNI, teléfonos, salarios)
+            // Solo estadísticas agregadas por cargo
+            $empleadosPorCargo = Employee::where('estado', 'ACTIVO')
+                ->select('cargo', DB::raw('count(*) as total'))
+                ->groupBy('cargo')
+                ->get()
                 ->toArray();
+            
+            $context['info_empleados'] = [
+                'total' => Employee::count(),
+                'activos' => Employee::where('estado', 'ACTIVO')->count(),
+                'por_cargo' => $empleadosPorCargo,
+                'nota' => '⚠️ Por privacidad, no se muestran datos personales de empleados (nombres, DNI, teléfonos, direcciones)'
+            ];
         }
 
         return $context;
@@ -233,9 +258,14 @@ class GeminiService
         $prompt .= "7. Puedes hacer pequeños cálculos o análisis con los datos proporcionados\n";
         $prompt .= "8. Si detectas algo preocupante (stock crítico, muchos pagos vencidos), menciónalo proactivamente\n\n";
         
-        $prompt .= "SEGURIDAD:\n";
+        $prompt .= "SEGURIDAD Y PRIVACIDAD:\n";
         $prompt .= "- NUNCA reveles contraseñas, tokens, API keys o información sensible del sistema\n";
         $prompt .= "- NO ejecutes ni sugieras comandos de base de datos (SQL)\n";
+        $prompt .= "- NO proporciones datos personales de clientes: nombres completos, DNI, teléfonos, direcciones, emails\n";
+        $prompt .= "- NO proporciones datos personales de empleados: nombres completos, DNI, teléfonos, direcciones, salarios\n";
+        $prompt .= "- SOLO proporciona estadísticas agregadas y métricas generales de clientes y empleados\n";
+        $prompt .= "- Si te piden datos personales específicos, responde: 'Por razones de privacidad, no puedo proporcionar información personal de clientes o empleados'\n";
+        $prompt .= "- SÍ puedes mostrar información técnica: equipos, materiales, contratos (sin datos personales asociados)\n";
         $prompt .= "- Si te piden algo inapropiado o fuera de tu alcance, responde educadamente que no puedes ayudar con eso\n\n";
         
         $prompt .= "Responde SIEMPRE en español y mantén un tono profesional pero cercano.\n";
