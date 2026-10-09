@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', 'Dashboard')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v=6"><script src="{{ asset('js/dashboard.js') }}?v=1" defer></script>@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v=7"><script src="{{ asset('js/dashboard.js') }}?v=1" defer></script>@endpush
 @section('workspace-content')
 <section class="overview">
     <header class="overview-heading">
@@ -25,7 +25,11 @@
             <span class="inventory-title">{{ $label }}</span>
             @include('layouts.module-icon', ['icon' => $key === 'equipment' ? 'router' : 'box'])
             <span class="metric-note">Haz clic para ver stock</span>
-            @if($summary[$key.'Low'])<span class="stock-warning">⚠ Stock mínimo</span>@endif
+            @if($key === 'equipment')
+                @if($summary[$key.'Low'])<span class="stock-warning">⚠ Stock bajo</span>@endif
+            @else
+                @if($summary[$key.'Low'])<span class="stock-warning">⚠ Stock mínimo</span>@endif
+            @endif
         </button>
         @endforeach
         @endif
@@ -70,8 +74,18 @@
         @foreach(['equipment' => 'Equipos', 'materials' => 'Materiales'] as $key => $label)
         <dialog class="inventory-dialog" id="{{ $key }}-dialog" aria-labelledby="{{ $key }}-title">
             <header class="inventory-heading"><h2 id="{{ $key }}-title">Inventario de {{ mb_strtolower($label) }}</h2><form method="dialog"><button type="submit" class="secondary" autofocus aria-label="Cerrar inventario de {{ mb_strtolower($label) }}">Cerrar ×</button></form></header>
-            @if($key === 'equipment')<p class="muted">Unidades disponibles para asignación, agrupadas por nombre, tipo, marca y modelo. Mínimo: {{ config('inventory.equipment_minimum') }} por grupo.</p>@endif
-            @if($summary[$key.'Low'])<p class="stock-warning" role="status">⚠ Stock igual o inferior al mínimo: {{ $summary[$key.'Low'] }} {{ $key === 'equipment' ? ($summary[$key.'Low'] === 1 ? 'grupo de equipos' : 'grupos de equipos') : ($summary[$key.'Low'] === 1 ? 'material' : 'materiales') }}.</p>@endif
+            @if($key === 'equipment')
+                <p class="muted">Unidades disponibles para asignación, agrupadas por nombre, tipo, marca y modelo. Mínimo recomendado: {{ config('inventory.equipment_minimum') }} por grupo.</p>
+            @else
+                <p class="muted">Materiales activos con su stock actual y mínimo recomendado.</p>
+            @endif
+            @if($summary[$key.'Low'])
+                @if($key === 'equipment')
+                    <p class="stock-warning" role="status">⚠ Stock bajo: {{ $summary[$key.'Low'] }} {{ $summary[$key.'Low'] === 1 ? 'grupo de equipos' : 'grupos de equipos' }} con menos unidades disponibles de lo recomendado.</p>
+                @else
+                    <p class="stock-warning" role="status">⚠ Stock igual o inferior al mínimo: {{ $summary[$key.'Low'] }} {{ $summary[$key.'Low'] === 1 ? 'material' : 'materiales' }}.</p>
+                @endif
+            @endif
             @include('operations.inventory-table', ['records' => $summary[$key], 'kind' => $key])
             <footer class="inventory-footer"><a class="action-link" @if(auth()->user()->hasPermission(\App\Support\AccessCatalog::forRoute($key.'.index') ?? '')) href="{{ route($key.'.index') }}" @endif>Abrir {{ mb_strtolower($label) }} →</a></footer>
         </dialog>
