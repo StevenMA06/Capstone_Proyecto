@@ -36,6 +36,24 @@ class AuthenticationTest extends TestCase
         $this->get('/dashboard')->assertRedirect('/login');
     }
 
+    public function test_tunnel_requests_keep_public_host_for_login_redirect_and_form(): void
+    {
+        $headers = [
+            'REMOTE_ADDR' => '127.0.0.1',
+            'HTTP_HOST' => 'localhost:8000',
+            'HTTP_X_FORWARDED_HOST' => 'tunnel.example.test',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+            'HTTP_X_FORWARDED_PORT' => '443',
+        ];
+
+        $this->withServerVariables($headers)->get('http://localhost:8000/technician/installations/1')
+            ->assertRedirect('https://tunnel.example.test/login');
+        $this->withServerVariables($headers)->get('http://localhost:8000/login')
+            ->assertOk()
+            ->assertSee('action="https://tunnel.example.test/login"', false)
+            ->assertSee('https://tunnel.example.test/css/app.css', false);
+    }
+
     public function test_login_by_email_normalizes_input_and_regenerates_session(): void
     {
         $user = User::factory()->create(['correo' => 'ana@example.com']);

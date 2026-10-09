@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Services\InstallationService;
+use App\Services\InstallationOrderService;
+use App\Services\InstallationDriveService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -10,7 +13,7 @@ use Illuminate\Validation\Rule;
 
 class TechnicianController extends Controller
 {
-    public function __construct(private InstallationService $installations) {}
+    public function __construct(private InstallationService $installations, private InstallationOrderService $orders, private InstallationDriveService $drive) {}
 
     public function index(Request $request)
     {
@@ -43,46 +46,70 @@ class TechnicianController extends Controller
             $query->where('pedidos_instalacion.estado', $data['estado']);
         }
 
+        $records = $query->orderByRaw("CASE pedidos_instalacion.estado WHEN 'PENDIENTE' THEN 0 WHEN 'PROGRAMADO' THEN 0 WHEN 'REPROGRAMADO' THEN 0 WHEN 'EN_PROCESO' THEN 1 WHEN 'COMPLETADO' THEN 2 ELSE 3 END")
+                ->orderByRaw('pedidos_instalacion.fecha_programada IS NULL')
+                ->orderBy('pedidos_instalacion.fecha_programada')->orderBy('pedidos_instalacion.pedido_id')->paginate(15)->withQueryString();
         return view('technician.index', [
             'states' => $states,
-            'records' => $query->orderByRaw("CASE pedidos_instalacion.estado WHEN 'PENDIENTE' THEN 0 WHEN 'PROGRAMADO' THEN 0 WHEN 'REPROGRAMADO' THEN 0 WHEN 'EN_PROCESO' THEN 1 WHEN 'COMPLETADO' THEN 2 ELSE 3 END")
-                ->orderByRaw('pedidos_instalacion.fecha_programada IS NULL')
-                ->orderBy('pedidos_instalacion.fecha_programada')->orderBy('pedidos_instalacion.pedido_id')->paginate(15)->withQueryString(),
+            'records' => $records,
+            'pendingReprogramming' => DB::table('pedido_reprogramaciones')->where('estado', 'SOLICITADA')
+                ->whereIn('pedido_id', collect($records->items())->pluck('pedido_id'))->pluck('pedido_id'),
         ]);
     }
 
     public function show(Request $request, int $pedido)
     {
         $installation = $this->installations->find($request->user(), $pedido);
-        $request->validate(['page' => ['nullable', 'integer', 'min:1'], 'contracts_page' => ['nullable', 'integer', 'min:1']]);
+        $request->validate(['page' => ['nullable', 'integer', 'min:1']]);
+        $contract = DB::table('contratos as c')->leftJoin('planes_servicio as p', 'p.plan_id', '=', 'c.plan_id')
+            ->where('c.contrato_id', $installation->contrato_id)->select('c.*', 'p.nombre as plan_nombre')->first();
+        $contractSync = DB::table('evidencias_drive_instalacion')->where('pedido_id', $pedido)
+            ->where('tipo', 'CONTRATO_VALIDADO')->where('evidencia_id', $installation->contrato_id)
+            ->where('estado', 'CONFIRMADO')->whereNotNull('drive_file_id')->first();
+        $contractReady = $contract?->firma_revision === 'VERIFICADA' && $contract->pdf_contrato_ruta
+            && Storage::disk('local')->exists($contract->pdf_contrato_ruta)
+            && $contractSync && $contractSync->source_sha256 === hash_file('sha256', Storage::disk('local')->path($contract->pdf_contrato_ruta));
 
         return view('technician.show', [
             'installation' => $installation,
             'client' => DB::table('clientes')->where('cliente_id', $installation->cliente_id)->first(),
-            'contract' => DB::table('contratos as c')->leftJoin('planes_servicio as p', 'p.plan_id', '=', 'c.plan_id')
-                ->where('c.contrato_id', $installation->contrato_id)->select('c.*', 'p.nombre as plan_nombre')->first(),
+            'contract' => $contract,
+            'contractReady' => (bool) $contractReady,
             'technician' => DB::table('empleados')->where('empleado_id', $installation->tecnico_id)->first(),
+            'coordinator' => $installation->coordinado_por ? User::with('employee')->find($installation->coordinado_por) : null,
+            'assigner' => $installation->asignado_por ? User::with('employee')->find($installation->asignado_por) : null,
             'execution' => DB::table('ejecuciones_instalacion')->where('pedido_id', $pedido)->first(),
             'evidences' => DB::table('evidencias_instalacion')->where('pedido_id', $pedido)->orderByDesc('evidencia_id')->paginate(10)->withQueryString(),
-            'contractEvidences' => DB::table('evidencias_contrato')->where('contrato_id', $installation->contrato_id)
-                ->where('tipo', 'CONTRATO_FIRMADO')->orderByDesc('evidencia_contrato_id')->paginate(10, ['*'], 'contracts_page')->withQueryString(),
             'equipment' => DB::table('equipos')->whereNotIn('condicion', ['MALO', 'MALOGRADO'])->where(function ($q) use ($pedido) {
                 $q->where('estado', 'DISPONIBLE')->orWhereIn('equipo_id', DB::table('pedido_equipos')->select('equipo_id')
                     ->where('pedido_id', $pedido)->where('estado_asignacion', 'ASIGNADO')->whereNull('fecha_devolucion'));
-            })->orderBy('nombre')->get(),
+            })->when($installation->fase_flujo, fn ($q) => $q->whereIn('equipo_id', DB::table('pedido_equipos')->select('equipo_id')
+                ->where('pedido_id', $pedido)->whereIn('estado_asignacion', ['ASIGNADO', 'UTILIZADO'])))
+                ->orderBy('nombre')->get(),
             'materials' => DB::table('materiales')->where('estado', 'ACTIVO')->select('materiales.*')
-                ->selectRaw('CASE WHEN inventario_en_empaque = 1 THEN unidad_empaque ELSE unidad_base END as unidad_medida')->orderBy('nombre')->get(),
+                ->selectRaw('CASE WHEN inventario_en_empaque = 1 THEN unidad_empaque ELSE unidad_base END as unidad_medida')
+                ->when($installation->fase_flujo, fn ($q) => $q->whereIn('material_id', DB::table('pedido_materiales')->select('material_id')->where('pedido_id', $pedido)))
+                ->orderBy('nombre')->get(),
             'usedEquipment' => DB::table('pedido_equipos as pe')->join('equipos as e', 'e.equipo_id', '=', 'pe.equipo_id')
                 ->where('pe.pedido_id', $pedido)->select('pe.*', 'e.codigo', 'e.nombre', 'e.numero_serie', 'e.marca', 'e.modelo')->get(),
             'usedMaterials' => DB::table('pedido_materiales as pm')->join('materiales as m', 'm.material_id', '=', 'pm.material_id')
                 ->where('pm.pedido_id', $pedido)->select('pm.*', 'm.codigo', 'm.nombre', 'm.unidad_base', 'm.unidad_empaque', 'm.inventario_en_empaque')
                 ->selectRaw('CASE WHEN m.inventario_en_empaque = 1 THEN m.unidad_empaque ELSE m.unidad_base END as unidad_medida')->get(),
+            'incidents' => DB::table('incidencias_instalacion')->where('pedido_id', $pedido)->orderByDesc('incidencia_id')->get(),
+            'driveStatus' => DB::table('evidencias_drive_instalacion')->where('pedido_id', $pedido)->get()->groupBy('tipo'),
+            'driveConfigured' => $this->drive->configured(),
+            'pendingReprogramming' => DB::table('pedido_reprogramaciones')->where('pedido_id', $pedido)
+                ->where('estado', 'SOLICITADA')->first(),
+            'latestApprovedReprogramming' => DB::table('pedido_reprogramaciones')->where('pedido_id', $pedido)
+                ->where('estado', 'APROBADA')->orderByDesc('reprogramacion_id')->first(),
         ]);
     }
 
-    private function saved(int $id, string $message)
+    private function saved(int $id, string $message, ?string $section = null)
     {
-        return redirect()->route('technician.show', $id)->with('status', $message);
+        $url = route('technician.show', $id).($section ? '#'.$section : '');
+
+        return redirect()->to($url)->with('status', $message);
     }
 
     public function start(Request $request, int $pedido)
@@ -92,11 +119,45 @@ class TechnicianController extends Controller
         return $this->saved($pedido, 'Inicio registrado. La instalación está en proceso.');
     }
 
-    public function finish(Request $request, int $pedido)
+    public function confirm(Request $request, int $pedido)
     {
-        $this->installations->finish($request->user(), $pedido);
+        $this->orders->confirm($request->user(), $pedido);
+        return $this->saved($pedido, 'Asignación confirmada. Registra el inicio al llegar al lugar de instalación.');
+    }
 
-        return $this->saved($pedido, 'Instalación completada correctamente.');
+    public function incident(Request $request, int $pedido)
+    {
+        $this->installations->find($request->user(), $pedido);
+        $data = $request->validate([
+            'tipo' => ['required', 'in:AVERIA,EXTRAVIO,DESPERDICIO,OTRO'],
+            'recurso_tipo' => ['required', 'in:EQUIPO,MATERIAL,OTRO'],
+            'recurso_id' => ['nullable', 'integer', 'min:1'],
+            'recurso_descripcion' => ['required', 'string', 'max:200'],
+            'cantidad' => ['nullable', 'numeric', 'gt:0', 'max:999999999.999'],
+            'causa' => ['required', 'string', 'max:500'],
+            'observacion' => ['required', 'string', 'max:5000'],
+            'evidencia' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+        ]);
+        $file = $request->file('evidencia');
+        unset($data['evidencia']);
+        $this->installations->incident($request->user(), $pedido, $data, $file);
+        return $this->saved($pedido, 'Incidencia registrada para revisión del jefe de Instalaciones.');
+    }
+
+    public function syncEvidence(Request $request, int $pedido)
+    {
+        $count = $this->installations->syncPending($request->user(), $pedido);
+        return $this->saved($pedido, $count ? 'Evidencias confirmadas en Google Drive: '.$count.'.' : 'Los archivos siguen pendientes en Drive. Comprueba la conexión o informa al responsable del sistema.', 'instalacion-evidencias')
+            ->with('evidence_result', 'DRIVE');
+    }
+
+    public function downloadIncident(Request $request, int $pedido, int $incident)
+    {
+        $this->installations->find($request->user(), $pedido);
+        $record = DB::table('incidencias_instalacion')->where('pedido_id', $pedido)->where('incidencia_id', $incident)->first();
+        abort_unless($record && $record->evidencia_ruta && preg_match('#^installation-incidents/[a-zA-Z0-9]+\.[a-zA-Z0-9]+$#D', $record->evidencia_ruta)
+            && Storage::disk('local')->exists($record->evidencia_ruta), 404);
+        return Storage::disk('local')->download($record->evidencia_ruta, $record->evidencia_nombre ?: basename($record->evidencia_ruta));
     }
 
     public function equipment(Request $request, int $pedido)
@@ -132,25 +193,24 @@ class TechnicianController extends Controller
 
     public function store(Request $request, int $pedido)
     {
-        return $this->upload($request, $pedido, false);
+        return $this->upload($request, $pedido);
     }
 
-    public function contractEvidence(Request $request, int $pedido)
-    {
-        return $this->upload($request, $pedido, true);
-    }
-
-    private function upload(Request $request, int $pedido, bool $contract)
+    private function upload(Request $request, int $pedido)
     {
         $this->installations->find($request->user(), $pedido);
         $data = $request->validate([
-            'evidence' => ['required', 'file', $contract ? 'mimes:pdf,jpg,jpeg,png,webp' : 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'evidence' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'descripcion' => ['nullable', 'string', 'max:500'],
-        ], ['evidence.required' => 'Selecciona un archivo.', 'evidence.mimes' => $contract ? 'Usa un PDF o una imagen JPG, PNG o WEBP.' : 'Usa una imagen JPG, PNG o WEBP.',
+        ], ['evidence.required' => 'Selecciona un archivo.', 'evidence.mimes' => 'Usa una imagen JPG, PNG o WEBP.',
             'evidence.max' => 'El archivo no debe superar 5 MB.'], ['evidence' => 'archivo', 'descripcion' => 'descripción']);
-        $this->installations->evidence($request->user(), $pedido, $request->file('evidence'), $data['descripcion'] ?? null, $contract);
-
-        return $this->saved($pedido, $contract ? 'Evidencia vinculada al contrato correctamente.' : 'Evidencia fotográfica registrada correctamente.');
+        $this->installations->evidence($request->user(), $pedido, $request->file('evidence'), $data['descripcion'] ?? null);
+        $state = DB::table('evidencias_drive_instalacion')->where('pedido_id', $pedido)
+            ->where('tipo', 'FOTO')->orderByDesc('sincronizacion_id')->value('estado');
+        return $this->saved($pedido, $state === 'CONFIRMADO'
+            ? 'Archivo guardado y confirmado en Google Drive.'
+            : 'Archivo guardado en el sistema. Falta confirmar su envío a Google Drive.', 'instalacion-fotos')
+            ->with('evidence_result', 'FOTO');
     }
 
     public function download(Request $request, int $pedido, int $evidence)

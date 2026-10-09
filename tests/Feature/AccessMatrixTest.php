@@ -9,7 +9,9 @@ use App\Models\User;
 use App\Services\RoleAccessService;
 use App\Support\AccessCatalog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\Support\ClientHistoryFixtures;
 use Tests\TestCase;
 
@@ -26,7 +28,7 @@ class AccessMatrixTest extends TestCase
     {
         $expectations=[
             Role::MANAGER=>[['dashboard.view','roles.manage','technician.supervise'],['office.view','technician.panel','technician.start','employees.view','access.view']],
-            Role::OFFICE=>[['office.view','clients.create','clients.update','sales.create','orders.create','equipments.availability'],['dashboard.view','technician.panel','clients.status','contracts.update','payments.view','reports.view','kardex.view']],
+            Role::OFFICE=>[['office.view','office.coordination','clients.create','clients.update','sales.create','equipments.availability'],['dashboard.view','technician.panel','clients.status','contracts.update','orders.view','payments.view','reports.view','kardex.view']],
             Role::TECHNICIAN=>[['technician.panel','technician.material','contracts.assigned','equipments.assigned','kardex.related','plans.view','zones.view'],['dashboard.view','office.view','contracts.view','equipments.view','kardex.view','technician.supervise']],
             Role::WAREHOUSE=>[['equipments.create','equipments.import','materials.adjustment','kardex.view'],['clients.view','orders.view','reports.view','bi.view']],
             Role::IT=>[[],array_keys(AccessCatalog::permissions())],
@@ -113,17 +115,88 @@ class AccessMatrixTest extends TestCase
 
     public function test_orders_separate_registration_from_assignment_and_block_started_changes(): void
     {
+        Storage::fake('local');
         $admin=$this->actor(Role::ADMIN);$office=$this->actor(Role::OFFICE);$chief=$this->actor(Role::INSTALLATIONS);
         $client=Client::create(['tipo_documento'=>'DNI','numero_documento'=>'12345678','nombres_razon_social'=>'Cliente prueba','direccion'=>'Calle prueba','creado_por'=>$admin->getKey()]);
         ClientHistoryFixtures::attach($client,$admin,'ORD');
         $order=DB::table('pedidos_instalacion')->where('codigo','ORD-I-0')->first();
-        $this->signIn($office)->post('/orders',['contrato_id'=>$order->contrato_id])->assertSessionHasNoErrors();
+        $base=DB::table('contratos')->where('contrato_id',$order->contrato_id)->first();
+        $contractId=DB::table('contratos')->insertGetId([
+            'codigo'=>'ORD-C-NUEVO','cliente_id'=>$base->cliente_id,'plan_id'=>$base->plan_id,
+            'zona_id'=>$base->zona_id,'responsable_id'=>$base->responsable_id,
+            'fecha_inicio'=>$base->fecha_inicio,'fecha_fin'=>$base->fecha_fin,
+            'duracion_meses'=>$base->duracion_meses,'precio_contratado'=>$base->precio_contratado,
+            'direccion_servicio'=>$base->direccion_servicio,'estado'=>'ACTIVO',
+        ]);
+        $this->signIn($office)->get('/dashboard/call-center/visitas')->assertOk();
+        $this->get('/orders')->assertForbidden();
+        $this->post('/orders',['contrato_id'=>$contractId])->assertStatus(405);
+        app(\App\Services\InstallationOrderService::class)->createForContract(DB::table('contratos')->where('contrato_id',$contractId)->first(),$chief->getKey());
+        $this->signIn($chief)->post('/orders',['contrato_id'=>$contractId])->assertStatus(405);
         $new=DB::table('pedidos_instalacion')->orderByDesc('pedido_id')->first();
-        $this->post('/orders',['contrato_id'=>$order->contrato_id])->assertSessionHasErrors('contrato_id');
-        $this->patch('/orders/'.$new->pedido_id.'/schedule',[])->assertForbidden();
+        $this->signIn($office)->patch('/orders/'.$new->pedido_id.'/schedule',[])->assertForbidden();
+        $this->patch('/orders/'.$new->pedido_id.'/coordinate', [])->assertNotFound();
+        $this->get('/dashboard/call-center/visitas?search=ORD-C-NUEVO')->assertOk()
+            ->assertSee('Confirmar fecha de visita')->assertSee('ORD-C-NUEVO')
+            ->assertSee('name="fecha_visita"', false)->assertSee('Mañana · 08:00 a 12:00');
+        $this->signIn($chief)->get('/orders?search=ORD-C-NUEVO')->assertOk()
+            ->assertSee('order-next-attention')->assertSee('Call Center debe confirmar la fecha con el cliente');
+        $this->signIn($office);
+        $this->patch('/dashboard/call-center/visitas/'.$new->pedido_id,[
+            'fecha_visita'=>now('America/Lima')->addDay()->toDateString(),
+            'hora_inicio'=>'13:00', 'franja_horaria'=>'08:00 a 12:00',
+            'canal_coordinacion'=>'LLAMADA',
+        ])->assertSessionHasErrors('hora_inicio');
+        $this->patch('/dashboard/call-center/visitas/'.$new->pedido_id,[
+            'fecha_visita'=>now('America/Lima')->addDay()->toDateString(), 'hora_inicio'=>'09:00',
+            'franja_horaria'=>'08:00 a 12:00','canal_coordinacion'=>'LLAMADA',
+        ])->assertSessionHasNoErrors();
+        $this->signIn($chief)->get('/orders?search=ORD-C-NUEVO')->assertOk()
+            ->assertSee('08:00 a 12:00');
         Employee::whereKey($order->tecnico_id)->update(['cargo'=>'Técnico de Campo']);
-        $this->signIn($chief)->patch('/orders/'.$new->pedido_id.'/schedule',['tecnico_id'=>$order->tecnico_id,'fecha_programada'=>now()->addDay()->format('Y-m-d H:i')])->assertSessionHasNoErrors();
+        \Illuminate\Support\Facades\Mail::fake();
+        $this->signIn($chief)->patch('/orders/'.$new->pedido_id.'/schedule',['tecnico_id'=>$order->tecnico_id])
+            ->assertSessionHasErrors('pedido');
+        $equipmentId=DB::table('equipos')->insertGetId(['codigo'=>'EQ-ORD-NEW','nombre'=>'Router nuevo','tipo'=>'Router','creado_por'=>$admin->getKey()]);
+        $materialId=DB::table('materiales')->insertGetId(['codigo'=>'MAT-ORD-NEW','nombre'=>'Cable nuevo','unidad_base'=>'m','stock_actual'=>'10.000','creado_por'=>$admin->getKey()]);
+        $this->post('/orders/'.$new->pedido_id.'/equipment',['equipo_tipo'=>'Router'])->assertSessionHasNoErrors();
+        $this->post('/orders/'.$new->pedido_id.'/material',['material_id'=>$materialId,'cantidad_asignada'=>'2'])->assertSessionHasNoErrors();
+        $warehouse=$this->actor(Role::WAREHOUSE);
+        foreach (DB::table('pedido_solicitudes_recurso')->where('pedido_id',$new->pedido_id)->get() as $resourceRequest) {
+            $this->signIn($warehouse)->patch('/warehouse/requests/'.$resourceRequest->solicitud_id.'/fulfill',
+                $resourceRequest->tipo === 'EQUIPO' ? ['equipo_id'=>$equipmentId] : [])->assertSessionHasNoErrors();
+        }
+        $this->signIn($chief)->patch('/orders/'.$new->pedido_id.'/schedule',['tecnico_id'=>$order->tecnico_id])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('orders.index', ['search' => $new->codigo]).'#pedido-'.$new->pedido_id);
+        $this->get('/orders?search=ORD-C-NUEVO')->assertOk()
+            ->assertSee('Pedidos: asignación y recursos')
+            ->assertSee('Supervisión de instalaciones')
+            ->assertSee('Solicitar recursos adicionales')
+            ->assertSee('Enviar solicitud a Almacén')
+            ->assertSee('Solicitudes del pedido');
         $this->assertDatabaseHas('pedidos_instalacion',['pedido_id'=>$new->pedido_id,'tecnico_id'=>$order->tecnico_id,'estado'=>'PROGRAMADO']);
+        $this->signIn($office)->patch('/dashboard/call-center/visitas/'.$new->pedido_id, [
+            'fecha_visita'=>now('America/Lima')->addDays(2)->toDateString(), 'hora_inicio'=>'14:00',
+            'franja_horaria'=>'14:00 a 18:00','canal_coordinacion'=>'WHATSAPP',
+            'motivo_codigo'=>'OTRO',
+        ])->assertSessionHasErrors('motivo_reprogramacion');
+        $this->patch('/dashboard/call-center/visitas/'.$new->pedido_id, [
+            'fecha_visita'=>now('America/Lima')->addDays(2)->toDateString(), 'hora_inicio'=>'14:00',
+            'franja_horaria'=>'14:00 a 18:00','canal_coordinacion'=>'WHATSAPP',
+            'motivo_codigo'=>'SOLICITUD_CLIENTE',
+            'motivo_reprogramacion'=>'Cliente pidió otra fecha',
+            'evidencia_acuerdo'=>UploadedFile::fake()->createWithContent('acuerdo.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN9sAAAAASUVORK5CYII=')),
+        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('pedidos_instalacion', ['pedido_id'=>$new->pedido_id,'estado'=>'PROGRAMADO']);
+        $requestId=DB::table('pedido_reprogramaciones')->where('pedido_id',$new->pedido_id)->value('reprogramacion_id');
+        $manager=$this->actor(Role::MANAGER);
+        $this->signIn($manager)->patch('/orders/'.$new->pedido_id.'/reprogramming/'.$requestId.'/approve', ['evidencia_revisada'=>'1'])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('pedidos_instalacion', [
+            'pedido_id'=>$new->pedido_id,'estado'=>'REPROGRAMADO',
+            'fase_flujo'=>'ESPERANDO_CONFIRMACION_TECNICO',
+        ]);
+        $this->signIn($chief);
         DB::table('pedidos_instalacion')->where('pedido_id',$new->pedido_id)->update(['estado'=>'EN_PROCESO']);
         $this->patch('/orders/'.$new->pedido_id.'/cancel')->assertSessionHasErrors('pedido');
     }

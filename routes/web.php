@@ -97,11 +97,13 @@ Route::middleware(['auth'])->group(function (): void {
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/technician', [TechnicianController::class, 'index'])->name('technician.index');
     Route::post('/technician/installations/{pedido}/start', [TechnicianController::class, 'start'])->whereNumber('pedido')->name('technician.start');
-    Route::post('/technician/installations/{pedido}/finish', [TechnicianController::class, 'finish'])->whereNumber('pedido')->name('technician.finish');
+    Route::post('/technician/installations/{pedido}/confirm', [TechnicianController::class, 'confirm'])->whereNumber('pedido')->name('technician.confirm');
+    Route::post('/technician/installations/{pedido}/incident', [TechnicianController::class, 'incident'])->whereNumber('pedido')->name('technician.incident');
+    Route::get('/technician/installations/{pedido}/incident/{incident}', [TechnicianController::class, 'downloadIncident'])->whereNumber(['pedido', 'incident'])->name('technician.incident.download');
+    Route::post('/technician/installations/{pedido}/sync-evidence', [TechnicianController::class, 'syncEvidence'])->whereNumber('pedido')->name('technician.syncEvidence');
     Route::post('/technician/installations/{pedido}/equipment', [TechnicianController::class, 'equipment'])->whereNumber('pedido')->name('technician.equipment');
     Route::post('/technician/installations/{pedido}/material', [TechnicianController::class, 'material'])->whereNumber('pedido')->name('technician.material');
     Route::post('/technician/installations/{pedido}/observation', [TechnicianController::class, 'observation'])->whereNumber('pedido')->name('technician.observation');
-    Route::post('/technician/installations/{pedido}/contract-evidence', [TechnicianController::class, 'contractEvidence'])->whereNumber('pedido')->name('technician.contractEvidence');
     Route::get('/technician/installations/{pedido}/contract-evidence/{evidence}/preview', [TechnicianController::class, 'previewContract'])->whereNumber(['pedido', 'evidence'])->name('technician.contract.preview');
     Route::get('/technician/installations/{pedido}/contract-evidence/{evidence}', [TechnicianController::class, 'downloadContract'])->whereNumber(['pedido', 'evidence'])->name('technician.contract.download');
     Route::get('/technician/installations/{pedido}', [TechnicianController::class, 'show'])->whereNumber('pedido')->name('technician.show');
@@ -197,6 +199,9 @@ Route::middleware(['auth'])->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard/gerencia', [DashboardController::class, 'management'])->name('dashboard.management');
     Route::get('/dashboard/call-center', [DashboardController::class, 'office'])->name('dashboard.office');
+    Route::get('/dashboard/call-center/visitas', [\App\Http\Controllers\OfficeInstallationCoordinationController::class, 'index'])->name('office.coordination.index');
+    Route::patch('/dashboard/call-center/visitas/{pedido}', [\App\Http\Controllers\OfficeInstallationCoordinationController::class, 'save'])->whereNumber('pedido')->name('office.coordination.save');
+    Route::post('/dashboard/call-center/visitas/contratos/{contrato}', [\App\Http\Controllers\OfficeInstallationCoordinationController::class, 'saveContract'])->whereNumber('contrato')->name('office.coordination.contract');
     Route::get('/executions', [TechnicianController::class, 'index'])->name('executions.index');
     Route::get('/assigned/contracts', [\App\Http\Controllers\ScopedAccessController::class, 'contracts'])->name('contracts.assigned');
     Route::get('/assigned/equipment', [\App\Http\Controllers\ScopedAccessController::class, 'equipment'])->name('equipments.assigned');
@@ -205,9 +210,21 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/availability/materials', [\App\Http\Controllers\ScopedAccessController::class, 'materialAvailability'])->name('materials.availability');
     Route::get('/orders', [\App\Http\Controllers\InstallationOrderController::class, 'index'])->name('orders.index');
     Route::get('/assigned/orders', [\App\Http\Controllers\InstallationOrderController::class, 'index'])->name('orders.assigned');
-    Route::post('/orders', [\App\Http\Controllers\InstallationOrderController::class, 'store'])->name('orders.store');
+    Route::patch('/orders/{pedido}/reprogramming/{reprogramacion}/approve', [\App\Http\Controllers\InstallationOrderController::class, 'approveReprogramming'])->whereNumber('pedido')->whereNumber('reprogramacion')->name('orders.reprogram.approve');
+    Route::patch('/orders/{pedido}/reprogramming/{reprogramacion}/reject', [\App\Http\Controllers\InstallationOrderController::class, 'rejectReprogramming'])->whereNumber('pedido')->whereNumber('reprogramacion')->name('orders.reprogram.reject');
+    Route::get('/orders/{pedido}/reprogramming/{reprogramacion}/evidence', [\App\Http\Controllers\InstallationOrderController::class, 'downloadReprogrammingEvidence'])->whereNumber('pedido')->whereNumber('reprogramacion')->name('orders.reprogram.evidence');
     Route::patch('/orders/{pedido}/schedule', [\App\Http\Controllers\InstallationOrderController::class, 'schedule'])->whereNumber('pedido')->name('orders.schedule');
+    Route::post('/orders/{pedido}/resources', [\App\Http\Controllers\InstallationOrderController::class, 'requestResources'])->whereNumber('pedido')->name('orders.resources.request');
+    Route::post('/orders/{pedido}/equipment', [\App\Http\Controllers\InstallationOrderController::class, 'equipment'])->whereNumber('pedido')->name('orders.equipment');
+    Route::post('/orders/{pedido}/material', [\App\Http\Controllers\InstallationOrderController::class, 'material'])->whereNumber('pedido')->name('orders.material');
+    Route::patch('/orders/{pedido}/resources/{solicitud}/approve', [\App\Http\Controllers\InstallationOrderController::class, 'approveResource'])->whereNumber('pedido')->whereNumber('solicitud')->name('orders.resources.approve');
+    Route::patch('/orders/{pedido}/resources/{solicitud}/reject', [\App\Http\Controllers\InstallationOrderController::class, 'rejectResource'])->whereNumber('pedido')->whereNumber('solicitud')->name('orders.resources.reject');
+    Route::get('/warehouse/requests', [\App\Http\Controllers\WarehouseRequestController::class, 'index'])->name('warehouse.requests.index');
+    Route::patch('/warehouse/requests/{solicitud}/fulfill', [\App\Http\Controllers\WarehouseRequestController::class, 'fulfill'])->whereNumber('solicitud')->name('warehouse.requests.fulfill');
+    Route::patch('/warehouse/requests/{solicitud}/escalate', [\App\Http\Controllers\WarehouseRequestController::class, 'escalate'])->whereNumber('solicitud')->name('warehouse.requests.escalate');
+    Route::patch('/warehouse/requests/{solicitud}/reject', [\App\Http\Controllers\WarehouseRequestController::class, 'reject'])->whereNumber('solicitud')->name('warehouse.requests.reject');
     Route::patch('/orders/{pedido}/cancel', [\App\Http\Controllers\InstallationOrderController::class, 'cancel'])->whereNumber('pedido')->name('orders.cancel');
+    Route::patch('/orders/{pedido}/reopen', [\App\Http\Controllers\InstallationOrderController::class, 'reopen'])->whereNumber('pedido')->name('orders.reopen');
 });
 
 Route::post('/sales/contracts/{contract}/confirm', [SaleController::class, 'confirm'])->middleware('auth')->whereNumber('contract')->name('sales.confirm');

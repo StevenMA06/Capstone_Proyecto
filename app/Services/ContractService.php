@@ -24,7 +24,9 @@ class ContractService
         private ContractSignatureVerifier $signatures,
         private ContractPeriodRepository $periods,
         private PaymentRepository $payments,
-        private SaleRepository $sales
+        private SaleRepository $sales,
+        private InstallationOrderService $installationOrders,
+        private InstallationDriveService $installationDrive
     ) {}
 
     public function search(array $filters)
@@ -44,7 +46,8 @@ class ContractService
 
     public function finalizeExpired(): int
     {
-        return $this->contracts->finalizeExpired(now()->toDateString());
+        return $this->contracts->finalizeExpired(now()->toDateString(),
+            fn (object $contract) => $this->installationOrders->cancelPendingForExpiredContract((int) $contract->contrato_id));
     }
 
     public function formData(?int $id = null): array
@@ -75,11 +78,11 @@ class ContractService
         return $data;
     }
 
-    public function create(array $data): int
+    public function create(array $data, int $actorId): int
     {
         for ($attempt = 0; $attempt < 3; $attempt++) {
             try {
-                return DB::transaction(function () use ($data): int {
+                return DB::transaction(function () use ($data, $actorId): int {
                     $plan = $this->plans->lock($data['plan_id']);
                     if ($plan->estado !== 'ACTIVO') {
                         throw ValidationException::withMessages(['plan_id' => 'Este plan fue inhabilitado. Selecciona otro plan activo.']);
@@ -87,7 +90,7 @@ class ContractService
                     $client = $this->validateSelections($data);
                     $end = $this->endDate($data);
 
-                    return $this->contracts->create(Arr::only($data, [
+                    $contractId = $this->contracts->create(Arr::only($data, [
                         'cliente_id', 'plan_id', 'zona_id', 'responsable_id', 'fecha_inicio',
                         'duracion_meses', 'observaciones',
                     ]) + [
@@ -97,6 +100,9 @@ class ContractService
                         'direccion_servicio' => $client->direccion,
                         'estado' => 'PENDIENTE',
                     ]);
+                    $this->installationOrders->createForContract($this->contracts->findDetailed($contractId), $actorId);
+
+                    return $contractId;
                 });
             } catch (UniqueConstraintViolationException $error) {
                 if (! str_contains($error->getMessage(), 'uq_contrato_codigo') || $attempt === 2) {
@@ -166,6 +172,7 @@ class ContractService
                     $attributes['estado'] = 'CANCELADO';
                     $attributes['periodo_actual'] = $period->getKey();
                     $this->sales->annul($id);
+                    $this->installationOrders->cancelForContract($id, $userId);
                     $feedback = ['message' => 'El contrato se canceló correctamente.', 'kind' => 'cancelled'];
                 }
                 if ($termsChanged && in_array($current->estado, ['ACTIVO', 'PENDIENTE'], true) && ($current->estado === 'ACTIVO' || $current->pdf_contrato_ruta)) {
@@ -204,6 +211,7 @@ class ContractService
                     // Si el contrato pasa a ACTIVO, crear período inicial y generar pagos
                     if ($newState === 'ACTIVO' && $current->estado !== 'ACTIVO') {
                         $this->activateContractWithPayments($id, auth()->id() ?? 1);
+                        $this->installationOrders->createForContract($this->contracts->find($id), auth()->id() ?? 1);
                     }
 
                     $feedback = $expiredAtConfirmation
@@ -221,6 +229,15 @@ class ContractService
         }
         if ($oldPath) {
             Storage::disk('local')->delete($oldPath);
+        }
+
+        if ($path && DB::table('contratos')->where('contrato_id', $id)->value('firma_revision') === 'VERIFICADA') {
+            $orderId = DB::table('pedidos_instalacion')->where('contrato_id', $id)->value('pedido_id');
+            if ($orderId) {
+                $sync = fn () => $this->installationDrive->syncVerifiedContract((int) $orderId);
+                if (DB::transactionLevel() > 0) DB::afterCommit($sync);
+                else $sync();
+            }
         }
 
         return $feedback;
@@ -426,6 +443,8 @@ class ContractService
                 'periodo_actual' => $nuevoPeriodo->getKey(),
             ]);
 
+            $orderResumed = $this->installationOrders->resumeForReactivatedContract($contractId, $userId);
+
             // Generar nuevos pagos mensuales para el nuevo período
             $paymentsGenerated = $this->payments->generateMonthlyPayments(
                 $this->contracts->find($contractId),
@@ -434,11 +453,9 @@ class ContractService
             $this->sales->confirm($this->contracts->find($contractId));
 
             return [
-                'message' => sprintf(
-                    'Contrato reactivado correctamente. Se creó el período %d y se generaron %d pagos mensuales.',
-                    $nuevoPeriodo->numero_periodo,
-                    count($paymentsGenerated)
-                ),
+                'message' => sprintf('Contrato reactivado correctamente. Se creó el período %d y se generaron %d pagos mensuales.%s',
+                    $nuevoPeriodo->numero_periodo, count($paymentsGenerated),
+                    $orderResumed ? ' El pedido de instalación volvió a coordinación para confirmar la visita.' : ''),
                 'kind' => 'reactivated',
                 'periodo_numero' => $nuevoPeriodo->numero_periodo,
                 'pagos_generados' => count($paymentsGenerated),

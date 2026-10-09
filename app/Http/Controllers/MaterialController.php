@@ -14,6 +14,7 @@ use App\Services\InventoryService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -43,6 +44,17 @@ class MaterialController extends Controller
             $filters['estado'] ?? null,
             $filters['low_stock'] ?? null
         );
+        $materialIds = $materials->getCollection()->pluck('material_id');
+        $reserved = DB::table('pedido_materiales as pm')->join('pedidos_instalacion as p', 'p.pedido_id', '=', 'pm.pedido_id')
+            ->whereIn('pm.material_id', $materialIds)->whereIn('p.estado', ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO', 'EN_PROCESO'])
+            ->groupBy('pm.material_id')->select('pm.material_id')
+            ->selectRaw('SUM(pm.cantidad_asignada - pm.cantidad_utilizada - pm.cantidad_devuelta) as reservado')
+            ->pluck('reservado', 'material_id');
+        foreach ($materials as $material) {
+            $reservedQuantity = (float) ($reserved[$material->material_id] ?? 0);
+            $material->setAttribute('reservado_pedido', $reservedQuantity);
+            $material->setAttribute('stock_libre', max(0, (float) $material->stock_actual - $reservedQuantity));
+        }
 
         $statistics = $this->materials->countByStockCondition();
 

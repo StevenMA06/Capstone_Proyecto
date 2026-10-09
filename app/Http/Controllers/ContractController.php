@@ -44,9 +44,9 @@ class ContractController extends Controller
 
     public function store(StoreContractRequest $request)
     {
-        $id = $this->contracts->create($request->validated());
+        $id = $this->contracts->create($request->validated(), (int) $request->user()->getKey());
 
-        return redirect()->route('contracts.show', $id)->with('status', 'Contrato registrado correctamente. Código generado automáticamente.');
+        return redirect()->route('contracts.show', $id)->with('status', 'Contrato registrado correctamente. Su pedido de instalación ya está disponible para coordinar la visita.');
     }
 
     public function show(Request $request, int $contract)

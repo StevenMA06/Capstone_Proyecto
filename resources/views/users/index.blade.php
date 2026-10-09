@@ -16,7 +16,7 @@
 @forelse($users as $account)<tr>
     <td>#{{ $account->usuario_id }}</td><td>
 @routecan('users.show')<a href="{{ route('users.show', $account) }}">{{ $account->nombre_usuario }}</a>@endroutecan
-</td><td>{{ $account->name }}</td><td>{{ $account->role_names }}</td><td><span class="state {{ ($account->estado === 'ACTIVO') ? 'active' : 'inactive' }}">{{ ($account->estado === 'ACTIVO') ? 'Activo' : ucfirst(strtolower($account->estado)) }}</span></td><td><div class="row-actions">
+</td><td>{{ $account->employee?->full_name ?? 'Sin empleado asociado' }}</td><td>{{ $account->role_names }}</td><td><span class="state {{ ($account->estado === 'ACTIVO') ? 'active' : 'inactive' }}">{{ ($account->estado === 'ACTIVO') ? 'Activo' : ucfirst(strtolower($account->estado)) }}</span></td><td><div class="row-actions">
 @routecan('users.show')<a href="{{ route('users.show', $account) }}" aria-label="Ver ficha de {{ $account->nombre_usuario }}">Ver ficha</a>@endroutecan
 @can('edit-user', $account)@can('users.manage')
 @routecan('users.edit')<a href="{{ route('users.edit', $account) }}" aria-label="Editar {{ $account->nombre_usuario }}">Editar</a>@endroutecan

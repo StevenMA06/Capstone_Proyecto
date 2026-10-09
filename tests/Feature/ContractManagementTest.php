@@ -239,6 +239,7 @@ class ContractManagementTest extends TestCase
         [$manager,$client,$contract]=$this->records();
         Storage::fake('local');
         DB::table('contratos')->where('contrato_id',$contract->contrato_id)->update(['estado'=>'PENDIENTE','direccion_servicio'=>$client->direccion]);
+        DB::table('pedidos_instalacion')->where('contrato_id', $contract->contrato_id)->delete();
         $office=User::factory()->create(['rol_id'=>Role::where('nombre',Role::OFFICE)->value('rol_id')]);
         $this->mock(ContractSignatureVerifier::class, fn ($mock) => $mock->shouldReceive('verify')->once()->andReturn(['status'=>'signed']));
         $this->signIn($office)->post('/sales/contracts/'.$contract->contrato_id.'/confirm',[
@@ -247,7 +248,52 @@ class ContractManagementTest extends TestCase
         ])->assertSessionHasNoErrors()->assertRedirect('/contracts/'.$contract->contrato_id);
         $this->assertDatabaseHas('contratos',['contrato_id'=>$contract->contrato_id,'estado'=>'ACTIVO','duracion_meses'=>$contract->duracion_meses,'precio_contratado'=>$contract->precio_contratado]);
         $this->assertDatabaseHas('ventas',['contrato_id'=>$contract->contrato_id,'estado'=>'CONFIRMADA']);
+        $this->assertDatabaseHas('pedidos_instalacion', [
+            'contrato_id' => $contract->contrato_id, 'estado' => 'PENDIENTE',
+            'fase_flujo' => 'PENDIENTE_COORDINACION', 'tecnico_id' => null,
+        ]);
         $this->put('/contracts/'.$contract->contrato_id,[])->assertForbidden();
+    }
+
+    public function test_confirmed_visit_creates_order_before_the_contract_is_signed(): void
+    {
+        [, $client, $contract] = $this->records();
+        DB::table('pedidos_instalacion')->where('contrato_id', $contract->contrato_id)->delete();
+        DB::table('contratos')->where('contrato_id', $contract->contrato_id)
+            ->update(['estado' => 'PENDIENTE', 'pdf_contrato_ruta' => null, 'firma_revision' => null]);
+        $office = User::factory()->create(['rol_id' => Role::where('nombre', Role::OFFICE)->value('rol_id')]);
+        $this->signIn($office)->get('/dashboard/call-center/visitas')->assertOk()
+            ->assertSee('Contratos por coordinar')->assertSee($contract->codigo);
+        $visit = now('America/Lima')->addDays(3)->setTime(9, 0);
+        $data = [
+            'fecha_visita' => $visit->format('Y-m-d'), 'hora_inicio' => '09:00',
+            'franja_horaria' => '08:00 a 12:00', 'canal_coordinacion' => 'LLAMADA',
+        ];
+        $url = '/dashboard/call-center/visitas/contratos/'.$contract->contrato_id;
+        $this->post($url, $data)->assertSessionHasErrors('aceptacion_cliente');
+        $this->assertDatabaseMissing('pedidos_instalacion', ['contrato_id' => $contract->contrato_id]);
+        $this->post($url, $data + ['aceptacion_cliente' => '1'])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'PENDIENTE']);
+        $this->assertDatabaseHas('pedidos_instalacion', [
+            'contrato_id' => $contract->contrato_id, 'cliente_id' => $client->getKey(),
+            'fecha_programada' => $visit->format('Y-m-d H:i:s'), 'franja_horaria' => '08:00 a 12:00',
+            'canal_coordinacion' => 'LLAMADA', 'fase_flujo' => 'PENDIENTE_ASIGNACION',
+        ]);
+        $this->post($url, $data + ['aceptacion_cliente' => '1'])->assertSessionHasErrors('contrato');
+        $this->assertSame(1, DB::table('pedidos_instalacion')->where('contrato_id', $contract->contrato_id)->count());
+
+        Storage::fake('local');
+        config()->set('services.installation_drive.folder_id', null);
+        $this->mock(ContractSignatureVerifier::class, fn ($mock) => $mock->shouldReceive('verify')->once()
+            ->andReturn(['status' => 'signed']));
+        $this->post('/sales/contracts/'.$contract->contrato_id.'/confirm', [
+            'documento_pdf' => UploadedFile::fake()->createWithContent('firmado.pdf', "%PDF-1.4\nDocumento firmado"),
+        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'ACTIVO']);
+        $this->assertSame(1, DB::table('pedidos_instalacion')->where('contrato_id', $contract->contrato_id)->count());
+        $this->assertDatabaseHas('evidencias_drive_instalacion', [
+            'tipo' => 'CONTRATO_VALIDADO', 'evidencia_id' => $contract->contrato_id, 'estado' => 'PENDIENTE',
+        ]);
     }
 
     public function test_active_contracts_finalize_after_the_last_day_by_request_or_scheduler(): void

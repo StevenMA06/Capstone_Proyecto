@@ -2,6 +2,14 @@
 
 return [
 
+    'installation_drive' => [
+        'credentials_path' => env('INSTALLATION_DRIVE_CREDENTIALS_PATH'),
+        'client_id' => env('INSTALLATION_DRIVE_CLIENT_ID'),
+        'client_secret' => env('INSTALLATION_DRIVE_CLIENT_SECRET'),
+        'refresh_token' => env('INSTALLATION_DRIVE_REFRESH_TOKEN'),
+        'folder_id' => env('INSTALLATION_DRIVE_FOLDER_ID'),
+    ],
+
     'brevo' => [
         'key' => env('BREVO_API_KEY'),
     ],
