@@ -228,4 +228,46 @@ class Payment extends Model
         $this->notificacion_anulacion_enviada_en = now();
         $this->save();
     }
+
+    /**
+     * Verifica si el comprobante subido es una imagen
+     */
+    public function hasImageProof(): bool
+    {
+        if (empty($this->constancia_ruta)) {
+            return false;
+        }
+
+        $extension = strtolower(pathinfo($this->constancia_ruta, PATHINFO_EXTENSION));
+        return in_array($extension, ['jpg', 'jpeg', 'png']);
+    }
+
+    /**
+     * Verifica si el comprobante subido es un PDF
+     */
+    public function hasPdfProof(): bool
+    {
+        if (empty($this->constancia_ruta)) {
+            return false;
+        }
+
+        $extension = strtolower(pathinfo($this->constancia_ruta, PATHINFO_EXTENSION));
+        return $extension === 'pdf';
+    }
+
+    /**
+     * Obtiene el tipo de comprobante
+     */
+    public function getProofType(): ?string
+    {
+        if ($this->hasImageProof()) {
+            return 'image';
+        }
+
+        if ($this->hasPdfProof()) {
+            return 'pdf';
+        }
+
+        return null;
+    }
 }

@@ -136,17 +136,33 @@ class PaymentController extends Controller
         try {
             // Si se marcó como realizado, usar el método específico
             if ($request->boolean('marcar_realizado') && $payment->estado !== 'REALIZADO') {
-                $this->payments->markAsCompleted($payment, $request->validated(), $request->user());
+                $data = $request->validated();
                 
-                // Generar comprobante PDF automáticamente
-                try {
-                    $receiptPath = $this->receiptPdf->generate($payment);
-                    $payment->constancia_ruta = $receiptPath;
-                    $payment->save();
-                } catch (\Exception $e) {
-                    // Si falla el PDF, continuar pero sin constancia
-                    \Log::warning('No se pudo generar comprobante para pago '.$payment->codigo.': '.$e->getMessage());
+                // Manejar método de pago personalizado
+                if ($request->input('metodo_pago') === 'OTRO' && $request->filled('metodo_pago_otro')) {
+                    $data['metodo_pago'] = strtoupper($request->input('metodo_pago_otro'));
                 }
+                
+                // Manejar archivo de comprobante subido
+                if ($request->hasFile('comprobante_pago')) {
+                    $file = $request->file('comprobante_pago');
+                    $filename = 'comprobante_' . $payment->codigo . '_' . now()->format('YmdHis') 
+                        . '.' . $file->getClientOriginalExtension();
+                    
+                    // Guardar en disco público
+                    $path = $file->storeAs('pagos/comprobantes', $filename, 'public');
+                    $data['constancia_ruta'] = 'storage/' . $path;
+                    
+                    // Eliminar comprobante anterior si existe
+                    if ($payment->constancia_ruta && Storage::disk('public')->exists(str_replace('storage/', '', $payment->constancia_ruta))) {
+                        Storage::disk('public')->delete(str_replace('storage/', '', $payment->constancia_ruta));
+                    }
+                }
+                
+                $this->payments->markAsCompleted($payment, $data, $request->user());
+                
+                // NO GENERAR PDF AUTOMÁTICO (deshabilitado por solicitud del usuario)
+                // Si no se subió comprobante, el campo constancia_ruta quedará NULL
                 
                 return redirect()->route('payments.show', $payment)
                     ->with('status', 'Pago registrado como realizado correctamente.');
@@ -225,6 +241,19 @@ class PaymentController extends Controller
      */
     public function receipt(Payment $payment): StreamedResponse|RedirectResponse
     {
+        // Si hay un comprobante subido por el usuario, mostrarlo
+        if ($payment->constancia_ruta && !str_ends_with(strtolower($payment->constancia_ruta), '.pdf')) {
+            $storagePath = str_replace('storage/', '', $payment->constancia_ruta);
+            
+            if (Storage::disk('public')->exists($storagePath)) {
+                return Storage::disk('public')->response(
+                    $storagePath,
+                    basename($storagePath)
+                );
+            }
+        }
+        
+        // Si es PDF generado, mostrarlo
         try {
             $this->payments->generateReceipt($payment);
         } catch (ValidationException $exception) {
@@ -237,8 +266,8 @@ class PaymentController extends Controller
             && $this->receiptPdf->exists($payment->constancia_ruta);
 
         if (! $hasPdf) {
-            $payment->constancia_ruta = $this->receiptPdf->generate($payment);
-            $payment->save();
+            return redirect()->route('payments.show', $payment)
+                ->with('error', 'No hay comprobante disponible para este pago.');
         }
 
         $storagePath = preg_replace('#^storage/#', '', $payment->constancia_ruta);

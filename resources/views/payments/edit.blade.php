@@ -150,7 +150,7 @@
 
 {{-- Formulario de validación --}}
 @can('payments.manage')
-@routecan('payments.update')<form class="payment-validation-form" method="POST" action="{{ route('payments.update', $payment) }}" novalidate>
+@routecan('payments.update')<form class="payment-validation-form" method="POST" action="{{ route('payments.update', $payment) }}" enctype="multipart/form-data" novalidate>
     @csrf
     @method('PUT')
     
@@ -177,13 +177,69 @@
                 <label for="metodo_pago">Método de pago <span class="required">*</span></label>
                 <select id="metodo_pago" name="metodo_pago" 
                     @error('metodo_pago') aria-invalid="true" @enderror
+                    onchange="toggleMetodoPagoOtro()"
                     required>
                     <option value="">-- Seleccionar método --</option>
-                    @foreach(['EFECTIVO' => 'Efectivo', 'TRANSFERENCIA' => 'Transferencia', 'YAPE' => 'Yape', 'PLIN' => 'Plin', 'TARJETA' => 'Tarjeta', 'OTRO' => 'Otro'] as $value => $label)
+                    @foreach(['EFECTIVO' => 'Efectivo', 'TRANSFERENCIA' => 'Transferencia', 'YAPE' => 'Yape', 'PLIN' => 'Plin', 'TARJETA' => 'Tarjeta', 'OTRO' => 'Otro (especificar)'] as $value => $label)
                         <option value="{{ $value }}" @selected(old('metodo_pago', $payment->metodo_pago) === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
                 @error('metodo_pago')<span class="error-msg">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group full-width" id="metodo_pago_otro_container" style="display: none;">
+                <label for="metodo_pago_otro">Especifica el método de pago <span class="required">*</span></label>
+                <input id="metodo_pago_otro" name="metodo_pago_otro" type="text" maxlength="60"
+                    value="{{ old('metodo_pago_otro') }}"
+                    placeholder="Ej: PayPal, BCP Móvil, Western Union, etc."
+                    @error('metodo_pago_otro') aria-invalid="true" @enderror>
+                <small class="help-text">
+                    <i class="bi bi-info-circle"></i>
+                    Ingresa el nombre del método de pago que no está en la lista
+                </small>
+                @error('metodo_pago_otro')<span class="error-msg">{{ $message }}</span>@enderror
+            </div>
+
+            <div class="form-group full-width">
+                <label for="comprobante_pago">
+                    <i class="bi bi-file-earmark-image"></i> Comprobante de pago (JPG, PNG o PDF)
+                </label>
+                <input id="comprobante_pago" name="comprobante_pago" type="file" 
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onchange="previewComprobante(this)"
+                    @error('comprobante_pago') aria-invalid="true" @enderror>
+                <small class="help-text">
+                    <i class="bi bi-info-circle"></i>
+                    Sube una foto o PDF del voucher, captura de pantalla del pago, etc. Máximo 5MB.
+                </small>
+                @error('comprobante_pago')<span class="error-msg">{{ $message }}</span>@enderror
+                
+                {{-- Preview del archivo --}}
+                <div id="preview_comprobante" style="margin-top: 12px; display: none;">
+                    <div style="padding: 12px; background: #f3f4f6; border-radius: 8px; border: 1px solid #d1d5db;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="bi bi-file-earmark-check" style="font-size: 1.5rem; color: #087846;"></i>
+                            <div style="flex: 1;">
+                                <strong id="preview_filename" style="color: #1f2937;"></strong>
+                                <div id="preview_filesize" style="font-size: 0.875rem; color: #6b7280;"></div>
+                            </div>
+                            <button type="button" onclick="clearComprobante()" class="btn-secondary" style="padding: 6px 12px; font-size: 0.875rem;">
+                                <i class="bi bi-x-circle"></i> Quitar
+                            </button>
+                        </div>
+                        <img id="preview_image" style="max-width: 300px; max-height: 200px; margin-top: 12px; border-radius: 4px; display: none;">
+                    </div>
+                </div>
+
+                @if($payment->constancia_ruta)
+                    <div style="margin-top: 12px; padding: 10px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 6px;">
+                        <i class="bi bi-check-circle-fill" style="color: #10b981;"></i>
+                        <strong>Comprobante actual:</strong>
+                        <a href="{{ route('payments.receipt', $payment) }}" target="_blank" style="color: #087846; text-decoration: underline;">
+                            Ver comprobante existente
+                        </a>
+                    </div>
+                @endif
             </div>
 
             <div class="form-group full-width">
@@ -207,7 +263,7 @@
         @if($payment->estado !== 'REALIZADO' && auth()->user()->hasPermission('payments.complete'))
         <div class="info-banner">
             <i class="bi bi-info-circle-fill"></i>
-            <span>Al enviar este formulario, el pago se marcará como <strong>REALIZADO</strong> y se generará automáticamente el comprobante PDF.</span>
+            <span>Al enviar este formulario, el pago se marcará como <strong>REALIZADO</strong>.</span>
         </div>
         @endif
     </section>
@@ -223,6 +279,69 @@
     </div>
 </form>@endroutecan
 @endcan
+
+<script>
+function toggleMetodoPagoOtro() {
+    const select = document.getElementById('metodo_pago');
+    const container = document.getElementById('metodo_pago_otro_container');
+    const input = document.getElementById('metodo_pago_otro');
+    
+    if (select.value === 'OTRO') {
+        container.style.display = 'block';
+        input.required = true;
+    } else {
+        container.style.display = 'none';
+        input.required = false;
+        input.value = '';
+    }
+}
+
+function previewComprobante(input) {
+    const preview = document.getElementById('preview_comprobante');
+    const filename = document.getElementById('preview_filename');
+    const filesize = document.getElementById('preview_filesize');
+    const image = document.getElementById('preview_image');
+    
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        // Mostrar nombre y tamaño
+        filename.textContent = file.name;
+        filesize.textContent = formatFileSize(file.size);
+        preview.style.display = 'block';
+        
+        // Si es imagen, mostrar preview
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                image.src = e.target.result;
+                image.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            image.style.display = 'none';
+        }
+    }
+}
+
+function clearComprobante() {
+    const input = document.getElementById('comprobante_pago');
+    const preview = document.getElementById('preview_comprobante');
+    input.value = '';
+    preview.style.display = 'none';
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+// Al cargar la página, verificar si ya hay método OTRO seleccionado
+document.addEventListener('DOMContentLoaded', function() {
+    toggleMetodoPagoOtro();
+});
+</script>
 
 <style>
 .payment-validation-form {

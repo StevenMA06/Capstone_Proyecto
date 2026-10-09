@@ -52,10 +52,23 @@
             <div>
                 <dt>Comprobante de pago</dt>
                 <dd>
+                    @php
+                        $extension = strtolower(pathinfo($payment->constancia_ruta, PATHINFO_EXTENSION));
+                        $isImage = in_array($extension, ['jpg', 'jpeg', 'png']);
+                        $isPdf = $extension === 'pdf';
+                    @endphp
                     
-@routecan('payments.receipt')<a href="{{ route('payments.receipt', $payment) }}" target="_blank" class="action-link" style="display: inline-flex; align-items: center; gap: 6px;">
-                        <i class="bi bi-file-pdf-fill" style="color: #dc2626;"></i>
-                        Descargar comprobante PDF
+                    @routecan('payments.receipt')<a href="{{ route('payments.receipt', $payment) }}" target="_blank" class="action-link" style="display: inline-flex; align-items: center; gap: 6px;">
+                        @if($isImage)
+                            <i class="bi bi-file-earmark-image-fill" style="color: #087846;"></i>
+                            Ver imagen del comprobante
+                        @elseif($isPdf)
+                            <i class="bi bi-file-pdf-fill" style="color: #dc2626;"></i>
+                            Ver comprobante PDF
+                        @else
+                            <i class="bi bi-file-earmark-fill" style="color: #6b7280;"></i>
+                            Ver comprobante
+                        @endif
                     </a>@endroutecan
 
                 </dd>

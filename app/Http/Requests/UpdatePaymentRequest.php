@@ -41,6 +41,12 @@ class UpdatePaymentRequest extends FormRequest
             // Método de pago
             'metodo_pago' => ['nullable', 'string', 'max:60'],
             
+            // Método de pago personalizado (cuando se selecciona OTRO)
+            'metodo_pago_otro' => ['nullable', 'required_if:metodo_pago,OTRO', 'string', 'max:60'],
+            
+            // Comprobante de pago (archivo subido)
+            'comprobante_pago' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            
             // Referencia externa
             'referencia_externa' => ['nullable', 'string', 'max:120'],
             
@@ -65,6 +71,8 @@ class UpdatePaymentRequest extends FormRequest
             'fecha_pago' => 'fecha de pago',
             'monto' => 'monto',
             'metodo_pago' => 'método de pago',
+            'metodo_pago_otro' => 'método de pago personalizado',
+            'comprobante_pago' => 'comprobante de pago',
             'referencia_externa' => 'referencia externa',
             'estado' => 'estado',
             'constancia_ruta' => 'ruta de constancia',
@@ -87,6 +95,10 @@ class UpdatePaymentRequest extends FormRequest
             'before_or_equal' => 'La :attribute no puede ser futura.',
             'periodo_servicio.regex' => 'El periodo de servicio debe tener el formato YYYY-MM (ejemplo: 2026-09).',
             'in' => 'El :attribute seleccionado no es válido.',
+            'required_if' => 'El campo :attribute es obligatorio cuando seleccionas "Otro".',
+            'comprobante_pago.mimes' => 'El comprobante debe ser un archivo JPG, PNG o PDF.',
+            'comprobante_pago.max' => 'El comprobante no puede superar 5MB.',
+            'comprobante_pago.file' => 'El comprobante debe ser un archivo válido.',
         ];
     }
 

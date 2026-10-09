@@ -256,9 +256,17 @@
 @endcan
                         @endif
                         @if($payment->constancia_ruta && $payment->estado === 'REALIZADO')
+                            @php
+                                $extension = strtolower(pathinfo($payment->constancia_ruta, PATHINFO_EXTENSION));
+                                $isImage = in_array($extension, ['jpg', 'jpeg', 'png']);
+                            @endphp
                             
-@routecan('payments.receipt')<a href="{{ route('payments.receipt', $payment) }}" target="_blank" aria-label="Ver comprobante del pago {{ $payment->codigo }}" title="Ver comprobante PDF">
-                                <i class="bi bi-file-pdf-fill" style="color: #dc2626;"></i> Comprobante
+@routecan('payments.receipt')<a href="{{ route('payments.receipt', $payment) }}" target="_blank" aria-label="Ver comprobante del pago {{ $payment->codigo }}" title="Ver comprobante">
+                                @if($isImage)
+                                    <i class="bi bi-file-earmark-image-fill" style="color: #087846;"></i> Comprobante
+                                @else
+                                    <i class="bi bi-file-pdf-fill" style="color: #dc2626;"></i> Comprobante
+                                @endif
                             </a>@endroutecan
 
                         @endif
