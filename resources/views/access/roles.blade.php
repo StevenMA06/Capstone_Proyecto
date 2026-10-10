@@ -18,7 +18,7 @@
 <label>Descripción<textarea name="descripcion" required maxlength="255" rows="3">{{ old('descripcion', $selected?->descripcion) }}</textarea></label>
 <label>Estado<select name="estado"><option value="ACTIVO" @selected(old('estado', $selected?->estado) !== 'INACTIVO')>Activo</option><option value="INACTIVO" @selected(old('estado', $selected?->estado) === 'INACTIVO')>Inactivo</option></select></label></div>
 </fieldset>
-@php($groups = collect($catalog)->groupBy('modulo'))
+@php($groups = collect($catalog)->groupBy('modulo', preserveKeys: true))
 <section class="permission-editor" aria-labelledby="permission-title">
 <div class="permission-heading"><div><h3 id="permission-title">Permisos por módulo</h3><p>Selecciona lo que este rol puede consultar y hacer en cada módulo.</p></div><span class="permission-total" data-permission-total role="status" aria-live="polite"></span></div>
 <details class="permission-help"><summary>Cómo funcionan los permisos</summary><p>Al marcar una acción, se seleccionan también las consultas que necesita. Al retirar una consulta, se retiran las acciones que dependen de ella. Los filtros solo cambian lo que ves: conservan tu selección.</p><p>Los roles inactivos no conceden permisos. Empleados e historial de accesos son exclusivos del Administrador.</p><p>Para revisar recursos pendientes en Gerencia, habilita «Pedidos de instalación · Consultar» y «Autorizar recursos de instalación». El listado de Almacén requiere «Solicitudes a Almacén · Consultar solicitudes de Almacén».</p></details>
