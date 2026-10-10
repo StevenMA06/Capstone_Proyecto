@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', 'Roles y permisos')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/access-admin.css') }}"><script src="{{ asset('js/access-admin.js') }}" defer></script>@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/access-admin.css') }}?v=2"><script src="{{ asset('js/access-admin.js') }}?v=2" defer></script>@endpush
 @section('workspace-content')
 <header class="module-heading"><h1>Roles y permisos</h1><p>Configura las consultas y acciones autorizadas para cada rol.</p></header>
 @if(session('status'))<p class="notice success" role="status">{{ session('status') }}</p>@endif
@@ -17,9 +17,34 @@
 <div class="access-fields"><label>Nombre del rol<input name="nombre" maxlength="50" required value="{{ old('nombre', $selected?->nombre) }}"></label>
 <label>Descripción<textarea name="descripcion" required maxlength="255" rows="3">{{ old('descripcion', $selected?->descripcion) }}</textarea></label>
 <label>Estado<select name="estado"><option value="ACTIVO" @selected(old('estado', $selected?->estado) !== 'INACTIVO')>Activo</option><option value="INACTIVO" @selected(old('estado', $selected?->estado) === 'INACTIVO')>Inactivo</option></select></label></div>
-<h3>Permisos</h3><p>Cada casilla indica el acceso o la acción que habilita. Las acciones requieren su consulta. Para revisar solicitudes pendientes en Gerencia, habilita «Pedidos de instalación · Consultar» y «Pedidos de instalación · Autorizar recursos de instalación». Para consultar el listado de Almacén, habilita «Solicitudes a Almacén · Consultar solicitudes de Almacén». Los roles inactivos no conceden permisos. Empleados e historial de accesos son exclusivos del Administrador.</p>
-<div class="access-selection"><button class="secondary" type="button" data-permission-selection="all" hidden>Seleccionar todo</button><button class="secondary" type="button" data-permission-selection="none" hidden>Deseleccionar todo</button></div>
-<div class="access-checks">@foreach($catalog as $code => $permission)<label><input type="checkbox" name="permissions[]" value="{{ $code }}" data-dependencies="{{ implode(',', \App\Support\AccessCatalog::dependencies($code)) }}" @disabled(\App\Support\AccessCatalog::reserved($code)) @checked(in_array($code, old('permissions', $protected ? array_keys($catalog) : ($snapshot['permissions'] ?? []))))><span><strong>{{ $permission['modulo'] }} · {{ $permission['accion'] }}</strong><small>{{ $permission['descripcion'] }}</small></span></label>@endforeach</div>
+</fieldset>
+@php($groups = collect($catalog)->groupBy('modulo'))
+<section class="permission-editor" aria-labelledby="permission-title">
+<div class="permission-heading"><div><h3 id="permission-title">Permisos por módulo</h3><p>Selecciona lo que este rol puede consultar y hacer en cada módulo.</p></div><span class="permission-total" data-permission-total role="status" aria-live="polite"></span></div>
+<details class="permission-help"><summary>Cómo funcionan los permisos</summary><p>Al marcar una acción, se seleccionan también las consultas que necesita. Al retirar una consulta, se retiran las acciones que dependen de ella. Los filtros solo cambian lo que ves: conservan tu selección.</p><p>Los roles inactivos no conceden permisos. Empleados e historial de accesos son exclusivos del Administrador.</p><p>Para revisar recursos pendientes en Gerencia, habilita «Pedidos de instalación · Consultar» y «Autorizar recursos de instalación». El listado de Almacén requiere «Solicitudes a Almacén · Consultar solicitudes de Almacén».</p></details>
+<div class="permission-toolbar" data-permission-toolbar hidden>
+<label for="permission-search">Buscar permiso<input id="permission-search" type="search" placeholder="Ej. clientes, registrar, contrato firmado" autocomplete="off"></label>
+<label for="permission-module">Módulo<select id="permission-module"><option value="">Todos los módulos</option>@foreach($groups as $module => $permissions)<option value="{{ $module }}">{{ $module }}</option>@endforeach</select></label>
+<label for="permission-state">Mostrar<select id="permission-state"><option value="">Todos los permisos</option><option value="selected">Solo seleccionados</option><option value="unselected">Sin seleccionar</option></select></label>
+<button class="secondary" type="button" data-clear-permission-filters>Limpiar filtros</button>
+</div>
+<p class="permission-results" data-permission-results role="status" aria-live="polite"></p>
+<fieldset @disabled($protected || !auth()->user()->can('roles.manage'))>
+<div class="access-selection"><button class="secondary" type="button" data-permission-selection="all" hidden>Seleccionar resultados</button><button class="secondary" type="button" data-permission-selection="none" hidden>Deseleccionar resultados</button></div>
+<div class="permission-modules">
+@foreach($groups as $module => $permissions)
+<details class="permission-module" data-permission-module="{{ $module }}" open>
+<summary><span>{{ $module }}</span><small data-module-count></small></summary>
+<div class="permission-module-body">
+<button class="secondary permission-module-select" type="button" data-module-selection hidden>Seleccionar resultados de este módulo</button>
+<div class="access-checks">
+@foreach($permissions as $code => $permission)
+<label data-permission-option><input type="checkbox" name="permissions[]" value="{{ $code }}" data-dependencies="{{ implode(',', \App\Support\AccessCatalog::dependencies($code)) }}" @disabled(\App\Support\AccessCatalog::reserved($code)) @checked(in_array($code, old('permissions', $protected ? array_keys($catalog) : ($snapshot['permissions'] ?? []))))><span><strong>{{ $permission['accion'] }}</strong><small>{{ $permission['descripcion'] }}</small>@if(\App\Support\AccessCatalog::reserved($code))<em class="permission-reserved">Exclusivo del Administrador</em>@endif</span></label>
+@endforeach
+</div></div></details>
+@endforeach
+</div>
+<p class="permission-empty" data-permission-empty hidden>No hay permisos que coincidan. Prueba otra búsqueda o limpia los filtros.</p>
 <button class="action-link" type="submit">Guardar rol y permisos</button>
-</fieldset></form></section></div>
+</fieldset></section></form></section></div>
 @endsection
