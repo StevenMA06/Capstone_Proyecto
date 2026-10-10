@@ -42,7 +42,7 @@
             button.disabled = !candidates.length;
             button.textContent = candidates.length && candidates.every(box => box.checked)
                 ? 'Deseleccionar resultados de este módulo' : 'Seleccionar resultados de este módulo';
-            if (query.length || moduleFilter.value || state.value) section.open = true;
+            if (!section.hidden && (query.length || moduleFilter.value || state.value)) section.open = true;
         });
         form.querySelector('[data-permission-total]').textContent = boxes.filter(box => box.checked).length + ' de ' + boxes.length + ' seleccionados';
         form.querySelector('[data-permission-results]').textContent = visible + ' permisos en ' + visibleModules + ' módulos';
@@ -67,10 +67,15 @@
     });
     boxes.forEach(box => box.addEventListener('change', () => { setPermission(box, box.checked); refresh(); }));
     search.addEventListener('input', refresh);
-    moduleFilter.addEventListener('change', refresh);
+    moduleFilter.addEventListener('change', () => {
+        refresh();
+        if (!moduleFilter.value) modules.forEach(section => { section.open = false; });
+    });
     state.addEventListener('change', refresh);
     form.querySelector('[data-clear-permission-filters]').addEventListener('click', () => {
-        search.value = ''; moduleFilter.value = ''; state.value = ''; refresh(); search.focus();
+        search.value = ''; moduleFilter.value = ''; state.value = ''; refresh();
+        modules.forEach(section => { section.open = false; });
+        search.focus();
     });
     refresh();
 })();

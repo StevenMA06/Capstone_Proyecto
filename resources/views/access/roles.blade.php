@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', 'Roles y permisos')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/access-admin.css') }}?v=3"><script src="{{ asset('js/access-admin.js') }}?v=2" defer></script>@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/access-admin.css') }}?v=3"><script src="{{ asset('js/access-admin.js') }}?v=3" defer></script>@endpush
 @section('workspace-content')
 <header class="module-heading"><h1>Roles y permisos</h1><p>Configura las consultas y acciones autorizadas para cada rol.</p></header>
 @if(session('status'))<p class="notice success" role="status">{{ session('status') }}</p>@endif
