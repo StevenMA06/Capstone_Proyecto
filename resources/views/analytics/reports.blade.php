@@ -7,7 +7,6 @@
 <section class="analytics">
 <header class="an-heading"><div><span class="an-eyebrow">CENTRO DE INFORMACIÓN</span><h1>Reportes de gestión</h1><p>Consulta los registros de cada módulo para apoyar el seguimiento operativo.</p></div><span class="an-version">Datos de MySQL</span></header>
 <nav class="an-tabs" aria-label="Información de gestión"><a href="{{ route('reports.index') }}" aria-current="page">Reportes <span>7.14</span></a>@can('indicators.view')<a href="{{ route('indicators.index') }}">Indicadores <span>7.15</span></a><a href="{{ route('bi.index') }}">Panel BI <span>7.16</span></a>@endcan</nav>
-<p class="an-demo"><strong>Consulta operativa</strong> · Los resultados y las exportaciones se obtienen desde las tablas de MySQL con los filtros aplicados. Si no hay registros, la tabla aparecerá vacía.</p>
 <section class="an-catalog-panel"><h2>1. Selecciona un módulo</h2><p>Los reportes se organizan según las áreas del sistema.</p><div class="an-catalog">@foreach($modules as $key => [$label, $types])<a class="an-catalog-item" href="{{ route('reports.index', ['modulo' => $key, 'tipo' => $types[0], 'desde' => $from, 'hasta' => $to]) }}" @if($selectedModule === $key) aria-current="true" @endif><span>MÓDULO</span>{{ $label }}<small>{{ implode(' · ', array_map(fn ($type) => \App\Services\ReportExportService::DEFINITIONS[$type][1], $types)) }}</small></a>@endforeach</div></section>
 <form class="an-filters" method="get" action="{{ route('reports.index') }}">
 <input type="hidden" name="modulo" value="{{ $selectedModule }}">

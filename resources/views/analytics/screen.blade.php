@@ -11,7 +11,6 @@
 @foreach(['reports'=>'Reportes','indicators'=>'Indicadores','bi'=>'Panel BI'] as $module=>$label)
 @can($module.'.view')<a href="{{ route($module.'.index') }}" @if($screen===$module) aria-current="page" @endif>{{ $label }}</a>@endcan
 @endforeach</nav>
-<p class="an-demo"><strong>Datos de demostración</strong> · Ejemplos ficticios de abril a septiembre de 2026. Los filtros cambian esta muestra; todavía no están conectados con los registros de la empresa.</p>
 <form class="an-filters" id="an-filters">
 @if($screen==='reports')<div class="an-type"><label for="an-type">Reporte</label><select id="an-type" name="tipo"></select></div>@else<div class="an-type"><label for="an-process">Proceso operativo</label><select id="an-process" name="proceso"><option value="all">Todos los procesos</option value="comercial">Comercial</option><option value="pagos">Pagos y cobranza</option><option value="instalaciones">Instalaciones</option><option value="inventario">Inventario</option><option value="reportes">Reportes</option></select></div>@endif
 <div><label for="an-from">Desde</label><input type="date" id="an-from" name="desde" value="2026-04-01" required></div><div><label for="an-to">Hasta</label><input type="date" id="an-to" name="hasta" value="2026-09-30" required></div>
