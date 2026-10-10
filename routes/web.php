@@ -19,6 +19,8 @@ use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReportExportController;
 use App\Http\Middleware\EnsureAccountActive;
 use Illuminate\Support\Facades\Route;
 
@@ -178,9 +180,9 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/kardex', [KardexController::class, 'index'])->name('kardex.index');
 });
 
-Route::middleware(['auth'])->group(function (): void {
-    Route::view('/reports', 'analytics.screen', ['screen' => 'reports'])->name('reports.index');
-    // Exportación real pendiente; la entrega actual contiene solo pantallas de demostración.
+Route::middleware(['auth', 'can:reports.view'])->group(function (): void {
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::post('/reports/export', [ReportExportController::class, 'store'])->middleware('throttle:20,1')->name('reports.export');
 });
 
 Route::middleware(['auth'])->group(function (): void {
