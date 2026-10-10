@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', 'Roles y permisos')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/access-admin.css') }}?v=2"><script src="{{ asset('js/access-admin.js') }}?v=2" defer></script>@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/access-admin.css') }}?v=3"><script src="{{ asset('js/access-admin.js') }}?v=2" defer></script>@endpush
 @section('workspace-content')
 <header class="module-heading"><h1>Roles y permisos</h1><p>Configura las consultas y acciones autorizadas para cada rol.</p></header>
 @if(session('status'))<p class="notice success" role="status">{{ session('status') }}</p>@endif
@@ -33,7 +33,7 @@
 <div class="access-selection"><button class="secondary" type="button" data-permission-selection="all" hidden>Seleccionar resultados</button><button class="secondary" type="button" data-permission-selection="none" hidden>Deseleccionar resultados</button></div>
 <div class="permission-modules">
 @foreach($groups as $module => $permissions)
-<details class="permission-module" data-permission-module="{{ $module }}" open>
+<details class="permission-module" data-permission-module="{{ $module }}">
 <summary><span>{{ $module }}</span><small data-module-count></small></summary>
 <div class="permission-module-body">
 <button class="secondary permission-module-select" type="button" data-module-selection hidden>Seleccionar resultados de este módulo</button>
@@ -45,6 +45,6 @@
 @endforeach
 </div>
 <p class="permission-empty" data-permission-empty hidden>No hay permisos que coincidan. Prueba otra búsqueda o limpia los filtros.</p>
-<button class="action-link" type="submit">Guardar rol y permisos</button>
+<button class="action-link permission-save" type="submit">Guardar rol y permisos</button>
 </fieldset></section></form></section></div>
 @endsection
