@@ -177,7 +177,7 @@ class AccessCatalog
         if ($name === 'office.coordination.contract') return 'office.coordination';
         if (in_array($name, ['warehouse.requests.fulfill', 'warehouse.requests.reject', 'warehouse.requests.escalate'], true)) return 'warehouse.fulfill';
         $suffix = match ($action) {
-            'index','show','cancelled' => 'view', 'create','store' => 'create', 'edit','update' => 'update',
+            'index','show','cancelled','lookup' => 'view', 'create','store' => 'create', 'edit','update' => 'update',
             'deactivate','status' => 'status', 'cancel','complete','schedule','availability','assigned','related' => $action,
             default => null,
         };

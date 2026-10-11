@@ -230,3 +230,10 @@ Route::middleware('auth')->group(function (): void {
 });
 
 Route::post('/sales/contracts/{contract}/confirm', [SaleController::class, 'confirm'])->middleware('auth')->whereNumber('contract')->name('sales.confirm');
+
+Route::middleware(['auth', 'throttle:10,1'])->group(function (): void {
+    Route::post('/clients/dni-lookup', \App\Http\Controllers\DniLookupController::class)
+        ->defaults('context', 'clients')->name('clients.lookup');
+    Route::post('/employees/dni-lookup', \App\Http\Controllers\DniLookupController::class)
+        ->defaults('context', 'employees')->name('employees.lookup');
+});

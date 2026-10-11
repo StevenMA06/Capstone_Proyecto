@@ -1,4 +1,8 @@
 @extends('clients.layout')
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/dni-lookup.css') }}?v=1">
+<script src="{{ asset('js/dni-lookup.js') }}?v=1" defer></script>
+@endpush
 @section('clients-content')
 <div class="management-toolbar">
     <h2>{{ $client->exists ? 'Editar cliente #'.$client->getKey() : 'Registrar cliente' }}</h2>
@@ -44,6 +48,7 @@
                 @required($required) @if($length) maxlength="{{ $length }}" @endif
                 @if($type === 'number') step="0.0000001" min="{{ $name === 'latitud' ? -90 : -180 }}" max="{{ $name === 'latitud' ? 90 : 180 }}" @endif
                 @error($name) aria-invalid="true" aria-describedby="{{ $name }}-error" @enderror>
+            @if($name === 'numero_documento') @include('layouts.dni-lookup', ['lookupModule' => 'clients']) @endif
             <p id="{{ $name }}-error" class="error" @if(!$errors->has($name)) hidden @endif>{{ $errors->first($name) }}</p>
         </div>
     @endforeach
