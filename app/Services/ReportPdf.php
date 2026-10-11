@@ -35,7 +35,7 @@ class ReportPdf
         $limit = (int) floor(($width - 14) / 9);
         $pages = []; $page = []; $height = 0;
         foreach ($report['rows'] as $row) {
-            $cells = array_map(fn ($value) => $this->wrap($value, $limit), $row);
+            $cells = array_map(fn ($value) => $this->wrap((string) ($value ?? '—'), $limit), $row);
             $rowHeight = max(array_map('count', $cells)) * 12 + 12;
             if ($height + $rowHeight > 365 && $page) {
                 $pages[] = $page; $page = []; $height = 0;
@@ -48,7 +48,7 @@ class ReportPdf
             $stream = "0.07 0.22 0.17 rg\n".$this->text(36, 554, 'Lunnys Perú R.2.D. - Reporte de '.$report['title'], 17, true);
             $stream .= $this->text(36, 532, 'Consulta generada desde la base de datos operativa', 10, true);
             $params = array_column($report['parameters'], 1, 0);
-            $stream .= $this->text(36, 512, 'Período: '.$params['Desde'].' al '.$params['Hasta'].' | Filtro: '.$params['Campo de fecha']);
+            $stream .= $this->text(36, 512, 'Período: '.$params['Desde'].' al '.$params['Hasta'].' | Filtro: '.($params['Campo o corte'] ?? $params['Campo de fecha'] ?? $report['dateField'] ?? 'Período seleccionado'));
             $stream .= $this->text(36, 495, 'Generado: '.$params['Generado'].' | Total de registros: '.$params['Total de registros']);
             $headerHeight = max(array_map(fn ($label) => count($this->wrap($label, $limit)), $report['columns'])) * 12 + 12;
             $y = 480;
@@ -85,4 +85,3 @@ class ReportPdf
         return $pdf.'trailer << /Size '.(count($objects)+1)." /Root 1 0 R >>\nstartxref\n$xref\n%%EOF";
     }
 }
-

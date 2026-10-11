@@ -18,11 +18,14 @@ class ReportController extends Controller
         $type = $request->query('tipo');
         $type = is_string($type) && isset($available[$type]) ? $type : array_key_first($available);
         $validated = $request->validate([
+            'page' => ['nullable', 'integer', 'min:1'],
             'desde' => ['nullable', 'date_format:Y-m-d'],
             'hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:desde'],
         ]);
         $from = $validated['desde'] ?? now('America/Lima')->startOfMonth()->toDateString();
         $to = $validated['hasta'] ?? now('America/Lima')->toDateString();
+
+        if ($from > $to) throw \Illuminate\Validation\ValidationException::withMessages(['hasta'=>'La fecha final debe ser igual o posterior a la inicial.']);
 
         return view('analytics.reports', [
             'modules' => $modules,
@@ -31,9 +34,8 @@ class ReportController extends Controller
             'selectedType' => $type,
             'from' => $from,
             'to' => $to,
-            'report' => $reports->report($type, $from, $to),
+            'report' => $reports->report($type, $from, $to, (int) ($validated['page'] ?? 1)),
             'manager' => $manager,
         ]);
     }
 }
-

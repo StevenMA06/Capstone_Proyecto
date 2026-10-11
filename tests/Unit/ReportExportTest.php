@@ -17,6 +17,16 @@ class ReportExportTest extends TestCase
                 ['Generado','10/10/2026 09:00:00 (America/Lima)'],['Total de registros',(string) count($rows)]]];
     }
 
+    public function test_pdf_accepts_current_service_parameters_and_nullable_numeric_cells(): void
+    {
+        $report = $this->report([[42, null]]);
+        $report['parameters'][2] = ['Campo o corte', 'Fecha de solicitud'];
+        $pdf = (new ReportPdf)->render($report);
+        $this->assertStringStartsWith('%PDF-1.4', $pdf);
+        $this->assertStringContainsString('Fecha de solicitud', $pdf);
+        $this->assertStringContainsString('(42)', $pdf);
+    }
+
     public function test_pdf_contains_all_rows_across_multiple_pages(): void
     {
         $rows = array_map(fn ($n) => ['VEN-'.$n, 'Cliente de ejemplo '.$n], range(1, 86));
@@ -61,4 +71,3 @@ class ReportExportTest extends TestCase
         $request->setUserResolver(fn () => null);$this->assertFalse($request->authorize());
     }
 }
-

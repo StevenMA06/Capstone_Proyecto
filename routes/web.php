@@ -186,8 +186,8 @@ Route::middleware(['auth', 'can:reports.view'])->group(function (): void {
 });
 
 Route::middleware(['auth'])->group(function (): void {
-    Route::view('/indicators', 'analytics.screen', ['screen' => 'indicators'])->name('indicators.index');
-    Route::view('/bi', 'analytics.screen', ['screen' => 'bi'])->name('bi.index');
+    Route::get('/indicators', [\App\Http\Controllers\AnalyticsController::class, 'index'])->middleware('can:indicators.view')->name('indicators.index');
+    Route::get('/bi', [\App\Http\Controllers\AnalyticsController::class, 'index'])->middleware('can:bi.view')->name('bi.index');
 });
 
 Route::middleware(['auth'])->group(function (): void {
