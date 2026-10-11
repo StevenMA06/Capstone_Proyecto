@@ -15,10 +15,19 @@
     <div><dt>Dirección</dt><dd>{{ $client->direccion }}</dd></div>
     <div><dt>Correo electrónico</dt><dd>{{ $client->correo ?? '—' }}</dd></div>
     <div><dt>Teléfono</dt><dd>{{ $client->telefono ?? '—' }}</dd></div>
+    <div><dt>Número de referencia</dt><dd>{{ $client->numero_referencia ?? '—' }}</dd></div>
     <div><dt>Referencia de dirección</dt><dd>{{ $client->referencia_direccion ?? '—' }}</dd></div>
     <div><dt>Distrito / Provincia / Departamento</dt><dd>{{ $client->distrito ?? '—' }} / {{ $client->provincia ?? '—' }} / {{ $client->departamento ?? '—' }}</dd></div>
     <div><dt>Latitud / Longitud</dt><dd>{{ $client->latitud ?? '—' }} / {{ $client->longitud ?? '—' }}</dd></div>
     <div><dt>Registrado / Última actualización</dt><dd>{{ $client->creado_en?->format('d/m/Y H:i') }} / {{ $client->actualizado_en?->format('d/m/Y H:i') }}</dd></div>
+</dl>
+<h3>Router y red WiFi</h3>
+<dl class="account-detail">
+    @foreach(['ip_router' => 'IP del router', 'modelo_router' => 'Modelo del router', 'usuario_router' => 'Usuario del router', 'ssid' => 'SSID'] as $name => $label)
+    <div><dt>{{ $label }}</dt><dd>{{ $client->{$name} ?? 'Sin registrar' }}</dd></div>
+    @endforeach
+    <div><dt>Contraseña del router</dt><dd>{{ filled($client->getRawOriginal('contrasena_router')) ? 'Configurada' : 'Sin registrar' }}</dd></div>
+    <div><dt>Contraseña WiFi</dt><dd>{{ filled($client->getRawOriginal('contrasena_wifi')) ? 'Configurada' : 'Sin registrar' }}</dd></div>
 </dl>
 @if($client->estado === 'ACTIVO' && auth()->user()->hasPermission('clients.status'))
 <details class="client-deactivate">

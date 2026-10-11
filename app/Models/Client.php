@@ -18,10 +18,17 @@ class Client extends Model
         'tipo_documento', 'numero_documento', 'nombres_razon_social', 'apellidos',
         'correo', 'telefono', 'direccion', 'referencia_direccion', 'distrito',
         'provincia', 'departamento', 'latitud', 'longitud', 'estado', 'creado_por',
+        'numero_referencia', 'ip_router', 'modelo_router', 'usuario_router',
+        'contrasena_router', 'ssid', 'contrasena_wifi',
     ];
+
+    protected $hidden = ['contrasena_router', 'contrasena_wifi'];
 
     protected function casts(): array
     {
-        return ['latitud' => 'decimal:7', 'longitud' => 'decimal:7'];
+        return [
+            'latitud' => 'decimal:7', 'longitud' => 'decimal:7',
+            'contrasena_router' => 'encrypted', 'contrasena_wifi' => 'encrypted',
+        ];
     }
 }

@@ -1,0 +1,12 @@
+.client-router-fields { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 24px 0 0; border: 0; border-top: 1px solid #e1eae4; }
+.client-router-fields legend { padding: 0 12px 0 0; font-size: 17px; font-weight: 600; color: #233d2b; }
+.client-router-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.client-secret-field { position: relative; }
+.management .client-secret-field input { padding-right: 52px; }
+.client-secret-toggle { position: absolute; top: 1px; bottom: 1px; right: 1px; width: 44px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 6px; color: #106f44; cursor: pointer; }
+.client-secret-toggle[hidden] { display: none; }
+.client-secret-toggle:hover { background: #edf5ef; }
+.client-secret-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.client-secret-toggle .secret-slash { display: none; }
+.client-secret-toggle[aria-pressed="true"] .secret-slash { display: block; }
+@media (max-width: 760px) { .client-router-grid { grid-template-columns: 1fr; } }

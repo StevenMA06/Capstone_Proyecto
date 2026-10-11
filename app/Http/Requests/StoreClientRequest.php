@@ -40,7 +40,31 @@ class StoreClientRequest extends FormRequest
             'departamento' => ['nullable', 'string', 'max:100'],
             'latitud' => ['nullable', 'numeric', 'between:-90,90'],
             'longitud' => ['nullable', 'numeric', 'between:-180,180'],
+            'numero_referencia' => ['nullable', 'string', 'max:25'],
+            'ip_router' => ['required', 'string', 'ip', 'max:45'],
+            'modelo_router' => ['required', 'string', 'max:100'],
+            'usuario_router' => ['required', 'string', 'max:100'],
+            'ssid' => ['required', 'string', 'max:100'],
+            'contrasena_router' => $this->passwordRules($client, 'contrasena_router'),
+            'contrasena_wifi' => $this->passwordRules($client, 'contrasena_wifi'),
         ];
+    }
+
+    private function passwordRules(mixed $client, string $field): array
+    {
+        $configured = $client instanceof Client && filled($client->getRawOriginal($field));
+
+        return ['bail', $configured ? 'nullable' : 'required', 'string', 'max:128'];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        foreach (['contrasena_router', 'contrasena_wifi'] as $field) {
+            $value = $this->input($field);
+            if (is_string($value) && trim($value) === '') {
+                $this->merge([$field => null]);
+            }
+        }
     }
 
     public function attributes(): array
@@ -50,6 +74,10 @@ class StoreClientRequest extends FormRequest
             'nombres_razon_social' => 'nombres o razón social', 'direccion' => 'dirección',
             'referencia_direccion' => 'referencia de dirección',
             'telefono' => 'teléfono',
+            'numero_referencia' => 'número de referencia', 'ip_router' => 'IP del router',
+            'modelo_router' => 'modelo del router', 'usuario_router' => 'usuario del router',
+            'contrasena_router' => 'contraseña del router', 'ssid' => 'SSID',
+            'contrasena_wifi' => 'contraseña WiFi',
         ];
     }
 
@@ -63,6 +91,7 @@ class StoreClientRequest extends FormRequest
             'unique' => 'Este número ya está registrado para el tipo de documento seleccionado.',
             'numero_documento.regex' => 'El DNI debe contener exactamente 8 dígitos numéricos.',
             'email' => 'Escribe un correo electrónico válido.',
+            'ip' => 'Escribe una dirección IP válida para el router.',
             'numeric' => 'El campo :attribute debe ser numérico.',
             'between' => 'El campo :attribute debe estar entre :min y :max.',
         ];

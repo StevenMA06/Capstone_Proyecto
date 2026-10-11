@@ -2,6 +2,7 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/dni-lookup.css') }}?v=1">
 <script src="{{ asset('js/dni-lookup.js') }}?v=1" defer></script>
+<link rel="stylesheet" href="{{ asset('css/client-router.css') }}?v=1">
 @endpush
 @section('clients-content')
 <div class="management-toolbar">
@@ -34,6 +35,7 @@
             ['referencia_direccion', 'Referencia de dirección', 255, false, 'text'],
             ['correo', 'Correo electrónico', 150, true, 'email'],
             ['telefono', 'Teléfono', 25, true, 'tel'],
+            ['numero_referencia', 'Número de referencia', 25, false, 'tel'],
             ['departamento', 'Departamento', 100, false, 'text'],
             ['provincia', 'Provincia', 100, false, 'text'],
             ['distrito', 'Distrito', 100, false, 'text'],
@@ -52,6 +54,7 @@
             <p id="{{ $name }}-error" class="error" @if(!$errors->has($name)) hidden @endif>{{ $errors->first($name) }}</p>
         </div>
     @endforeach
+    @include('clients.router-form')
     <div class="form-actions">
         <button class="action-link" type="submit">{{ $client->exists ? 'Guardar cambios' : 'Registrar cliente' }}</button>
         
@@ -60,5 +63,5 @@
     </div>
 </form>@endroutecan
 @endcan
-<script src="{{ asset('js/clients.js') }}" defer></script>
+<script src="{{ asset('js/clients.js') }}?v=2" defer></script>
 @endsection
