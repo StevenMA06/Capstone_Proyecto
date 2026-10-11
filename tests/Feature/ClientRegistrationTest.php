@@ -28,6 +28,9 @@ class ClientRegistrationTest extends TestCase
             'apellidos' => 'Pérez Gómez', 'telefono' => '900111222',
             'correo' => 'ana@example.test',
             'direccion' => 'Av. España 123',
+            'ip_router' => '192.168.1.1', 'modelo_router' => 'Router de prueba',
+            'usuario_router' => 'admin', 'contrasena_router' => 'Router12345',
+            'ssid' => 'Red de prueba', 'contrasena_wifi' => 'Wifi12345',
         ], $overrides);
     }
 
@@ -38,7 +41,7 @@ class ClientRegistrationTest extends TestCase
             ->assertSessionHasNoErrors()
             ->assertSessionHas('status');
         $this->assertDatabaseCount('clientes', 1);
-        $this->assertDatabaseHas('clientes', $this->data() + [
+        $this->assertDatabaseHas('clientes', array_diff_key($this->data(), array_flip(['contrasena_router', 'contrasena_wifi'])) + [
             'creado_por' => $creator->getKey(), 'estado' => 'ACTIVO',
             'latitud' => null, 'longitud' => null,
         ]);
@@ -62,7 +65,7 @@ class ClientRegistrationTest extends TestCase
         ]);
         $this->signIn($this->userWithRole(Role::OFFICE))->post('/clients', $data)
             ->assertRedirect('/clients/'.Client::firstOrFail()->getKey())->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('clientes', $data);
+        $this->assertDatabaseHas('clientes', array_diff_key($data, array_flip(['contrasena_router', 'contrasena_wifi'])));
     }
 
     public function test_all_document_types_with_required_contact_information_are_supported(): void

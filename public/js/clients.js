@@ -4,6 +4,19 @@ const documentNumber = document.getElementById('numero_documento');
 const documentError = document.getElementById('numero_documento-error');
 const regexDni = /^[0-9]{8}$/;
 
+document.querySelectorAll('[data-client-secret-toggle]').forEach(button => {
+    const input = document.getElementById(button.getAttribute('aria-controls'));
+    if (!input) return;
+    const label = button.getAttribute('aria-label').replace(/^Mostrar /, '');
+    button.hidden = false;
+    button.addEventListener('click', () => {
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        button.setAttribute('aria-pressed', String(show));
+        button.setAttribute('aria-label', `${show ? 'Ocultar' : 'Mostrar'} ${label}`);
+    });
+});
+
 if (clientForm && documentType && documentNumber && documentError) {
     const configureDocument = () => {
         if (documentType.value === 'DNI') {

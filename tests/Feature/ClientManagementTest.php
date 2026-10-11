@@ -31,6 +31,9 @@ class ClientManagementTest extends TestCase
             'nombres_razon_social' => 'Ana María', 'apellidos' => 'Pérez Gómez',
             'direccion' => 'Av. España 123', 'telefono' => '900111222',
             'correo' => 'ana@example.test',
+            'ip_router' => '192.168.1.1', 'modelo_router' => 'Router de prueba',
+            'usuario_router' => 'admin', 'contrasena_router' => 'Router12345',
+            'ssid' => 'Red de prueba', 'contrasena_wifi' => 'Wifi12345',
         ], $overrides);
     }
 
@@ -180,7 +183,7 @@ class ClientManagementTest extends TestCase
         $this->signIn($editor)->put('/clients/'.$client->getKey(), $data + [
             'estado' => 'ACTIVO', 'creado_por' => $editor->getKey(), 'cliente_id' => 999999, 'creado_en' => '2000-01-01',
         ])->assertRedirect('/clients/'.$client->getKey())->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('clientes', $data + [
+        $this->assertDatabaseHas('clientes', array_diff_key($data, array_flip(['contrasena_router', 'contrasena_wifi'])) + [
             'cliente_id' => $client->getKey(), 'estado' => 'INACTIVO', 'creado_por' => $creator->getKey(), 'creado_en' => $created,
         ]);
         $this->get('/clients/'.$client->getKey().'/edit')->assertOk()->assertSee('Empresa SAC');
@@ -193,7 +196,7 @@ class ClientManagementTest extends TestCase
         $this->signIn($actor)->put('/clients/'.$client->getKey(), $this->data([
             'direccion' => '', 'numero_documento' => '', 'nombres_razon_social' => 'Cambio rechazado',
         ]))->assertSessionHasErrors(['direccion', 'numero_documento']);
-        $this->assertDatabaseHas('clientes', ['cliente_id' => $client->getKey()] + $this->data());
+        $this->assertDatabaseHas('clientes', ['cliente_id' => $client->getKey()] + array_diff_key($this->data(), array_flip(['contrasena_router', 'contrasena_wifi'])));
     }
 
     public function test_rf07_rf08_rf09_deactivation_retains_client_and_cannot_be_used_to_reactivate(): void
@@ -203,7 +206,7 @@ class ClientManagementTest extends TestCase
         $this->signIn($actor)->patch('/clients/'.$client->getKey().'/deactivate', ['direccion' => 'IGNORAR', 'estado' => 'ACTIVO'])
             ->assertRedirect('/clients/'.$client->getKey());
         $this->assertDatabaseCount('clientes', 1);
-        $this->assertDatabaseHas('clientes', ['cliente_id' => $client->getKey(), 'estado' => 'INACTIVO'] + $this->data());
+        $this->assertDatabaseHas('clientes', ['cliente_id' => $client->getKey(), 'estado' => 'INACTIVO'] + array_diff_key($this->data(), array_flip(['contrasena_router', 'contrasena_wifi'])));
         $this->get('/clients/'.$client->getKey())->assertOk()->assertSee('Inactivo')->assertSee('Av. España 123');
         $this->get('/clients?search=00123456')->assertOk()->assertSee('Inactivo')->assertSee('00123456');
         $updated = $client->fresh()->actualizado_en->toDateTimeString();

@@ -18,10 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // VS Code Dev Tunnels forwards requests through the local loopback proxy.
         // Honor its public host and HTTPS headers so login and asset URLs stay on the tunnel.
         $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+        $middleware->trimStrings(except: ['contrasena_router', 'contrasena_wifi']);
         $middleware->web(append: [ExpireEmployees::class, FinalizeContracts::class, EnsureAccountActive::class, \App\Http\Middleware\RequireModulePermission::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->dontFlash(['code']);
+        $exceptions->dontFlash(['code', 'contrasena_router', 'contrasena_wifi']);
         $exceptions->respond(function ($response) {
             if ($response instanceof \Illuminate\Http\JsonResponse) {
                 $messages = [

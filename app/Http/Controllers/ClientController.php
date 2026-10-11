@@ -41,7 +41,7 @@ class ClientController extends Controller
                 throw $exception;
             }
 
-            return back()->withInput()->withErrors([
+            return back()->withInput($request->except(['contrasena_router', 'contrasena_wifi']))->withErrors([
                 'numero_documento' => 'Este número ya está registrado para el tipo de documento seleccionado.',
             ]);
         }
@@ -79,7 +79,7 @@ class ClientController extends Controller
                 throw $exception;
             }
 
-            return back()->withInput()->withErrors([
+            return back()->withInput($request->except(['contrasena_router', 'contrasena_wifi']))->withErrors([
                 'numero_documento' => 'Este número ya está registrado para el tipo de documento seleccionado.',
             ]);
         }

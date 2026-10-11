@@ -29,6 +29,11 @@ class ClientService
     /** @param array<string, mixed> $data */
     public function update(Client $client, array $data): Client
     {
+        foreach (['contrasena_router', 'contrasena_wifi'] as $secret) {
+            if (! isset($data[$secret]) || $data[$secret] === '') {
+                unset($data[$secret]);
+            }
+        }
         return $this->clients->update($client, $this->attributes($data));
     }
 
@@ -53,6 +58,8 @@ class ClientService
             'tipo_documento', 'numero_documento', 'nombres_razon_social', 'apellidos',
             'correo', 'telefono', 'direccion', 'referencia_direccion', 'distrito',
             'provincia', 'departamento', 'latitud', 'longitud',
+            'numero_referencia', 'ip_router', 'modelo_router', 'usuario_router',
+            'contrasena_router', 'ssid', 'contrasena_wifi',
         ]);
     }
 }
