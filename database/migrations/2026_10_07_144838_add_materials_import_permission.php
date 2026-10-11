@@ -9,7 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         // Crear el permiso materials.import
-        $permisoId = DB::table('permisos')->insertGetId([
+        $permisoId = DB::table('permisos')->where('codigo', 'materials.import')->value('permiso_id')
+            ?? DB::table('permisos')->insertGetId([
             'codigo' => 'materials.import',
             'modulo' => 'Materiales',
             'accion' => 'Importar materiales',
@@ -24,7 +25,7 @@ return new class extends Migration
             ->pluck('rol_id');
 
         foreach ($roles as $rolId) {
-            DB::table('rol_permiso')->insert([
+            DB::table('rol_permiso')->insertOrIgnore([
                 'rol_id' => $rolId,
                 'permiso_id' => $permisoId,
                 'permitido' => true,

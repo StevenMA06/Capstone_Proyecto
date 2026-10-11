@@ -1,4 +1,8 @@
 @extends('employees.layout')
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/dni-lookup.css') }}?v=1">
+<script src="{{ asset('js/dni-lookup.js') }}?v=1" defer></script>
+@endpush
 @section('employees-content')
 <h2>{{ $employee->exists ? 'Editar empleado' : 'Registrar empleado' }}</h2>
 @can('employees.manage')
@@ -11,7 +15,7 @@
     ['correo','Correo electrónico','email',150,true], ['telefono','Teléfono','tel',25,true],
     ['fecha_ingreso','Fecha de inicio','date',null,true], ['fecha_cese','Fecha de cese','date',null,true]
 ] as [$field,$label,$type,$max,$required])
-<div><label for="{{ $field }}">{{ $label }} {{ $required ? '*' : '(opcional)' }}</label><input id="{{ $field }}" name="{{ $field }}" type="{{ $type }}" value="{{ old($field, $employee->$field) }}" @required($required) @if($max) maxlength="{{ $max }}" @endif @if($type === 'date') min="1000-01-01" max="9999-12-31" @endif @error($field) aria-invalid="true" aria-describedby="{{ $field }}-error" @enderror>@error($field)<p id="{{ $field }}-error" class="field-error" role="alert">{{ $message }}</p>@enderror</div>
+<div><label for="{{ $field }}">{{ $label }} {{ $required ? '*' : '(opcional)' }}</label><input id="{{ $field }}" name="{{ $field }}" type="{{ $type }}" value="{{ old($field, $employee->$field) }}" @required($required) @if($max) maxlength="{{ $max }}" @endif @if($type === 'date') min="1000-01-01" max="9999-12-31" @endif @error($field) aria-invalid="true" aria-describedby="{{ $field }}-error" @enderror>@if($field === 'numero_documento') @include('layouts.dni-lookup', ['lookupModule' => 'employees']) @endif @error($field)<p id="{{ $field }}-error" class="field-error" role="alert">{{ $message }}</p>@enderror</div>
 @endforeach
 <div>
     <label for="cargo">Cargo *</label>

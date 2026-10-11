@@ -2,6 +2,10 @@
 
 return [
 
+    'apiperu' => [
+        'key' => env('APIPERU_API_KEY'),
+    ],
+
     'installation_drive' => [
         'credentials_path' => env('INSTALLATION_DRIVE_CREDENTIALS_PATH'),
         'client_id' => env('INSTALLATION_DRIVE_CLIENT_ID'),

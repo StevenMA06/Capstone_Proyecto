@@ -1,0 +1,6 @@
+.workspace-shell .dni-lookup { margin-top: 10px; }
+.workspace-shell .dni-lookup button { font-size: 12px; min-height: 38px; }
+.workspace-shell .dni-lookup-message { font-size: 12px; line-height: 1.5; margin: 8px 0 0; color: #526b5b; }
+.workspace-shell .dni-lookup-message[data-error="true"] { color: #a3362c; }
+.workspace-shell .dni-lookup button:disabled { cursor: wait; opacity: .65; }
+.workspace-shell .dni-lookup button[hidden] { display: none; }
