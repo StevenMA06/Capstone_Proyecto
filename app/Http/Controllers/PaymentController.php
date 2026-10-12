@@ -143,29 +143,20 @@ class PaymentController extends Controller
                     $data['metodo_pago'] = strtoupper($request->input('metodo_pago_otro'));
                 }
                 
-                // Manejar archivo de comprobante subido
-                if ($request->hasFile('comprobante_pago')) {
-                    $file = $request->file('comprobante_pago');
-                    $filename = 'comprobante_' . $payment->codigo . '_' . now()->format('YmdHis') 
-                        . '.' . $file->getClientOriginalExtension();
-                    
-                    // Guardar en disco público
-                    $path = $file->storeAs('pagos/comprobantes', $filename, 'public');
-                    $data['constancia_ruta'] = 'storage/' . $path;
-                    
-                    // Eliminar comprobante anterior si existe
-                    if ($payment->constancia_ruta && Storage::disk('public')->exists(str_replace('storage/', '', $payment->constancia_ruta))) {
-                        Storage::disk('public')->delete(str_replace('storage/', '', $payment->constancia_ruta));
-                    }
-                }
-                
                 $this->payments->markAsCompleted($payment, $data, $request->user());
                 
-                // NO GENERAR PDF AUTOMÁTICO (deshabilitado por solicitud del usuario)
-                // Si no se subió comprobante, el campo constancia_ruta quedará NULL
+                // Generar comprobante PDF automáticamente
+                try {
+                    $receiptPath = $this->receiptPdf->generate($payment);
+                    $payment->constancia_ruta = $receiptPath;
+                    $payment->save();
+                } catch (\Exception $e) {
+                    // Si falla el PDF, continuar pero sin constancia
+                    \Log::warning('No se pudo generar comprobante para pago '.$payment->codigo.': '.$e->getMessage());
+                }
                 
                 return redirect()->route('payments.show', $payment)
-                    ->with('status', 'Pago registrado como realizado correctamente.');
+                    ->with('status', 'Pago registrado como realizado y comprobante generado correctamente.');
             }
             
             // Si no se marcó como realizado, solo actualizar datos

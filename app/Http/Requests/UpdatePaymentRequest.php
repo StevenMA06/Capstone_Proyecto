@@ -44,10 +44,7 @@ class UpdatePaymentRequest extends FormRequest
             // Método de pago personalizado (cuando se selecciona OTRO)
             'metodo_pago_otro' => ['nullable', 'required_if:metodo_pago,OTRO', 'string', 'max:60'],
             
-            // Comprobante de pago (archivo subido)
-            'comprobante_pago' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
-            
-            // Referencia externa
+            // Referencia externa (ahora será el número de operación)
             'referencia_externa' => ['nullable', 'string', 'max:120'],
             
             // Estado (no se puede cambiar directamente, usar endpoints específicos)

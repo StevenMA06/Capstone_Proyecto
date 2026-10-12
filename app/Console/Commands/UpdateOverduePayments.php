@@ -21,7 +21,7 @@ class UpdateOverduePayments extends Command
      *
      * @var string
      */
-    protected $description = 'Actualiza automáticamente los estados de pagos: PENDIENTE → VENCIDO y VENCIDO → IMPAGO según las reglas de negocio';
+    protected $description = 'Actualiza automáticamente los estados de pagos: PENDIENTE → VENCIDO (al pasar fecha) y VENCIDO → IMPAGO (4 días después)';
 
     /**
      * Execute the console command.
@@ -78,12 +78,12 @@ class UpdateOverduePayments extends Command
 
         // ============================================================
         // PASO 2: VENCIDO → IMPAGO
-        // Cuando han pasado 7 días desde el vencimiento
+        // Cuando han pasado 4 días desde el vencimiento (CAMBIADO de 7 a 4 días)
         // ============================================================
 
-        $this->info('📋 Buscando pagos VENCIDOS que superen los 7 días de tolerancia...');
+        $this->info('📋 Buscando pagos VENCIDOS que superen los 4 días de tolerancia...');
 
-        $toleranceDays = 7;
+        $toleranceDays = 4;  // CAMBIADO: Antes era 7 días
         $cutoffDate = $today->copy()->subDays($toleranceDays);
 
         $overdueToCancel = Payment::where('estado', 'VENCIDO')
@@ -112,7 +112,7 @@ class UpdateOverduePayments extends Command
                     ->where('fecha_vencimiento', '<', $cutoffDate)
                     ->update([
                         'estado' => 'IMPAGO',
-                        'observaciones' => DB::raw("CONCAT(COALESCE(observaciones, ''), '\nMarcado como IMPAGO automáticamente por superar 7 días de vencimiento.')"),
+                        'observaciones' => DB::raw("CONCAT(COALESCE(observaciones, ''), '\n[".now()->format('Y-m-d H:i:s').'] Marcado como IMPAGO automáticamente por superar 4 días de vencimiento.')"),
                     ]);
 
                 $this->info("   ✅ {$cancelled} pagos actualizados a IMPAGO");

@@ -23,7 +23,7 @@ class CancelContractsForNonPayment extends Command
      *
      * @var string
      */
-    protected $description = 'Cancela automáticamente contratos cuando tienen pagos marcados como IMPAGO por falta de pago';
+    protected $description = 'Cancela automáticamente contratos cuando tienen pagos IMPAGO que superan 1 día adicional (5 días totales desde vencimiento)';
 
     /**
      * Execute the console command.
@@ -37,26 +37,33 @@ class CancelContractsForNonPayment extends Command
             $this->newLine();
         }
 
-        $this->info('📋 Buscando contratos ACTIVOS con pagos IMPAGO por falta de pago...');
+        $this->info('📋 Buscando contratos ACTIVOS con pagos IMPAGO que superen 1 día adicional...');
 
-        // Obtener contratos activos que tienen al menos un pago IMPAGO
+        // Obtener contratos activos que tienen pagos IMPAGO que llevan al menos 1 día en ese estado
+        // Esto significa: 4 días después del vencimiento (IMPAGO) + 1 día adicional = 5 días totales
+        $today = now()->startOfDay();
+        $cutoffDateForCancellation = $today->copy()->subDays(5); // 5 días desde el vencimiento
+
         $contractsToCancel = Contract::where('estado', 'ACTIVO')
-            ->whereHas('payments', function ($query) {
-                $query->where('estado', 'IMPAGO');
-            })
-            ->with(['payments' => function ($query) {
+            ->whereHas('payments', function ($query) use ($cutoffDateForCancellation) {
                 $query->where('estado', 'IMPAGO')
+                    ->where('fecha_vencimiento', '<=', $cutoffDateForCancellation);
+            })
+            ->with(['payments' => function ($query) use ($cutoffDateForCancellation) {
+                $query->where('estado', 'IMPAGO')
+                    ->where('fecha_vencimiento', '<=', $cutoffDateForCancellation)
                     ->orderBy('fecha_vencimiento');
             }, 'client', 'currentPeriod'])
             ->get();
 
         if ($contractsToCancel->isEmpty()) {
-            $this->line('   ✓ No hay contratos que deban cancelarse por falta de pago');
+            $this->line('   ✓ No hay contratos que deban cancelarse (requieren 5 días totales desde vencimiento)');
 
             return self::SUCCESS;
         }
 
         $this->warn("   ⚠ Se encontraron {$contractsToCancel->count()} contratos para cancelar:");
+        $this->comment('      (Pagos IMPAGO que superaron 5 días desde su vencimiento)');
         $this->newLine();
 
         $cancelledCount = 0;
@@ -64,6 +71,7 @@ class CancelContractsForNonPayment extends Command
         foreach ($contractsToCancel as $contract) {
             $anulatedPayments = $contract->payments;
             $firstAnulated = $anulatedPayments->first();
+            $diasVencidos = $today->diffInDays($firstAnulated->fecha_vencimiento);
 
             $this->line(sprintf(
                 '   📄 Contrato #%d (%s):',
@@ -80,9 +88,10 @@ class CancelContractsForNonPayment extends Command
                 $anulatedPayments->count()
             ));
             $this->line(sprintf(
-                '      Primer pago IMPAGO: %s (vencimiento: %s)',
+                '      Primer pago IMPAGO: %s (vencimiento: %s, hace %d días)',
                 $firstAnulated->codigo,
-                $firstAnulated->fecha_vencimiento->format('d/m/Y')
+                $firstAnulated->fecha_vencimiento->format('d/m/Y'),
+                $diasVencidos
             ));
 
             if (! $dryRun) {

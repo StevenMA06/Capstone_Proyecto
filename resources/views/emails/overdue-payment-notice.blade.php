@@ -54,7 +54,7 @@
             </h3>
             <p style="margin:0;font-size:15px;color:#92400e;line-height:1.6">
                 <strong>Su servicio será suspendido automáticamente si no se regulariza el pago dentro de 
-                {{ 7 - $diasVencidos }} {{ (7 - $diasVencidos) == 1 ? 'día' : 'días' }} adicionales.</strong>
+                {{ 4 - $diasVencidos }} {{ (4 - $diasVencidos) == 1 ? 'día' : 'días' }} adicionales.</strong>
             </p>
             <p style="margin:8px 0 0 0;font-size:14px;color:#92400e">
                 Evite la suspensión del servicio regularizando su pago a la brevedad posible.

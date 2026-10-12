@@ -112,7 +112,7 @@
         <label for="metodo_pago">Método de pago (opcional)</label>
         <select id="metodo_pago" name="metodo_pago" @error('metodo_pago') aria-invalid="true" aria-describedby="metodo_pago-error" @enderror>
             <option value="">-- Seleccionar --</option>
-            @foreach(['EFECTIVO', 'TRANSFERENCIA', 'YAPE', 'PLIN', 'TARJETA', 'OTRO'] as $metodo)
+            @foreach(['TRANSFERENCIA', 'YAPE', 'PLIN', 'TARJETA', 'OTRO'] as $metodo)
                 <option value="{{ $metodo }}" @selected(old('metodo_pago', $payment->metodo_pago) === $metodo)>{{ $metodo }}</option>
             @endforeach
         </select>
@@ -121,11 +121,12 @@
     </div>
 
     <div>
-        <label for="referencia_externa">Referencia externa (opcional)</label>
+        <label for="referencia_externa">Número de operación (opcional)</label>
         <input id="referencia_externa" name="referencia_externa" type="text" maxlength="120"
+            placeholder="Ej: OP-123456, YAPE-789012, etc."
             value="{{ old('referencia_externa', $payment->referencia_externa) }}"
             @error('referencia_externa') aria-invalid="true" aria-describedby="referencia_externa-error" @enderror>
-        <small>Número de operación, transacción o comprobante externo.</small>
+        <small>Número de operación o transacción del pago.</small>
         @error('referencia_externa')<p id="referencia_externa-error" class="error">{{ $message }}</p>@enderror
     </div>
 

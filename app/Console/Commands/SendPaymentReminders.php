@@ -25,7 +25,7 @@ class SendPaymentReminders extends Command
      *
      * @var string
      */
-    protected $description = 'Envía recordatorios automáticos de pagos: próximos a vencer (7 días antes), vencidos (5 días después) y cancelaciones';
+    protected $description = 'Envía recordatorios automáticos de pagos: próximos a vencer (7 días antes), vencidos (4 días después) y cancelaciones';
 
     /**
      * Execute the console command.
@@ -98,12 +98,12 @@ class SendPaymentReminders extends Command
         $this->newLine();
 
         // ============================================================
-        // PASO 2: Recordatorios vencidos (5 días después)
+        // PASO 2: Recordatorios vencidos (4 días después - CAMBIADO de 5 a 4)
         // ============================================================
 
-        $this->info('📧 Buscando pagos vencidos (5 días después del vencimiento)...');
+        $this->info('📧 Buscando pagos vencidos (4 días después del vencimiento)...');
 
-        $cutoffDate = $today->copy()->subDays(5);
+        $cutoffDate = $today->copy()->subDays(4);  // CAMBIADO: Antes era 5 días
 
         $overduePayments = Payment::where('estado', 'VENCIDO')
             ->whereNull('recordatorio_vencido_enviado_en')

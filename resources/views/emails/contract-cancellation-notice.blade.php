@@ -62,7 +62,7 @@
                 </tr>
             </table>
             <p style="margin:12px 0 0 0;font-size:13px;color:#92400e">
-                Este pago superó el período de tolerancia de 7 días y fue anulado automáticamente.
+                Este pago superó el período de tolerancia de 4 días y fue marcado como IMPAGO. Tras 1 día adicional, el contrato fue cancelado automáticamente.
             </p>
         </div>
 

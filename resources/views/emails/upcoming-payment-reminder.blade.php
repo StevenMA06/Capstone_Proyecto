@@ -56,8 +56,8 @@
 
         <div style="background-color:#fef3c7;padding:16px;border-radius:8px;margin:20px 0;border-left:4px solid #f59e0b">
             <p style="margin:0;font-size:14px;color:#92400e">
-                <strong>Importante:</strong> Si su pago no es confirmado dentro de los 7 días posteriores al vencimiento, 
-                su servicio será suspendido automáticamente.
+                <strong>Importante:</strong> Si su pago no es confirmado dentro de los 4 días posteriores al vencimiento, 
+                su servicio será suspendido automáticamente. Un día después de la suspensión, su contrato será cancelado.
             </p>
         </div>
 
