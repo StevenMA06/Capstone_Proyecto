@@ -17,6 +17,8 @@ class WarehouseRequestController extends Controller
         $filters = $request->validate([
             'vista' => ['nullable', Rule::in(['pendientes', 'historial'])],
             'pedido' => ['nullable', 'integer', 'exists:pedidos_instalacion,pedido_id'],
+            'buscar' => ['nullable', 'string', 'max:150'],
+            'resultado' => ['nullable', Rule::in(['ENTREGADA', 'RECHAZADA', 'ANULADA'])],
         ]);
         $view = $filters['vista'] ?? 'pendientes';
         $pendingStates = ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'];
@@ -25,10 +27,41 @@ class WarehouseRequestController extends Controller
             ->whereIn('s.estado', $pendingStates))->count();
         $records = DB::table('pedido_solicitudes_recursos as g')
             ->join('pedidos_instalacion as p', 'p.pedido_id', '=', 'g.pedido_id')
+            ->leftJoin('clientes as c', 'c.cliente_id', '=', 'p.cliente_id')
             ->join('usuarios as u', 'u.usuario_id', '=', 'g.solicitado_por')
             ->select('g.*', 'p.codigo as pedido_codigo', 'p.estado as pedido_estado', 'p.fecha_programada',
-                'u.nombre_usuario as solicitante')
+                'u.nombre_usuario as solicitante', 'c.nombres_razon_social as cliente_nombre', 'c.apellidos as cliente_apellidos')
             ->when(filled($filters['pedido'] ?? null), fn ($query) => $query->where('g.pedido_id', $filters['pedido']))
+            ->when($view === 'historial' && filled($filters['buscar'] ?? null), function ($query) use ($filters): void {
+                $pattern = '%'.trim($filters['buscar']).'%';
+                $query->where(function ($search) use ($pattern): void {
+                    $search->where('p.codigo', 'like', $pattern)
+                        ->orWhere('u.nombre_usuario', 'like', $pattern)
+                        ->orWhere('c.nombres_razon_social', 'like', $pattern)
+                        ->orWhere('c.apellidos', 'like', $pattern)
+                        ->orWhereRaw('CAST(g.solicitud_grupo_id AS CHAR) LIKE ?', [$pattern])
+                        ->orWhereExists(function ($resource) use ($pattern): void {
+                            $resource->selectRaw('1')->from('pedido_solicitudes_recurso as sr')
+                                ->leftJoin('equipos as eq', 'eq.equipo_id', '=', 'sr.equipo_id')
+                                ->leftJoin('materiales as ma', 'ma.material_id', '=', 'sr.material_id')
+                                ->whereColumn('sr.solicitud_grupo_id', 'g.solicitud_grupo_id')
+                                ->where(function ($item) use ($pattern): void {
+                                    $item->where('eq.codigo', 'like', $pattern)->orWhere('eq.nombre', 'like', $pattern)
+                                        ->orWhere('eq.tipo', 'like', $pattern)->orWhere('eq.modelo', 'like', $pattern)
+                                        ->orWhere('eq.numero_serie', 'like', $pattern)->orWhere('sr.equipo_tipo_solicitado', 'like', $pattern)
+                                        ->orWhere('ma.codigo', 'like', $pattern)->orWhere('ma.nombre', 'like', $pattern);
+                                });
+                        });
+                });
+            })
+            ->when($view === 'historial' && filled($filters['resultado'] ?? null), function ($query) use ($filters): void {
+                $query->whereExists(fn ($subquery) => $subquery->selectRaw('1')->from('pedido_solicitudes_recurso as sr')
+                    ->whereColumn('sr.solicitud_grupo_id', 'g.solicitud_grupo_id')->where('sr.estado', $filters['resultado']));
+                if ($filters['resultado'] === 'ENTREGADA') {
+                    $query->whereNotExists(fn ($subquery) => $subquery->selectRaw('1')->from('pedido_solicitudes_recurso as sr')
+                        ->whereColumn('sr.solicitud_grupo_id', 'g.solicitud_grupo_id')->where('sr.estado', '!=', 'ENTREGADA'));
+                }
+            })
             ->when($view === 'pendientes', fn ($query) => $query->whereExists(fn ($subquery) => $subquery
                 ->selectRaw('1')->from('pedido_solicitudes_recurso as s')->whereColumn('s.solicitud_grupo_id', 'g.solicitud_grupo_id')
                 ->whereIn('s.estado', $pendingStates)),
@@ -67,7 +100,7 @@ class WarehouseRequestController extends Controller
         $availableEquipment = DB::table('equipos')->where('estado', 'DISPONIBLE')
             ->whereNotIn('condicion', ['MALO', 'MALOGRADO'])->orderBy('nombre')->get()->groupBy('tipo');
 
-        return view('warehouse.requests', compact('records', 'view', 'pendingCount', 'availableEquipment'));
+        return view('warehouse.requests', compact('records', 'view', 'pendingCount', 'availableEquipment', 'filters'));
     }
 
     public function fulfill(Request $request, int $solicitud)

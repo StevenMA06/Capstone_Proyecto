@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Services\InstallationOrderService;
 use App\Services\InstallationResourceRequestService;
 use App\Support\ResourceRejectionReasons;
+use App\Support\InstallationOrderCancellationReasons;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -28,29 +29,38 @@ class InstallationOrderController extends Controller
         ]);
         $assignedOnly = $request->routeIs('orders.assigned');
         $query = DB::table('pedidos_instalacion as p')
-            ->join('contratos as c', 'c.contrato_id', '=', 'p.contrato_id')
-            ->join('clientes as cl', 'cl.cliente_id', '=', 'p.cliente_id')
+            ->leftJoin('contratos as c', 'c.contrato_id', '=', 'p.contrato_id')
+            ->leftJoin('clientes as cl', 'cl.cliente_id', '=', 'p.cliente_id')
             ->leftJoin('empleados as e', 'e.empleado_id', '=', 'p.tecnico_id')
+            ->leftJoin('empleados as e2', 'e2.empleado_id', '=', 'p.tecnico_secundario_id')
             ->leftJoin('usuarios as a', 'a.usuario_id', '=', 'p.asignado_por')
             ->leftJoin('usuarios as co', 'co.usuario_id', '=', 'p.coordinado_por')
             ->leftJoin('empleados as ae', 'ae.empleado_id', '=', 'a.empleado_id')
             ->leftJoin('empleados as ce', 'ce.empleado_id', '=', 'co.empleado_id')
-            ->select('p.*', 'c.codigo as contrato_codigo', 'c.direccion_servicio', 'c.fecha_inicio as contrato_fecha_inicio', 'c.estado as contrato_estado',
+            ->select('p.*', 'c.codigo as contrato_codigo', 'c.fecha_inicio as contrato_fecha_inicio', 'c.estado as contrato_estado',
                 'cl.nombres_razon_social as cliente_nombre', 'cl.apellidos as cliente_apellidos',
                 'cl.telefono as cliente_telefono', 'cl.correo as cliente_correo',
                 'a.nombre_usuario as asignador_usuario', 'co.nombre_usuario as coordinador_usuario')
+            ->selectRaw('COALESCE(c.direccion_servicio, p.direccion_solicitada, cl.direccion) as direccion_servicio')
+            ->selectRaw('COALESCE(CONCAT_WS(" ", NULLIF(cl.nombres_razon_social, ""), NULLIF(cl.apellidos, "")), p.solicitante_nombre) as nombre_solicitud')
+            ->selectRaw('COALESCE(cl.telefono, p.telefono_contacto) as telefono_solicitud')
+            ->selectRaw('COALESCE(cl.correo, p.correo_contacto) as correo_solicitud')
             ->selectRaw("CONCAT_WS(' ', e.nombres, e.apellidos) as tecnico_nombre")
+            ->selectRaw("NULLIF(TRIM(CONCAT_WS(' ', e2.nombres, e2.apellidos)), '') as tecnico_secundario_nombre")
             ->selectRaw("NULLIF(TRIM(CONCAT_WS(' ', ae.nombres, ae.apellidos)), '') as asignador_nombre")
             ->selectRaw("NULLIF(TRIM(CONCAT_WS(' ', ce.nombres, ce.apellidos)), '') as coordinador_nombre");
         if ($assignedOnly) {
-            $query->where('p.tecnico_id', $request->user()->empleado_id ?? 0);
+            $employeeId = $request->user()->empleado_id ?? 0;
+            $query->where(fn ($builder) => $builder->where('p.tecnico_id', $employeeId)->orWhere('p.tecnico_secundario_id', $employeeId));
         }
         if (filled($filters['search'] ?? null)) {
             $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], trim($filters['search'])).'%';
             $query->where(function ($builder) use ($pattern): void {
                 $builder->whereRaw("p.codigo LIKE ? ESCAPE '!'", [$pattern])
                     ->orWhereRaw("c.codigo LIKE ? ESCAPE '!'", [$pattern])
-                    ->orWhereRaw("CONCAT_WS(' ', cl.nombres_razon_social, cl.apellidos) LIKE ? ESCAPE '!'", [$pattern]);
+                    ->orWhere('p.documento_cliente', 'like', $pattern)
+                    ->orWhereRaw("CONCAT_WS(' ', cl.nombres_razon_social, cl.apellidos) LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhere('p.solicitante_nombre', 'like', $pattern);
             });
         }
         if (filled($filters['estado'] ?? null)) {
@@ -65,7 +75,10 @@ class InstallationOrderController extends Controller
                 ->whereColumn('s.pedido_id', 'p.pedido_id')->where('s.estado', 'PENDIENTE_GERENCIA'));
         }
         $counts = DB::table('pedidos_instalacion')
-            ->when($assignedOnly, fn ($builder) => $builder->where('tecnico_id', $request->user()->empleado_id ?? 0))
+            ->when($assignedOnly, function ($builder) use ($request): void {
+                $employeeId = $request->user()->empleado_id ?? 0;
+                $builder->where(fn ($query) => $query->where('tecnico_id', $employeeId)->orWhere('tecnico_secundario_id', $employeeId));
+            })
             ->select('estado')->selectRaw('COUNT(*) as total')->groupBy('estado')->pluck('total', 'estado');
         $records = $query->orderByRaw("CASE p.estado WHEN 'PENDIENTE' THEN 0 WHEN 'REPROGRAMADO' THEN 1 WHEN 'PROGRAMADO' THEN 2 WHEN 'EN_PROCESO' THEN 3 ELSE 4 END")
             ->orderByRaw('p.fecha_programada IS NULL')->orderBy('p.fecha_programada')->orderByDesc('p.pedido_id')
@@ -91,7 +104,8 @@ class InstallationOrderController extends Controller
             ->leftJoin('equipos as e', 'e.equipo_id', '=', 's.equipo_id')
             ->leftJoin('materiales as m', 'm.material_id', '=', 's.material_id')
             ->whereIn('s.pedido_id', $ids)->orderByDesc('s.solicitud_id')
-            ->get(['s.*', 'u.nombre_usuario as solicitante', 'a.nombre_usuario as aprobador',
+            ->leftJoin('pedido_solicitudes_recursos as g', 'g.solicitud_grupo_id', '=', 's.solicitud_grupo_id')
+            ->get(['s.*', 'g.incluye_equipo', 'g.incluye_material', 'u.nombre_usuario as solicitante', 'a.nombre_usuario as aprobador',
                 'w.nombre_usuario as almacenista', 'z.nombre_usuario as cerrador', 'e.codigo as equipo_codigo', 'e.nombre as equipo_nombre',
                 'e.modelo as equipo_modelo', 'e.numero_serie as equipo_serie',
                 'm.codigo as material_codigo', 'm.nombre as material_nombre', 'm.unidad_base as material_unidad_base',
@@ -104,9 +118,13 @@ class InstallationOrderController extends Controller
 
         return view('orders.index', [
             'records' => $records,
+            'resourceRequestableOrderIds' => collect($records->items())
+                ->filter(fn ($order) => $this->resources->canRequestForOrder($request->user(), $order))
+                ->pluck('pedido_id'),
             'reprogramming' => $reprogramming,
             'pendingReprogrammingCount' => DB::table('pedido_reprogramaciones')->where('estado', 'SOLICITADA')->count(),
             'reasonOptions' => InstallationOrderService::REPROGRAM_REASONS,
+            'cancellationReasons' => InstallationOrderCancellationReasons::all(),
             'states' => $states,
             'counts' => $counts,
             'assignedEquipment' => $assignedEquipment,
@@ -118,14 +136,14 @@ class InstallationOrderController extends Controller
                 ->where('s.estado', 'PENDIENTE_GERENCIA'))->count(),
             'technicians' => $request->user()->hasPermission('orders.schedule')
                 ? Employee::eligible()->where('cargo', 'Técnico de Campo')->get() : collect(),
-            'equipmentOptions' => $request->user()->hasPermission('orders.schedule')
+            'equipmentOptions' => $request->user()->hasPermission('orders.resources.request')
                 ? DB::table('equipos as e')->where('e.estado', 'DISPONIBLE')->whereNotIn('e.condicion', ['MALO', 'MALOGRADO'])
                     ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('pedido_solicitudes_recurso as s')
                         ->whereIn('s.estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])
                         ->where(fn ($requestQuery) => $requestQuery->whereColumn('s.equipo_id', 'e.equipo_id')
                             ->orWhereColumn('s.equipo_tipo_solicitado', 'e.tipo')))
                     ->orderBy('e.tipo')->orderBy('e.modelo')->orderBy('e.numero_serie')->get('e.*') : collect(),
-            'materials' => $request->user()->hasPermission('orders.schedule')
+            'materials' => $request->user()->hasPermission('orders.resources.request')
                 ? DB::table('materiales as m')->leftJoinSub(
                     DB::table('pedido_materiales as pm')->join('pedidos_instalacion as p', 'p.pedido_id', '=', 'pm.pedido_id')
                         ->whereIn('p.estado', ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO', 'EN_PROCESO'])
@@ -187,15 +205,19 @@ class InstallationOrderController extends Controller
     {
         $data = $request->validate([
             'tecnico_id' => ['required', 'integer', 'exists:empleados,empleado_id'],
+            'tecnico_secundario_id' => ['nullable', 'integer', 'different:tecnico_id', 'exists:empleados,empleado_id'],
             'motivo_reprogramacion' => ['nullable', 'string', 'max:500'],
             'fecha_programada' => ['nullable', 'date', 'after:now'],
+        ], [
+            'tecnico_secundario_id.different' => 'El técnico principal y el segundo técnico deben ser personas distintas.',
         ]);
         $this->orders->assign($request->user(), $pedido, $data['tecnico_id'],
-            $data['motivo_reprogramacion'] ?? null, $data['fecha_programada'] ?? null);
+            $data['motivo_reprogramacion'] ?? null, $data['fecha_programada'] ?? null,
+            isset($data['tecnico_secundario_id']) ? (int) $data['tecnico_secundario_id'] : null);
 
         $code = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->value('codigo');
         return redirect()->to(route('orders.index', ['search' => $code]).'#pedido-'.$pedido)
-            ->with('status', 'Recursos preparados y técnico asignado. El aviso al técnico se procesará según la configuración de correo.');
+            ->with('status', 'Equipo técnico definido para la visita. Cada técnico recibirá un aviso y deberá confirmar antes de iniciar.');
     }
 
     public function equipment(Request $request, int $pedido)
@@ -210,7 +232,7 @@ class InstallationOrderController extends Controller
             $this->resources->request($request->user(), $pedido, 'EQUIPO', $data['equipo_id']);
         }
         $code = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->value('codigo');
-        return redirect()->to(route('orders.index', ['search' => $code]).'#solicitar-recursos-'.$pedido)
+        return redirect()->to($this->resourceRequestUrl($request, $pedido, $code))
             ->with('status', 'Solicitud de equipo registrada. Revisa si falta solicitar material. Almacén debe atenderla; si ambos cargos pertenecen a tu cuenta, primero la autoriza Gerencia.')
             ->with('resource_request_order', $pedido);
     }
@@ -237,7 +259,8 @@ class InstallationOrderController extends Controller
         }
 
         DB::transaction(function () use ($request, $pedido, $data, $materialRequests): void {
-            $groupId = $this->resources->createRequestGroup($request->user(), $pedido);
+            $groupId = $this->resources->createRequestGroup($request->user(), $pedido,
+                filled($data['equipo_id'] ?? null), $materialRequests !== []);
             if (filled($data['equipo_id'] ?? null)) {
                 $this->resources->request($request->user(), $pedido, 'EQUIPO', (int) $data['equipo_id'], '1', $groupId);
             }
@@ -251,8 +274,8 @@ class InstallationOrderController extends Controller
             $materialRequests !== [] ? count($materialRequests).' '.(count($materialRequests) === 1 ? 'material' : 'materiales') : null]);
         $code = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->value('codigo');
 
-        return redirect()->to(route('orders.index', ['search' => $code]).'#solicitar-recursos-'.$pedido)
-            ->with('status', 'Solicitud conjunta de '.implode(' y ', $parts).' registrada. Gerencia y Almacén resolverán los recursos en conjunto; el detalle de cada uno aparece en el pedido.')
+        return redirect()->to($this->resourceRequestUrl($request, $pedido, $code))
+            ->with('status', 'Solicitud conjunta de '.implode(' y ', $parts).' registrada. Almacén verificará la disponibilidad y dejará constancia de lo preparado; el detalle aparece en el pedido.')
             ->with('resource_request_order', $pedido);
     }
 
@@ -264,9 +287,15 @@ class InstallationOrderController extends Controller
         ]);
         $this->resources->request($request->user(), $pedido, 'MATERIAL', $data['material_id'], (string) $data['cantidad_asignada']);
         $code = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->value('codigo');
-        return redirect()->to(route('orders.index', ['search' => $code]).'#solicitar-recursos-'.$pedido)
+        return redirect()->to($this->resourceRequestUrl($request, $pedido, $code))
             ->with('status', 'Solicitud de material registrada. Revisa si falta solicitar equipo. Almacén debe atenderla; si ambos cargos pertenecen a tu cuenta, primero la autoriza Gerencia.')
             ->with('resource_request_order', $pedido);
+    }
+
+    private function resourceRequestUrl(Request $request, int $pedido, string $code): string
+    {
+        $route = $request->user()->hasPermission('orders.view') ? 'orders.index' : 'orders.assigned';
+        return route($route, ['search' => $code]).'#solicitar-recursos-'.$pedido;
     }
 
     public function approveResource(Request $request, int $pedido, int $solicitud)
@@ -291,8 +320,13 @@ class InstallationOrderController extends Controller
 
     public function cancel(Request $request, int $pedido)
     {
-        $data = $request->validate(['motivo_cancelacion' => ['required', 'string', 'min:5', 'max:500']]);
-        $this->orders->cancelOrder($pedido, $request->user()->getKey(), trim($data['motivo_cancelacion']));
+        $data = $request->validate([
+            'motivo_codigo' => ['required', 'string', Rule::in(array_keys(InstallationOrderCancellationReasons::all()))],
+            'motivo_detalle' => ['nullable', 'required_if:motivo_codigo,OTRO', 'string', 'min:10', 'max:500'],
+        ]);
+        $label = InstallationOrderCancellationReasons::all()[$data['motivo_codigo']];
+        $reason = $label.(!empty($data['motivo_detalle']) ? ': '.trim($data['motivo_detalle']) : '');
+        $this->orders->cancelOrder($pedido, $request->user()->getKey(), $reason, $data['motivo_codigo']);
 
         return redirect()->route('orders.index')->with('status', 'Pedido cancelado. Su información se conserva.');
     }

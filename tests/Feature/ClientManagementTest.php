@@ -39,7 +39,7 @@ class ClientManagementTest extends TestCase
 
     private function client(User $actor, array $overrides = []): Client
     {
-        return Client::create($this->data($overrides) + ['creado_por' => $actor->getKey()]);
+        return Client::create($this->data($overrides) + ['estado' => 'ACTIVO', 'creado_por' => $actor->getKey()]);
     }
 
     public function test_dni_requires_exactly_eight_ascii_digits_on_create_and_update(): void
@@ -57,6 +57,7 @@ class ClientManagementTest extends TestCase
             ]);
         }
         $this->post('/clients', $this->data(['numero_documento' => '00000002']))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('clientes', ['numero_documento' => '00000002', 'estado' => 'PENDIENTE']);
         $this->put('/clients/'.$client->getKey(), $this->data(['numero_documento' => '00000003']))->assertSessionHasNoErrors();
         $this->assertDatabaseHas('clientes', ['cliente_id' => $client->getKey(), 'numero_documento' => '00000003']);
     }

@@ -158,9 +158,34 @@ class InstallationDriveService
 
     private function evidenceFolder(string $token, int $orderId, string $type): string
     {
-        $code = DB::table('pedidos_instalacion')->where('pedido_id', $orderId)->value('codigo');
-        if (! is_string($code) || $code === '') throw new \RuntimeException('No se encontró el pedido de la evidencia.');
-        $orderFolder = $this->findOrCreateFolder($token, config('services.installation_drive.folder_id'), 'Pedido '.$code);
+        $order = DB::table('pedidos_instalacion as p')
+            ->leftJoin('clientes as c', 'c.cliente_id', '=', 'p.cliente_id')
+            ->where('p.pedido_id', $orderId)
+            ->select('p.codigo', 'p.solicitante_nombre', 'c.nombres_razon_social', 'c.apellidos')
+            ->first();
+        if (! $order) throw new \RuntimeException('No se encontró el pedido de la evidencia.');
+        $clientName = trim(implode(' ', array_filter([$order->nombres_razon_social, $order->apellidos])));
+        $clientName = trim(preg_replace('/\s+/u', ' ', $clientName ?: ($order->solicitante_nombre ?: '')));
+        if ($clientName === '') throw new \RuntimeException('No se encontró el nombre del cliente para organizar la evidencia.');
+        $rootFolder = config('services.installation_drive.folder_id');
+        $folderName = 'Cliente '.$clientName;
+        $orderFolder = $this->findOrderFolder($token, $rootFolder, $orderId)
+            ?: $this->findFolder($token, $rootFolder, 'Pedido '.$order->codigo);
+        if ($orderFolder) {
+            Http::withToken($token)->patch('https://www.googleapis.com/drive/v3/files/'.rawurlencode($orderFolder), [
+                'name' => $folderName, 'appProperties' => ['pedido_id' => (string) $orderId],
+            ])->throw();
+        } else {
+            $created = Http::withToken($token)->post('https://www.googleapis.com/drive/v3/files?fields=id', [
+                'name' => $folderName, 'mimeType' => 'application/vnd.google-apps.folder',
+                'parents' => [$rootFolder], 'appProperties' => ['pedido_id' => (string) $orderId],
+            ]);
+            $created->throw();
+            $orderFolder = $created->json('id');
+            if (! is_string($orderFolder) || $orderFolder === '') {
+                throw new \RuntimeException('Drive no devolvió el ID de la carpeta del cliente.');
+            }
+        }
         $section = match ($type) {
             'FOTO' => 'Fotos de la instalación',
             'CLIENTE' => 'Comprobante con el cliente',
@@ -173,15 +198,8 @@ class InstallationDriveService
 
     private function findOrCreateFolder(string $token, string $parentId, string $name): string
     {
-        $quotedName = str_replace(['\\', "'"], ['\\\\', "\\'"], $name);
-        $quotedParent = str_replace(['\\', "'"], ['\\\\', "\\'"], $parentId);
-        $response = Http::withToken($token)->get('https://www.googleapis.com/drive/v3/files', [
-            'q' => "'{$quotedParent}' in parents and name = '{$quotedName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
-            'fields' => 'files(id,name,parents),nextPageToken', 'pageSize' => 2,
-        ]);
-        $response->throw();
-        $id = $response->json('files.0.id');
-        if (is_string($id) && $id !== '') return $id;
+        $id = $this->findFolder($token, $parentId, $name);
+        if ($id) return $id;
 
         $created = Http::withToken($token)->post('https://www.googleapis.com/drive/v3/files?fields=id', [
             'name' => $name, 'mimeType' => 'application/vnd.google-apps.folder', 'parents' => [$parentId],
@@ -190,6 +208,31 @@ class InstallationDriveService
         $id = $created->json('id');
         if (! is_string($id) || $id === '') throw new \RuntimeException('Drive no devolvió el ID de la carpeta creada.');
         return $id;
+    }
+
+    private function findFolder(string $token, string $parentId, string $name): ?string
+    {
+        $quotedName = str_replace(['\\', "'"], ['\\\\', "\\'"], $name);
+        $quotedParent = str_replace(['\\', "'"], ['\\\\', "\\'"], $parentId);
+        $response = Http::withToken($token)->get('https://www.googleapis.com/drive/v3/files', [
+            'q' => "'{$quotedParent}' in parents and name = '{$quotedName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+            'fields' => 'files(id,name,parents),nextPageToken', 'pageSize' => 2,
+        ]);
+        $response->throw();
+        $id = $response->json('files.0.id');
+        return is_string($id) && $id !== '' ? $id : null;
+    }
+
+    private function findOrderFolder(string $token, string $parentId, int $orderId): ?string
+    {
+        $quotedParent = str_replace(['\\', "'"], ['\\\\', "\\'"], $parentId);
+        $response = Http::withToken($token)->get('https://www.googleapis.com/drive/v3/files', [
+            'q' => "'{$quotedParent}' in parents and appProperties has { key='pedido_id' and value='{$orderId}' } and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+            'fields' => 'files(id),nextPageToken', 'pageSize' => 2,
+        ]);
+        $response->throw();
+        $id = $response->json('files.0.id');
+        return is_string($id) && $id !== '' ? $id : null;
     }
 
     private function file(string $token, string $fileId): \Illuminate\Http\Client\Response

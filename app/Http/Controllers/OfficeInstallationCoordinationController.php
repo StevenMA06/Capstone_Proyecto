@@ -25,19 +25,25 @@ class OfficeInstallationCoordinationController extends Controller
             'estado' => ['nullable', Rule::in(['por_confirmar', 'confirmadas'])],
         ]);
         $query = DB::table('pedidos_instalacion as p')
-            ->join('contratos as c', 'c.contrato_id', '=', 'p.contrato_id')
-            ->join('clientes as cl', 'cl.cliente_id', '=', 'p.cliente_id')
-            ->whereIn('c.estado', ['PENDIENTE', 'ACTIVO'])
+            ->leftJoin('contratos as c', 'c.contrato_id', '=', 'p.contrato_id')
+            ->leftJoin('clientes as cl', 'cl.cliente_id', '=', 'p.cliente_id')
             ->whereIn('p.estado', ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO'])
             ->select('p.pedido_id', 'p.codigo', 'p.estado', 'p.fecha_programada', 'p.franja_horaria',
-                'p.canal_coordinacion', 'p.coordinado_en', 'p.fase_flujo', 'c.codigo as contrato_codigo', 'c.fecha_inicio as contrato_fecha_inicio',
-                'c.direccion_servicio', 'cl.nombres_razon_social as cliente_nombre', 'cl.apellidos as cliente_apellidos',
-                'cl.telefono as cliente_telefono', 'cl.correo as cliente_correo');
+                'p.canal_coordinacion', 'p.coordinado_en', 'p.fase_flujo', 'p.documento_cliente', 'p.tipo_instalacion', 'p.ubicacion_compartida',
+                'p.plan_solicitado', 'p.disponibilidad_fecha', 'p.disponibilidad_desde', 'p.disponibilidad_hasta',
+                'p.estado_cobertura', 'p.detalle_cobertura', 'c.codigo as contrato_codigo', 'c.fecha_inicio as contrato_fecha_inicio',
+                'cl.nombres_razon_social as cliente_nombre', 'cl.apellidos as cliente_apellidos',
+                'cl.telefono as cliente_telefono', 'cl.correo as cliente_correo')
+            ->selectRaw('COALESCE(c.direccion_servicio, p.direccion_solicitada, cl.direccion) as direccion_servicio')
+            ->selectRaw('COALESCE(CONCAT_WS(" ", NULLIF(cl.nombres_razon_social, ""), NULLIF(cl.apellidos, "")), p.solicitante_nombre) as nombre_solicitud')
+            ->selectRaw('COALESCE(cl.telefono, p.telefono_contacto) as telefono_solicitud')
+            ->selectRaw('COALESCE(cl.correo, p.correo_contacto) as correo_solicitud');
         if (filled($filters['search'] ?? null)) {
             $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], trim($filters['search'])).'%';
             $query->where(function ($builder) use ($pattern): void {
                 $builder->whereRaw("p.codigo LIKE ? ESCAPE '!'", [$pattern])
                     ->orWhereRaw("c.codigo LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhere('p.documento_cliente', 'like', $pattern)
                     ->orWhereRaw("CONCAT_WS(' ', cl.nombres_razon_social, cl.apellidos) LIKE ? ESCAPE '!'", [$pattern]);
             });
         }
@@ -46,20 +52,6 @@ class OfficeInstallationCoordinationController extends Controller
 
         $records = $query->orderByRaw('p.fecha_programada IS NOT NULL')->orderBy('p.fecha_programada')
             ->orderByDesc('p.pedido_id')->paginate(12)->withQueryString();
-        $unplannedContracts = DB::table('contratos as c')
-            ->join('clientes as cl', 'cl.cliente_id', '=', 'c.cliente_id')
-            ->leftJoin('pedidos_instalacion as p', 'p.contrato_id', '=', 'c.contrato_id')
-            ->whereNull('p.pedido_id')->whereIn('c.estado', ['PENDIENTE', 'ACTIVO'])
-            ->when(filled($filters['search'] ?? null), function ($builder) use ($filters): void {
-                $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], trim($filters['search'])).'%';
-                $builder->where(fn ($builder) => $builder->whereRaw("c.codigo LIKE ? ESCAPE '!'", [$pattern])
-                    ->orWhereRaw("CONCAT_WS(' ', cl.nombres_razon_social, cl.apellidos) LIKE ? ESCAPE '!'", [$pattern]));
-            })
-            ->when(($filters['estado'] ?? null) === 'confirmadas', fn ($builder) => $builder->whereRaw('1 = 0'))
-            ->select('c.contrato_id', 'c.codigo', 'c.direccion_servicio', 'c.estado', 'c.fecha_inicio as contrato_fecha_inicio',
-                'cl.nombres_razon_social as cliente_nombre', 'cl.apellidos as cliente_apellidos',
-                'cl.telefono as cliente_telefono', 'cl.correo as cliente_correo')
-            ->orderByDesc('c.contrato_id')->limit(12)->get();
         $latestChanges = DB::table('pedido_reprogramaciones')
             ->whereIn('pedido_id', collect($records->items())->pluck('pedido_id'))
             ->orderByDesc('reprogramacion_id')
@@ -76,7 +68,6 @@ class OfficeInstallationCoordinationController extends Controller
 
         return view('access.coordination', [
             'records' => $records,
-            'unplannedContracts' => $unplannedContracts,
             'latestChanges' => $latestChanges,
             'reasonOptions' => InstallationOrderService::REPROGRAM_REASONS,
             'visitWindows' => self::VISIT_WINDOWS,
@@ -84,29 +75,49 @@ class OfficeInstallationCoordinationController extends Controller
         ]);
     }
 
-    public function saveContract(Request $request, int $contrato)
+    public function saveCoverage(Request $request, int $pedido)
     {
-        $request->validate(['aceptacion_cliente' => ['accepted']], [
-            'aceptacion_cliente.accepted' => 'Confirma que el cliente aceptó la visita y las condiciones antes de crear el pedido.',
+        $data = $request->validate([
+            'estado_cobertura' => ['required', Rule::in(['VALIDADA', 'FUERA_COBERTURA'])],
+            'detalle_cobertura' => ['nullable', 'string', 'max:500', 'required_if:estado_cobertura,FUERA_COBERTURA'],
         ]);
-        return DB::transaction(function () use ($request, $contrato) {
-            $contract = DB::table('contratos')->where('contrato_id', $contrato)->lockForUpdate()->first();
-            abort_unless($contract, 404);
-            if (! in_array($contract->estado, ['PENDIENTE', 'ACTIVO'], true)) {
-                throw ValidationException::withMessages(['contrato' => 'El contrato no permite programar una instalación.']);
-            }
-            if (DB::table('pedidos_instalacion')->where('contrato_id', $contrato)->exists()) {
-                throw ValidationException::withMessages(['contrato' => 'Este contrato ya tiene un pedido. Abre su visita en la lista para continuar.']);
-            }
-            $pedido = $this->orders->createForContract($contract, $request->user()->getKey());
-            $response = $this->save($request, $pedido);
-            DB::afterCommit(fn () => app(\App\Services\InstallationDriveService::class)->syncVerifiedContract($pedido));
-            return $response;
-        }, 3);
+        $order = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->first();
+        abort_unless($order, 404);
+        if ($order->contrato_id) {
+            throw ValidationException::withMessages(['cobertura' => 'Este pedido ya tiene un contrato formal vinculado.']);
+        }
+        if (! in_array($order->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO'], true)) {
+            throw ValidationException::withMessages(['cobertura' => 'La cobertura solo se actualiza antes de iniciar la instalación.']);
+        }
+        if ($order->fecha_programada && $data['estado_cobertura'] !== $order->estado_cobertura) {
+            throw ValidationException::withMessages(['cobertura' => 'La cobertura ya fue validada para una visita confirmada. Gestiona un cambio de fecha o cancela el pedido antes de modificarla.']);
+        }
+        DB::transaction(function () use ($request, $pedido, $data): void {
+            DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->update([
+                'estado_cobertura' => $data['estado_cobertura'],
+                'detalle_cobertura' => $data['estado_cobertura'] === 'FUERA_COBERTURA' ? trim($data['detalle_cobertura']) : null,
+                'actualizado_en' => now('America/Lima'),
+            ]);
+            DB::table('pedido_historial_eventos')->insert([
+                'pedido_id' => $pedido, 'usuario_id' => $request->user()->getKey(),
+                'tipo' => 'VALIDACION_COBERTURA',
+                'motivo' => $data['estado_cobertura'] === 'VALIDADA' ? 'Cobertura validada.' : trim($data['detalle_cobertura']),
+                'contexto' => json_encode(['estado' => $data['estado_cobertura']]), 'registrado_en' => now('America/Lima'),
+            ]);
+        });
+        return redirect()->route('office.coordination.index', ['search' => $order->codigo])
+            ->with('status', $data['estado_cobertura'] === 'VALIDADA'
+                ? 'Cobertura validada. Ya puedes coordinar la fecha exacta con el cliente.'
+                : 'La solicitud quedó marcada fuera de cobertura y no se podrá programar mientras ese resultado siga vigente.');
     }
 
     public function save(Request $request, int $pedido)
     {
+        $order = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->first();
+        abort_unless($order, 404);
+        if (! $order->contrato_id && $order->estado_cobertura !== 'VALIDADA') {
+            throw ValidationException::withMessages(['cobertura' => 'Valida primero la cobertura antes de confirmar la visita.']);
+        }
         $data = $request->validate([
             'fecha_visita' => ['required_without:fecha_programada', 'nullable', 'date_format:Y-m-d'],
             'hora_inicio' => ['required_with:fecha_visita', 'nullable', 'date_format:H:i'],

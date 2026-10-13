@@ -32,7 +32,7 @@ class AccessMatrixTest extends TestCase
             Role::TECHNICIAN=>[['technician.panel','technician.material','contracts.assigned','equipments.assigned','kardex.related','plans.view','zones.view'],['dashboard.view','office.view','contracts.view','equipments.view','kardex.view','technician.supervise']],
             Role::WAREHOUSE=>[['equipments.create','equipments.import','materials.adjustment','kardex.view'],['clients.view','orders.view','reports.view','bi.view']],
             Role::IT=>[[],array_keys(AccessCatalog::permissions())],
-            Role::INSTALLATIONS=>[['technician.supervise','orders.schedule','orders.cancel','payments.view'],['employees.view','access.view','clients.update','reports.view']],
+            Role::INSTALLATIONS=>[['technician.supervise','orders.schedule','orders.assigned','orders.resources.request','orders.cancel','payments.view'],['employees.view','access.view','clients.update','reports.view']],
         ];
         foreach ($expectations as $name=>[$allowed,$denied]) {
             $user=$this->actor($name);
@@ -51,6 +51,18 @@ class AccessMatrixTest extends TestCase
         $this->get('/equipments')->assertForbidden();
         $this->signIn($this->actor(Role::ADMIN))->get('/employees')->assertOk();
         $this->get('/access-history')->assertOk();
+    }
+
+    public function test_contract_cancellation_inbox_has_a_separate_view_permission(): void
+    {
+        $manager = $this->actor(Role::MANAGER);
+        $office = $this->actor(Role::OFFICE);
+
+        $this->assertSame('contracts.cancel.inbox', AccessCatalog::forRoute('contracts.cancellations'));
+        $this->assertContains('contracts.cancel.inbox', AccessCatalog::dependencies('contracts.cancel.approve'));
+        $this->signIn($manager)->get('/contracts/cancellation-requests')->assertOk()->assertSee('Bandeja de solicitudes');
+        $this->get('/contracts')->assertSee(route('contracts.cancellations'), false);
+        $this->signIn($office)->get('/contracts/cancellation-requests')->assertForbidden();
     }
 
     public function test_reserved_permissions_cannot_be_granted_even_through_a_pivot_record(): void
@@ -138,7 +150,9 @@ class AccessMatrixTest extends TestCase
         $this->patch('/orders/'.$new->pedido_id.'/coordinate', [])->assertNotFound();
         $this->get('/dashboard/call-center/visitas?search=ORD-C-NUEVO')->assertOk()
             ->assertSee('Confirmar fecha de visita')->assertSee('ORD-C-NUEVO')
-            ->assertSee('name="fecha_visita"', false)->assertSee('Mañana · 08:00 a 12:00');
+            ->assertSee('name="fecha_visita"', false)
+            ->assertSee('value="'.$base->fecha_inicio.'"', false)
+            ->assertSee('Mañana · 08:00 a 12:00');
         $this->signIn($chief)->get('/orders?search=ORD-C-NUEVO')->assertOk()
             ->assertSee('order-next-attention')->assertSee('Call Center debe confirmar la fecha con el cliente');
         $this->signIn($office);

@@ -28,27 +28,29 @@
 <div class="installation-cards">
 @foreach($records as $record)
 @php
-    $mine = $record->tecnico_id && (int) $record->tecnico_id === (int) auth()->user()->empleado_id;
+    $mine = in_array((int) auth()->user()->empleado_id, [(int) $record->tecnico_id, (int) $record->tecnico_secundario_id], true);
     $changePending = $pendingReprogramming->contains($record->pedido_id);
-    $canBegin = ! $changePending && $mine && in_array($record->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO'], true) && (! $record->fase_flujo || $record->fase_flujo === 'CONFIRMADO');
-    $canConfirm = $mine && $record->fase_flujo === 'ESPERANDO_CONFIRMACION_TECNICO';
+    $canBegin = ! $changePending && $record->tecnico_id && (int) $record->tecnico_id === (int) auth()->user()->empleado_id && in_array($record->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO'], true) && (! $record->fase_flujo || ($record->fase_flujo === 'CONFIRMADO' && $resourcesPrepared->contains($record->pedido_id)));
+    $alreadyConfirmed = (int) $record->tecnico_id === (int) auth()->user()->empleado_id ? $record->confirmado_por_tecnico_en : $record->confirmado_por_tecnico_secundario_en;
+    $canConfirm = $mine && ! $alreadyConfirmed && $record->fase_flujo === 'ESPERANDO_CONFIRMACION_TECNICO';
     $supervising = auth()->user()->hasPermission('technician.supervise');
     $visitDate = $record->fecha_programada ? \Illuminate\Support\Carbon::parse($record->fecha_programada) : null;
     $nextAction = match (true) {
         $record->estado === 'CANCELADO' => 'Pedido cancelado',
-        $record->estado === 'COMPLETADO' => 'Instalación finalizada',
+        $record->estado === 'COMPLETADO' => $record->estado_documentacion === 'COMPLETA' ? 'Instalación y documentos completos' : 'Trabajo terminado; Call Center debe registrar cliente y contrato',
         $record->estado === 'EN_PROCESO' => $supervising ? 'El técnico ya inició; consulta su avance en la ficha' : 'Continúa registrando recursos, incidencias y evidencias',
         $changePending => 'Espera la decisión de Gerencia; la visita conserva la fecha vigente',
         ! $record->fecha_programada => 'Falta acordar la fecha de visita con el cliente',
         ! $record->tecnico_id => 'Falta asignar al técnico instalador',
         $record->fase_flujo === 'ESPERANDO_CONFIRMACION_TECNICO' => $supervising ? 'El técnico aún debe confirmar que recibió la asignación' : 'Confirma que recibiste la asignación para poder iniciar',
+        $record->fase_flujo === 'CONFIRMADO' && ! $resourcesPrepared->contains($record->pedido_id) => 'Espera a que Almacén prepare el equipo y los materiales',
         $canBegin => 'Ya puedes iniciar la instalación desde esta ficha',
         $supervising => 'Visita programada; el técnico podrá iniciarla',
         default => 'Visita programada',
     };
 @endphp
 <article class="installation-panel technician-card">
-    <div class="technician-card-top"><div><p class="order-card-kicker">FICHA #{{ $record->pedido_id }}</p><h3>{{ $record->codigo }}</h3><p class="technician-card-client"><small>Cliente</small><strong>{{ trim($record->nombres_razon_social.' '.$record->apellidos) }}</strong></p></div><span class="installation-state state-{{ strtolower($record->estado) }}">{{ ucfirst(mb_strtolower(str_replace('_', ' ', $record->estado))) }}</span></div>
+    <div class="technician-card-top"><div><p class="order-card-kicker">FICHA #{{ $record->pedido_id }}</p><h3>{{ $record->codigo }}</h3><p class="technician-card-client"><small>Cliente</small><strong>{{ $record->nombre_solicitud ?: 'Cliente sin identificar' }}</strong></p></div><span class="installation-state state-{{ strtolower($record->estado) }}">{{ ucfirst(mb_strtolower(str_replace('_', ' ', $record->estado))) }}</span></div>
     <div class="technician-card-meta">
         <div class="technician-card-visit"><small>Visita acordada</small><dl>
             <div><dt>Día</dt><dd>{{ $visitDate ? ucfirst($visitDate->locale('es')->isoFormat('dddd')).' '.$visitDate->format('d/m/Y') : 'Por confirmar' }}</dd></div>
@@ -56,9 +58,10 @@
             <div><dt>Franja</dt><dd>{{ $record->franja_horaria ?: 'Por confirmar' }}</dd></div>
         </dl></div>
         <div><small>Dirección del servicio</small><strong>{{ $record->direccion_servicio }}</strong></div>
-        <div><small>Técnico instalador</small><strong>{{ $record->tecnico_id ? trim($record->tecnico_nombres.' '.$record->tecnico_apellidos) : 'Sin asignar' }}</strong></div>
+        <div><small>Equipo técnico</small><strong>{{ $record->tecnico_id ? trim($record->tecnico_nombres.' '.$record->tecnico_apellidos) : 'Sin asignar' }}</strong>@if($record->segundo_tecnico_nombres)<span>+ {{ trim($record->segundo_tecnico_nombres.' '.$record->segundo_tecnico_apellidos) }}</span>@endif</div>
     </div>
     @if($record->estado === 'REPROGRAMADO' && $record->fecha_original)<p class="technician-card-note">Esta visita fue reprogramada · Fecha inicial: {{ \Illuminate\Support\Carbon::parse($record->fecha_original)->format('d/m/Y · H:i') }}</p>@endif
+    @if($record->estado === 'CANCELADO' && ($cancellation = $cancellationEvents->get($record->pedido_id)))<p class="technician-card-note" role="note"><strong>Motivo de cancelación:</strong> {{ $cancellation->motivo }} <small>· {{ $cancellation->nombre_usuario ?: 'Proceso automático' }} · {{ \Illuminate\Support\Carbon::parse($cancellation->registrado_en)->format('d/m/Y · H:i') }}</small></p>@endif
     <div class="technician-card-footer"><div class="technician-card-next {{ $record->estado === 'COMPLETADO' ? 'is-complete' : ($record->estado === 'CANCELADO' ? 'is-muted' : 'is-pending') }}"><small>{{ in_array($record->estado, ['COMPLETADO', 'CANCELADO']) ? 'SEGUIMIENTO' : 'SIGUIENTE PASO' }}</small><strong>{{ $nextAction }}</strong></div><div class="installation-row-actions">
         @if($supervising && in_array($record->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO'], true) && auth()->user()->hasPermission('office.coordination'))
             <a class="action-link" href="{{ route('office.coordination.index', ['search' => $record->codigo]) }}#visita-{{ $record->pedido_id }}">{{ $changePending ? 'Ver coordinación' : ($record->fecha_programada ? 'Solicitar cambio de fecha' : 'Coordinar fecha') }}</a>

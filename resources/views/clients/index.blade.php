@@ -8,7 +8,7 @@
 @routecan('clients.index')<form class="filters client-filters" method="GET" action="{{ route('clients.index') }}">
         <div><label for="search">Nombre o documento</label><input id="search" name="search" value="{{ request('search') }}" placeholder="Buscar cliente…" maxlength="180"><small>Nombres, apellidos o número de documento.</small></div>
         <fieldset><legend>Estado del cliente</legend>
-            @foreach(['' => 'Todos los estados', 'ACTIVO' => 'Activo', 'INACTIVO' => 'Inactivo'] as $value => $label)
+            @foreach(['' => 'Todos los estados', 'PENDIENTE' => 'Pendiente de instalación', 'ACTIVO' => 'Activo', 'INACTIVO' => 'Inactivo'] as $value => $label)
                 <label class="state-option"><input type="radio" name="estado" value="{{ $value }}" @checked((request('estado') ?? '') === $value)><span>{{ $label }}</span></label>
             @endforeach
         </fieldset>
@@ -30,7 +30,7 @@
 @routecan('clients.show')<a class="client-name" href="{{ route('clients.show', $client) }}">{{ $client->nombres_razon_social }} {{ $client->apellidos }}</a>@endroutecan
 </td>
         <td>{{ $client->telefono ?? '—' }}</td><td>{{ $client->direccion }}</td>
-        <td><span class="state {{ $client->estado === 'ACTIVO' ? 'active' : 'inactive' }}">{{ $client->estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span></td>
+        <td><span class="state {{ $client->estado === 'ACTIVO' ? 'active' : ($client->estado === 'PENDIENTE' ? 'pending' : 'inactive') }}">{{ ['ACTIVO' => 'Activo', 'PENDIENTE' => 'Pendiente de instalación', 'INACTIVO' => 'Inactivo'][$client->estado] ?? $client->estado }}</span></td>
         <td><div class="row-actions">
 @routecan('clients.show')<a href="{{ route('clients.show', $client) }}" aria-label="Ver ficha de {{ $client->nombres_razon_social }}">Ver ficha</a>@endroutecan
 @can('clients.manage')

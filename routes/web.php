@@ -65,11 +65,16 @@ Route::middleware(['auth'])->group(function (): void {
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
     Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+    Route::get('/contracts/cancellation-requests', [ContractController::class, 'cancellationRequests'])->name('contracts.cancellations');
     Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
     Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
     Route::get('/contracts/{contract}', [ContractController::class, 'show'])->whereNumber('contract')->name('contracts.show');
     Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->whereNumber('contract')->name('contracts.edit');
     Route::put('/contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
+    Route::post('/contracts/{contract}/cancellation-requests', [ContractController::class, 'requestCancellation'])->whereNumber('contract')->name('contracts.cancellation.request');
+    Route::post('/contracts/{contract}/cancellation-requests/{cancellationRequest}/approve', [ContractController::class, 'approveCancellation'])->whereNumber(['contract', 'cancellationRequest'])->name('contracts.cancellation.approve');
+    Route::post('/contracts/{contract}/cancellation-requests/{cancellationRequest}/reject', [ContractController::class, 'rejectCancellation'])->whereNumber(['contract', 'cancellationRequest'])->name('contracts.cancellation.reject');
+    Route::get('/contracts/{contract}/cancellation-requests/{cancellationRequest}/evidence', [ContractController::class, 'cancellationEvidence'])->whereNumber(['contract', 'cancellationRequest'])->name('contracts.cancellation.evidence');
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->whereNumber('contract')->name('contracts.pdf');
     Route::get('/contracts/{contract}/field-evidence/{evidence}', [ContractController::class, 'evidence'])->whereNumber(['contract', 'evidence'])->name('contracts.evidence');
     Route::get('/contracts/{contract}/draft', [ContractController::class, 'draft'])->whereNumber('contract')->name('contracts.draft');
@@ -202,8 +207,8 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard/gerencia', [DashboardController::class, 'management'])->name('dashboard.management');
     Route::get('/dashboard/call-center', [DashboardController::class, 'office'])->name('dashboard.office');
     Route::get('/dashboard/call-center/visitas', [\App\Http\Controllers\OfficeInstallationCoordinationController::class, 'index'])->name('office.coordination.index');
+    Route::patch('/dashboard/call-center/visitas/{pedido}/cobertura', [\App\Http\Controllers\OfficeInstallationCoordinationController::class, 'saveCoverage'])->whereNumber('pedido')->name('office.coordination.coverage');
     Route::patch('/dashboard/call-center/visitas/{pedido}', [\App\Http\Controllers\OfficeInstallationCoordinationController::class, 'save'])->whereNumber('pedido')->name('office.coordination.save');
-    Route::post('/dashboard/call-center/visitas/contratos/{contrato}', [\App\Http\Controllers\OfficeInstallationCoordinationController::class, 'saveContract'])->whereNumber('contrato')->name('office.coordination.contract');
     Route::get('/executions', [TechnicianController::class, 'index'])->name('executions.index');
     Route::get('/assigned/contracts', [\App\Http\Controllers\ScopedAccessController::class, 'contracts'])->name('contracts.assigned');
     Route::get('/assigned/equipment', [\App\Http\Controllers\ScopedAccessController::class, 'equipment'])->name('equipments.assigned');
