@@ -199,7 +199,7 @@ class GeminiService
         if (preg_match('/material|materiales|stock/i', $query) && !isset($context['material_especifico'])) {
             $context['materiales_stock_bajo'] = Material::whereRaw('stock_actual <= stock_minimo')
                 ->where('estado', 'ACTIVO')
-                ->get(['codigo', 'nombre', 'stock_actual', 'stock_minimo', 'unidad_medida'])
+                ->get(['codigo', 'nombre', 'stock_actual', 'stock_minimo', 'unidad_base as unidad_medida'])
                 ->toArray();
         }
 
