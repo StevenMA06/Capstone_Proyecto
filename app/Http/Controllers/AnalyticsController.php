@@ -20,6 +20,7 @@ class AnalyticsController extends Controller
         $process=$values['proceso'] ?? 'all';
         return view('analytics.screen', [
             'screen'=>$request->routeIs('bi.index') ? 'bi' : 'indicators',
+            'pretest'=>app(\App\Services\PretestMeasurementService::class)->summary($from,$to,$process),
             'from'=>$from,'to'=>$to,'process'=>$process,'processes'=>AnalyticsService::PROCESSES,
             ...$analytics->dashboard($from,$to,$process),
         ]);

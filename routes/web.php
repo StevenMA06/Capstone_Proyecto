@@ -219,6 +219,7 @@ Route::middleware(['auth', 'can:reports.view'])->group(function (): void {
 
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/indicators', [\App\Http\Controllers\AnalyticsController::class, 'index'])->middleware('can:indicators.view')->name('indicators.index');
+    Route::post('/indicators/pretest', [\App\Http\Controllers\PretestObservationController::class, 'store'])->middleware(['can:indicators.view', 'throttle:20,1'])->name('indicators.pretest.store');
     Route::get('/bi', [\App\Http\Controllers\AnalyticsController::class, 'index'])->middleware('can:bi.view')->name('bi.index');
 });
 

@@ -56,7 +56,9 @@ class AnalyticsService
         if ($process==='all' || $process==='instalaciones') {
             $alerts[]=['label'=>'Instalaciones pendientes de programación','value'=>DB::table('pedidos_instalacion')->where('estado','PENDIENTE')->count(),'detail'=>'Revisar asignación y disponibilidad del técnico.','module'=>'instalaciones','report'=>'instalaciones_estado'];
         }
-        $materials = ($process==='all' || $process==='inventario') ? DB::table('materiales')->where('estado','ACTIVO')->orderByRaw('(stock_actual <= stock_minimo) DESC')->orderBy('nombre')->limit(8)->get(['codigo','nombre','stock_actual','stock_minimo','unidad_medida']) : collect();
+        $materials = ($process==='all' || $process==='inventario') ? DB::table('materiales')->where('estado','ACTIVO')->orderByRaw('(stock_actual <= stock_minimo) DESC')->orderBy('nombre')->limit(8)
+            ->select('codigo','nombre','stock_actual','stock_minimo')
+            ->selectRaw('CASE WHEN inventario_en_empaque = 1 THEN unidad_empaque ELSE unidad_base END as unidad_medida')->get() : collect();
         return compact('materials','items','alerts','previousFrom','previousTo');
     }
 }
