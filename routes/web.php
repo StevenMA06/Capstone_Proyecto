@@ -58,8 +58,33 @@ Route::middleware(['auth'])->group(function (): void {
     
     // Chatbot: acceso y consultas según los permisos efectivos.
     Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');
+    Route::get('/chatbot/test-interface', [ChatbotController::class, 'testInterface'])->name('chatbot.test-interface');
     Route::post('/chatbot/query', [ChatbotController::class, 'query'])->middleware('throttle:60,1')->name('chatbot.query');
     Route::post('/chatbot/new', [ChatbotController::class, 'newConversation'])->name('chatbot.new');
+    
+    // RF-IA-03: Consultar información operativa
+    Route::post('/chatbot/operational-data', [ChatbotController::class, 'queryOperationalData'])->middleware('throttle:60,1')->name('chatbot.operational-data');
+    
+    // RF-IA-04: Consultar información de inventario
+    Route::post('/chatbot/inventory', [ChatbotController::class, 'queryInventory'])->middleware('throttle:60,1')->name('chatbot.inventory');
+    
+    // RF-IA-08: Verificar permisos de acceso
+    Route::post('/chatbot/check-permissions', [ChatbotController::class, 'checkPermissions'])->middleware('throttle:60,1')->name('chatbot.check-permissions');
+    
+    // RF-IA-05: Consultar indicadores
+    Route::post('/chatbot/indicators', [ChatbotController::class, 'queryIndicators'])->middleware('throttle:60,1')->name('chatbot.indicators');
+    
+    // RF-IA-06: Consultar paneles de BI
+    Route::post('/chatbot/bi', [ChatbotController::class, 'queryBI'])->middleware('throttle:60,1')->name('chatbot.bi');
+    
+    // RF-IA-07: Reportar ausencia de datos
+    Route::post('/chatbot/no-data', [ChatbotController::class, 'reportNoData'])->middleware('throttle:60,1')->name('chatbot.no-data');
+    
+    // RF-IA-09: Mostrar fuente de datos
+    Route::post('/chatbot/data-source', [ChatbotController::class, 'showDataSource'])->middleware('throttle:60,1')->name('chatbot.data-source');
+    
+    // RF-IA-10: Iniciar nueva conversación con tracking
+    Route::post('/chatbot/start-conversation', [ChatbotController::class, 'startNewConversation'])->middleware('throttle:60,1')->name('chatbot.start-conversation');
 });
 
 Route::middleware(['auth'])->group(function (): void {
