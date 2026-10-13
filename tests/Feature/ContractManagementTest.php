@@ -41,7 +41,9 @@ class ContractManagementTest extends TestCase
         $this->signIn($actor)->get('/contracts?search=76543210&estado=ACTIVO&desde=2026-01-01&hasta=2026-01-31')
             ->assertOk()->assertSee('RF-CON-C-0')->assertSee('Ana Pérez');
         $this->get('/contracts?search=76543210&estado=CANCELADO')->assertOk()->assertDontSee('>RF-CON-C-0<', false);
-        $this->get('/contracts/'.$contract->contrato_id)->assertOk()->assertSee('Internet RF-CON');
+        $this->get('/contracts/'.$contract->contrato_id)->assertOk()->assertSee('Internet RF-CON')
+            ->assertDontSee('Registrar venta mediante contrato firmado')
+            ->assertDontSee('Archivos de campo anteriores');
         $this->get('/contracts/'.$contract->contrato_id.'/pdf')->assertOk()->assertHeader('Content-Type', 'application/pdf')->assertSee('%PDF-1.4', false);
         $this->get('/contracts/'.$contract->contrato_id.'/draft')->assertDownload('contrato-'.$contract->codigo.'-para-firma.pdf');
 
@@ -63,7 +65,7 @@ class ContractManagementTest extends TestCase
         $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'PENDIENTE']);
     }
 
-    public function test_breadcrumb_is_above_heading_and_manual_cancellation_requires_a_reason(): void
+    public function test_contract_cancellation_requires_evidence_and_a_different_authorized_reviewer(): void
     {
         [$actor, $client, $contract] = $this->records();
         Storage::fake('local');
@@ -86,28 +88,52 @@ class ContractManagementTest extends TestCase
 
         $this->signIn($actor)->get('/contracts/'.$contract->contrato_id.'/edit')->assertOk()
             ->assertSeeInOrder(['workspace-breadcrumb', 'GESTIÓN COMERCIAL'])
-            ->assertSee('Motivo de cancelación');
+            ->assertSee('Solicitar cancelación del contrato')
+            ->assertSee('Evidencia de respaldo')
+            ->assertDontSee('name="estado"', false);
 
-        $data = [
+        $this->put('/contracts/'.$contract->contrato_id, [
             'cliente_id' => $client->getKey(), 'plan_id' => $contract->plan_id,
             'zona_id' => $contract->zona_id, 'responsable_id' => $contract->responsable_id,
             'fecha_inicio' => $contract->fecha_inicio, 'duracion_meses' => $contract->duracion_meses,
-            'observaciones' => $contract->observaciones, 'estado' => 'CANCELADO',
-        ];
-        $this->put('/contracts/'.$contract->contrato_id, $data)->assertSessionHasErrors('motivo_cancelacion');
+            'estado' => 'CANCELADO', 'motivo_cancelacion' => 'Solicitud del cliente',
+        ])->assertSessionHasErrors(['estado', 'motivo_cancelacion']);
         $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'ACTIVO']);
 
         $reason = 'El cliente solicitó la baja por cambio de domicilio.';
-        $this->put('/contracts/'.$contract->contrato_id, $data + ['motivo_cancelacion' => $reason])
+        $evidence = UploadedFile::fake()->createWithContent('solicitud.pdf', "%PDF-1.4\nEvidencia de solicitud de baja\n");
+        $this->post('/contracts/'.$contract->contrato_id.'/cancellation-requests', [
+            'categoria' => 'Solicitud del cliente', 'explicacion' => $reason, 'evidencia' => $evidence,
+        ])->assertSessionHasNoErrors()->assertRedirect('/contracts/'.$contract->contrato_id);
+        $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'ACTIVO']);
+        $this->put('/contracts/'.$contract->contrato_id, [
+            'cliente_id' => $client->getKey(), 'plan_id' => $contract->plan_id,
+            'zona_id' => $contract->zona_id, 'responsable_id' => $contract->responsable_id,
+            'fecha_inicio' => $contract->fecha_inicio, 'duracion_meses' => $contract->duracion_meses,
+        ])->assertSessionHasErrors('contrato');
+
+        $requestId = DB::table('solicitudes_cancelacion_contrato')->value('solicitud_cancelacion_id');
+        $this->post('/contracts/'.$contract->contrato_id.'/cancellation-requests/'.$requestId.'/approve')
+            ->assertSessionHasErrors('solicitud');
+        $reviewer = User::factory()->create(['rol_id' => Role::where('nombre', Role::MANAGER)->value('rol_id')]);
+        $this->signIn($reviewer)->get('/contracts/'.$contract->contrato_id.'/cancellation-requests/'.$requestId.'/evidence')
+            ->assertOk()->assertHeader('X-Content-Type-Options', 'nosniff');
+        $this->post('/contracts/'.$contract->contrato_id.'/cancellation-requests/'.$requestId.'/approve')
             ->assertSessionHasNoErrors()->assertRedirect('/contracts/'.$contract->contrato_id);
         $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'CANCELADO']);
         $this->assertDatabaseHas('periodos_contractuales', [
             'periodo_id' => $periodId, 'estado_periodo' => 'CANCELADO',
-            'motivo_cancelacion' => $reason, 'origen_cancelacion' => 'MANUAL',
-            'cancelado_por' => $actor->getKey(),
+            'motivo_cancelacion' => 'Solicitud del cliente — '.$reason, 'origen_cancelacion' => 'MANUAL',
+            'cancelado_por' => $reviewer->getKey(),
         ]);
         $this->get('/contracts/'.$contract->contrato_id)->assertOk()->assertSee($reason)
-            ->assertSee('únicamente para consulta')->assertDontSee('Actualizar contrato');
+            ->assertSee('únicamente para consulta')->assertDontSee('Actualizar contrato')
+            ->assertSee($actor->name)->assertSee($reviewer->name);
+        $this->assertDatabaseHas('solicitudes_cancelacion_contrato', [
+            'solicitud_cancelacion_id' => $requestId, 'estado' => 'APROBADA',
+            'solicitado_por' => $actor->getKey(), 'resuelto_por' => $reviewer->getKey(),
+            'evidencia_sha256' => hash('sha256', "%PDF-1.4\nEvidencia de solicitud de baja\n"),
+        ]);
         $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertForbidden();
         $this->put('/contracts/'.$contract->contrato_id, $data + ['motivo_cancelacion' => 'Intento posterior'])->assertForbidden();
     }
@@ -167,6 +193,31 @@ class ContractManagementTest extends TestCase
         $this->assertDatabaseCount('contratos', 1);
     }
 
+    public function test_office_contract_creator_is_automatically_responsible_and_cannot_override_it(): void
+    {
+        [$manager, $client, $existing] = $this->records();
+        $assistant = Employee::create([
+            'tipo_documento' => 'OTRO', 'numero_documento' => 'OFFICE-CON',
+            'nombres' => 'Rosa', 'apellidos' => 'Call Center', 'cargo' => 'Asistente de Ventas',
+        ]);
+        $officeRole = Role::where('nombre', Role::OFFICE)->value('rol_id');
+        $officeUser = User::factory()->create(['rol_id' => $officeRole, 'empleado_id' => $assistant->getKey()]);
+        $this->signIn($officeUser)->get('/contracts/create')->assertOk()
+            ->assertSee('Rosa Call Center')->assertDontSee('name="responsable_id"', false);
+
+        $data = [
+            'cliente_id' => $client->getKey(), 'plan_id' => $existing->plan_id,
+            'zona_id' => $existing->zona_id, 'fecha_inicio' => '2026-10-12',
+            'duracion_meses' => 12,
+        ];
+        $this->post('/contracts', $data + ['responsable_id' => $existing->responsable_id])
+            ->assertSessionHasErrors('responsable_id');
+        $this->post('/contracts', $data)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('contratos', [
+            'cliente_id' => $client->getKey(), 'responsable_id' => $assistant->getKey(),
+        ]);
+    }
+
     public function test_code_is_generated_and_unsigned_contract_cannot_leave_pending(): void
     {
         [$actor, $client, $existing] = $this->records();
@@ -178,29 +229,47 @@ class ContractManagementTest extends TestCase
         ]);
         $response->assertSessionHasNoErrors()->assertRedirect();
         $saved = DB::table('contratos')->where('contrato_id', '!=', $existing->contrato_id)->first();
+        $this->get('/contracts/'.$saved->contrato_id)->assertOk()
+            ->assertSee('Descargar contrato para firma')
+            ->assertDontSee('Archivos de este contrato');
         $this->assertMatchesRegularExpression('/^CON-[0-9]{8}-[A-Z0-9]{8}$/', $saved->codigo);
         $this->assertSame('PENDIENTE', $saved->estado);
         $this->assertNull($saved->pdf_contrato_ruta);
         $this->assertSame('Calle Uno', $saved->direccion_servicio);
         $this->get('/contracts/create')->assertOk()->assertDontSee('name="direccion_servicio"', false);
         $this->get('/contracts/'.$saved->contrato_id.'/edit')->assertOk()->assertSee('value="Calle Uno"', false);
-        $this->get('/contracts/'.$saved->contrato_id.'/edit')->assertSee('name="estado"', false)
-            ->assertSee('value="CANCELADO"', false)->assertDontSee('value="ACTIVO"', false);
+        $this->get('/contracts/'.$saved->contrato_id.'/edit')->assertDontSee('name="estado"', false)
+            ->assertSee('Pendiente', false)->assertDontSee('value="ACTIVO"', false);
+        // Isolate this new customer service so canceling its only pending work
+        // proves the client no longer remains permanently pending installation.
+        DB::table('pedidos_instalacion')->where('contrato_id', '<>', $saved->contrato_id)->delete();
+        DB::table('pagos')->where('contrato_id', '<>', $saved->contrato_id)->delete();
+        DB::table('contratos')->where('contrato_id', '<>', $saved->contrato_id)->delete();
         $this->put('/contracts/'.$saved->contrato_id, [
             'cliente_id' => $client->getKey(), 'plan_id' => $saved->plan_id,
             'zona_id' => $saved->zona_id, 'responsable_id' => $saved->responsable_id,
             'fecha_inicio' => '2026-10-01', 'duracion_meses' => 12,
             'estado' => 'ACTIVO',
         ])->assertSessionHasErrors('estado');
-        $this->put('/contracts/'.$saved->contrato_id, [
-            'cliente_id' => $client->getKey(), 'plan_id' => $saved->plan_id,
-            'zona_id' => $saved->zona_id, 'responsable_id' => $saved->responsable_id,
-            'fecha_inicio' => '2026-10-01', 'duracion_meses' => 12,
-            'estado' => 'CANCELADO', 'motivo_cancelacion' => 'Solicitud del cliente',
-        ])->assertSessionHasNoErrors()->assertRedirect('/contracts/'.$saved->contrato_id);
+        Storage::fake('local');
+        $this->post('/contracts/'.$saved->contrato_id.'/cancellation-requests', [
+            'categoria' => 'Solicitud del cliente',
+            'explicacion' => 'El cliente decidió no continuar con la instalación.',
+            'evidencia' => UploadedFile::fake()->createWithContent('baja.pdf', "%PDF-1.4\nSolicitud del cliente\n"),
+        ])->assertSessionHasNoErrors();
+        $requestId = DB::table('solicitudes_cancelacion_contrato')->value('solicitud_cancelacion_id');
+        $reviewer = User::factory()->create(['rol_id' => Role::where('nombre', Role::MANAGER)->value('rol_id')]);
+        $this->signIn($reviewer)->post('/contracts/'.$saved->contrato_id.'/cancellation-requests/'.$requestId.'/approve')
+            ->assertSessionHasNoErrors()->assertRedirect('/contracts/'.$saved->contrato_id);
         $this->patch('/contracts/'.$saved->contrato_id.'/status', ['estado' => 'CANCELADO'])->assertNotFound();
         $this->assertDatabaseHas('contratos', ['contrato_id' => $saved->contrato_id, 'estado' => 'CANCELADO']);
-        $this->assertDatabaseHas('periodos_contractuales', ['contrato_id' => $saved->contrato_id, 'estado_periodo' => 'CANCELADO', 'motivo_cancelacion' => 'Solicitud del cliente']);
+        $this->assertDatabaseHas('periodos_contractuales', ['contrato_id' => $saved->contrato_id, 'estado_periodo' => 'CANCELADO', 'motivo_cancelacion' => 'Solicitud del cliente — El cliente decidió no continuar con la instalación.']);
+        $orderId = DB::table('pedidos_instalacion')->where('contrato_id', $saved->contrato_id)->value('pedido_id');
+        $this->assertDatabaseHas('pedidos_instalacion', ['pedido_id' => $orderId, 'estado' => 'CANCELADO']);
+        $this->assertDatabaseHas('pedido_historial_eventos', [
+            'pedido_id' => $orderId, 'tipo' => 'CANCELACION', 'motivo' => 'Solicitud del cliente — El cliente decidió no continuar con la instalación.',
+        ]);
+        $this->assertDatabaseHas('clientes', ['cliente_id' => $client->getKey(), 'estado' => 'INACTIVO']);
     }
 
     public function test_signed_document_upload_is_only_available_when_updating(): void

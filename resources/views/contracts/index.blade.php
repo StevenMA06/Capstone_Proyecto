@@ -1,5 +1,6 @@
 @extends('contracts.layout')
 @section('contracts-content')
+@include('contracts._section-nav', ['active' => 'contracts'])
 <div class="contracts-panel">
 
 @routecan('contracts.index')<form method="GET" action="{{ route('contracts.index') }}" class="contracts-filters">

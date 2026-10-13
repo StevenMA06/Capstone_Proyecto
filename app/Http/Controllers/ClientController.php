@@ -19,7 +19,7 @@ class ClientController extends Controller
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:180'],
-            'estado' => ['nullable', Rule::in(['ACTIVO', 'INACTIVO'])],
+            'estado' => ['nullable', Rule::in(['ACTIVO', 'PENDIENTE', 'INACTIVO'])],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
         $clients = $this->clients->search($filters['search'] ?? '', $filters['estado'] ?? null);

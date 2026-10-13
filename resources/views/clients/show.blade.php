@@ -2,7 +2,7 @@
 @section('clients-content')
 <div class="management-toolbar">
     <div><h2>Cliente #{{ $client->getKey() }} · {{ $client->nombres_razon_social }} {{ $client->apellidos }}</h2>
-        <p>Estado: <span class="state {{ $client->estado === 'ACTIVO' ? 'active' : 'inactive' }}">{{ $client->estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span></p>
+        <p>Estado: <span class="state {{ $client->estado === 'ACTIVO' ? 'active' : ($client->estado === 'PENDIENTE' ? 'pending' : 'inactive') }}">{{ ['ACTIVO' => 'Activo', 'PENDIENTE' => 'Pendiente de instalación', 'INACTIVO' => 'Inactivo'][$client->estado] ?? $client->estado }}</span></p>
     </div>
     <div class="row-actions">
 @routecan('clients.index')<a class="secondary" href="{{ route('clients.index') }}">Ver clientes</a>@endroutecan
@@ -37,6 +37,8 @@
 @routecan('clients.deactivate')<form method="POST" action="{{ route('clients.deactivate', $client) }}">@csrf @method('PATCH')<button class="secondary danger" type="submit">Confirmar inhabilitación</button></form>@endroutecan
 @endcan
 </details>
+@elseif($client->estado === 'PENDIENTE')
+<p class="notice">El cliente permanecerá pendiente mientras se realiza la instalación. El sistema lo activará cuando valide la foto de instalación y el contrato firmado guardado en Drive.</p>
 @elseif($client->estado !== 'ACTIVO')
 <p class="notice success">Este cliente está inactivo. Sus datos e historiales permanecen disponibles.</p>
 @endif

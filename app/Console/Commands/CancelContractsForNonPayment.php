@@ -7,6 +7,7 @@ use App\Repositories\ContractPeriodRepository;
 use App\Repositories\SaleRepository;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class CancelContractsForNonPayment extends Command
 {
@@ -109,6 +110,13 @@ class CancelContractsForNonPayment extends Command
                                 $firstAnulated->codigo." IMPAGO).')"
                             ),
                         ]);
+                    if (Schema::hasTable('solicitudes_cancelacion_contrato')) {
+                        DB::table('solicitudes_cancelacion_contrato')->where('contrato_id', $contract->getKey())
+                            ->where('estado', 'PENDIENTE')->update([
+                                'estado' => 'CERRADA', 'resuelto_en' => now('America/Lima'),
+                                'decision_motivo' => 'La solicitud manual se cerró porque el sistema canceló el contrato por falta de pago.',
+                            ]);
+                    }
                     $sales->annul($contract->getKey());
 
                     // Anular todos los pagos pendientes, vencidos e impagos del contrato

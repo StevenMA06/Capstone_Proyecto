@@ -10,8 +10,10 @@ use App\Repositories\SaleRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -44,21 +46,73 @@ class ContractService
         return $this->contracts->findDetailed($id);
     }
 
+    public function pendingCancellationCount(): int
+    {
+        if (! $this->cancellationWorkflowReady()) return 0;
+
+        return (int) DB::table('solicitudes_cancelacion_contrato')->where('estado', 'PENDIENTE')->count();
+    }
+
+    public function cancellationRequests(array $filters = [])
+    {
+        if (! $this->cancellationWorkflowReady()) return collect();
+
+        $query = DB::table('solicitudes_cancelacion_contrato as s')
+            ->join('contratos as c', 'c.contrato_id', '=', 's.contrato_id')
+            ->join('clientes as cl', 'cl.cliente_id', '=', 'c.cliente_id')
+            ->join('usuarios as u', 'u.usuario_id', '=', 's.solicitado_por')
+            ->leftJoin('usuarios as r', 'r.usuario_id', '=', 's.resuelto_por')
+            ->select('s.*', 'c.codigo', 'cl.nombres_razon_social', 'cl.apellidos',
+                'u.nombre_usuario as solicitante_usuario', 'r.nombre_usuario as revisor_usuario');
+
+        if (filled($filters['estado'] ?? null)) $query->where('s.estado', $filters['estado']);
+        if (filled($filters['q'] ?? null)) {
+            $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], trim($filters['q'])).'%';
+            $query->where(function ($builder) use ($pattern): void {
+                $builder->where('c.codigo', 'like', $pattern)
+                    ->orWhere('cl.nombres_razon_social', 'like', $pattern)
+                    ->orWhere('cl.apellidos', 'like', $pattern)
+                    ->orWhere('u.nombre_usuario', 'like', $pattern)
+                    ->orWhere('s.categoria', 'like', $pattern)
+                    ->orWhere('s.explicacion', 'like', $pattern);
+            });
+        }
+
+        return $query->orderByRaw("CASE s.estado WHEN 'PENDIENTE' THEN 0 ELSE 1 END")
+            ->orderByDesc('s.solicitado_en')->paginate(12)->withQueryString();
+    }
+
     public function finalizeExpired(): int
     {
         return $this->contracts->finalizeExpired(now()->toDateString(),
-            fn (object $contract) => $this->installationOrders->cancelPendingForExpiredContract((int) $contract->contrato_id));
+            fn (object $contract) => $this->installationOrders->cancelPendingForExpiredContract((int) $contract->contrato_id),
+            function (object $contract): void {
+                if ($this->cancellationWorkflowReady()) {
+                    DB::table('solicitudes_cancelacion_contrato')->where('contrato_id', $contract->contrato_id)
+                        ->where('estado', 'PENDIENTE')->update([
+                            'estado' => 'CERRADA', 'resuelto_en' => now('America/Lima'),
+                            'decision_motivo' => 'La solicitud se cerró porque el contrato venció antes de la decisión.',
+                        ]);
+                }
+                $this->refreshClientLifecycle((int) $contract->cliente_id);
+            });
     }
 
-    public function formData(?int $id = null): array
+    public function formData(?int $id = null, ?\App\Models\User $actor = null): array
     {
         $data = $this->contracts->formOptions();
         $data['plans'] = $this->plans->active();
         $data['contract'] = $id ? $this->contracts->find($id) : null;
+        $data['canChooseResponsible'] = $actor?->isManager() ?? true;
+        $responsibleId = $data['contract']?->responsable_id ?? $actor?->empleado_id;
+        $data['assignedResponsible'] = $responsibleId
+            ? $this->contracts->option('employees', (int) $responsibleId)
+            : null;
+        if (! $data['canChooseResponsible']) {
+            $data['employees'] = collect();
+        }
         $data['storedPdfAvailable'] = $data['contract']?->pdf_contrato_ruta
             && Storage::disk('local')->exists($data['contract']->pdf_contrato_ruta);
-        $data['canCancel'] = $data['contract']
-            && in_array($data['contract']->estado, ['PENDIENTE', 'ACTIVO'], true);
         if ($data['contract']) {
             foreach ([
                 ['plans', 'plan_id', $data['contract']->plan_id],
@@ -100,7 +154,9 @@ class ContractService
                         'direccion_servicio' => $client->direccion,
                         'estado' => 'PENDIENTE',
                     ]);
-                    $this->installationOrders->createForContract($this->contracts->findDetailed($contractId), $actorId);
+                    $contract = $this->contracts->findDetailed($contractId);
+                    $linkedOrder = $this->installationOrders->linkFormalContract($contract, $actorId);
+                    if (! $linkedOrder) $this->installationOrders->createForContract($contract, $actorId);
 
                     return $contractId;
                 });
@@ -148,32 +204,9 @@ class ContractService
                 if (($data['estado'] ?? null) === 'ACTIVO' && ($current->estado !== 'ACTIVO' || $current->firma_revision !== 'VERIFICADA' || ! $current->pdf_contrato_ruta || ! Storage::disk('local')->exists($current->pdf_contrato_ruta))) {
                     throw ValidationException::withMessages(['estado' => 'La activación solo se realiza automáticamente al verificar la firma del cliente.']);
                 }
-                if (($data['estado'] ?? null) === 'CANCELADO') {
-                    if (! in_array($current->estado, ['PENDIENTE', 'ACTIVO'], true)) {
-                        throw ValidationException::withMessages(['estado' => 'Solo puedes cancelar un contrato pendiente o activo.']);
-                    }
-                    if ($current->estado === 'ACTIVO' && ($current->firma_revision !== 'VERIFICADA' || ! $current->pdf_contrato_ruta || ! Storage::disk('local')->exists($current->pdf_contrato_ruta))) {
-                        throw ValidationException::withMessages(['estado' => 'El contrato activo no conserva un PDF firmado válido.']);
-                    }
-                    if ($termsChanged || $path) {
-                        throw ValidationException::withMessages(['estado' => 'Para cerrar el contrato, conserva los datos y el PDF actual.']);
-                    }
-                    $reason = trim((string) ($data['motivo_cancelacion'] ?? ''));
-                    if ($reason === '') {
-                        throw ValidationException::withMessages(['motivo_cancelacion' => 'Debes explicar el motivo de la cancelación.']);
-                    }
-                    $period = $this->periods->findActivePeriod($current);
-                    if (! $period) {
-                        $period = $this->periods->findLatestPeriod($current)
-                            ? $this->periods->createReactivationPeriod($current, ['fecha_inicio' => $current->fecha_inicio, 'duracion_meses' => $current->duracion_meses])
-                            : $this->periods->createInitialPeriod($current);
-                    }
-                    $this->periods->cancel($period, $reason, 'MANUAL', $userId);
-                    $attributes['estado'] = 'CANCELADO';
-                    $attributes['periodo_actual'] = $period->getKey();
-                    $this->sales->annul($id);
-                    $this->installationOrders->cancelForContract($id, $userId);
-                    $feedback = ['message' => 'El contrato se canceló correctamente.', 'kind' => 'cancelled'];
+                if ($this->cancellationWorkflowReady()
+                    && DB::table('solicitudes_cancelacion_contrato')->where('contrato_id', $id)->where('estado', 'PENDIENTE')->exists()) {
+                    throw ValidationException::withMessages(['contrato' => 'Este contrato tiene una solicitud de cancelación en revisión. Espera la decisión antes de editarlo.']);
                 }
                 if ($termsChanged && in_array($current->estado, ['ACTIVO', 'PENDIENTE'], true) && ($current->estado === 'ACTIVO' || $current->pdf_contrato_ruta)) {
                     $attributes += ['estado' => 'PENDIENTE', 'firma_revision' => null, 'firma_validada_en' => null];
@@ -187,6 +220,7 @@ class ContractService
                     $attributes['pdf_contrato_ruta'] = $path;
                 }
                 $this->contracts->update($id, $attributes);
+                $this->installationOrders->linkFormalContract($this->contracts->findDetailed($id), $userId ?? (auth()->id() ?? 1));
                 if ($path) {
                     if (in_array($current->estado, ['CANCELADO', 'FINALIZADO'], true)) {
                         throw ValidationException::withMessages(['documento_pdf' => 'No se puede activar un contrato cancelado o finalizado.']);
@@ -211,7 +245,6 @@ class ContractService
                     // Si el contrato pasa a ACTIVO, crear período inicial y generar pagos
                     if ($newState === 'ACTIVO' && $current->estado !== 'ACTIVO') {
                         $this->activateContractWithPayments($id, auth()->id() ?? 1);
-                        $this->installationOrders->createForContract($this->contracts->find($id), auth()->id() ?? 1);
                     }
 
                     $feedback = $expiredAtConfirmation
@@ -243,21 +276,154 @@ class ContractService
         return $feedback;
     }
 
+    public function requestCancellation(int $contractId, array $data, UploadedFile $evidence, int $userId): int
+    {
+        $path = 'contract-cancellations/'.Str::uuid().'.'.$evidence->extension();
+        $stored = Storage::disk('local')->putFileAs('contract-cancellations', $evidence, basename($path));
+        if (! $stored) {
+            throw ValidationException::withMessages(['evidencia' => 'No se pudo guardar el archivo de respaldo. Vuelve a intentarlo.']);
+        }
+        $evidenceHash = hash_file('sha256', $evidence->getRealPath());
+
+        try {
+            return DB::transaction(function () use ($contractId, $data, $userId, $path, $evidence, $evidenceHash): int {
+                $contract = $this->contracts->find($contractId, true);
+                if (! in_array($contract->estado, ['PENDIENTE', 'ACTIVO'], true)) {
+                    throw ValidationException::withMessages(['contrato' => 'Solo se puede solicitar la cancelación de contratos pendientes o activos.']);
+                }
+                if (DB::table('solicitudes_cancelacion_contrato')->where('contrato_id', $contractId)->where('estado', 'PENDIENTE')->exists()) {
+                    throw ValidationException::withMessages(['contrato' => 'Ya hay una solicitud de cancelación pendiente para este contrato.']);
+                }
+                if (DB::table('pedidos_instalacion')->where('contrato_id', $contractId)->where('estado', 'EN_PROCESO')->exists()) {
+                    throw ValidationException::withMessages(['contrato' => 'No se puede solicitar la cancelación mientras la instalación está en proceso. Coordina primero su cierre con el jefe de Instalaciones.']);
+                }
+                if ($contract->estado === 'ACTIVO' && ($contract->firma_revision !== 'VERIFICADA' || ! $contract->pdf_contrato_ruta || ! Storage::disk('local')->exists($contract->pdf_contrato_ruta))) {
+                    throw ValidationException::withMessages(['contrato' => 'No se puede cancelar: el contrato activo no conserva un documento firmado verificado.']);
+                }
+
+                return DB::table('solicitudes_cancelacion_contrato')->insertGetId([
+                    'contrato_id' => $contractId, 'solicitado_por' => $userId,
+                    'solicitado_en' => now('America/Lima'), 'categoria' => $data['categoria'],
+                    'explicacion' => trim($data['explicacion']), 'evidencia_ruta' => $path,
+                    'evidencia_nombre' => basename((string) $evidence->getClientOriginalName()),
+                    'evidencia_sha256' => $evidenceHash, 'contrato_sha256' => $this->contractSnapshot($contract),
+                    'estado' => 'PENDIENTE',
+                ]);
+            }, 3);
+        } catch (\Throwable $error) {
+            Storage::disk('local')->delete($path);
+            throw $error;
+        }
+    }
+
+    public function approveCancellation(int $contractId, int $requestId, int $approverId): void
+    {
+        DB::transaction(function () use ($contractId, $requestId, $approverId): void {
+            $request = DB::table('solicitudes_cancelacion_contrato')->where('solicitud_cancelacion_id', $requestId)
+                ->where('contrato_id', $contractId)->lockForUpdate()->first();
+            if (! $request || $request->estado !== 'PENDIENTE') {
+                throw ValidationException::withMessages(['solicitud' => 'Esta solicitud ya fue resuelta o no está disponible.']);
+            }
+            if ((int) $request->solicitado_por === $approverId) {
+                throw ValidationException::withMessages(['solicitud' => 'Por control de separación de funciones, otra cuenta debe aprobar esta solicitud.']);
+            }
+
+            $contract = $this->contracts->find($contractId, true);
+            if (! in_array($contract->estado, ['PENDIENTE', 'ACTIVO'], true)) {
+                throw ValidationException::withMessages(['contrato' => 'El contrato ya no está pendiente ni activo. Solicita una nueva revisión si corresponde.']);
+            }
+            if (DB::table('pedidos_instalacion')->where('contrato_id', $contractId)->where('estado', 'EN_PROCESO')->exists()) {
+                throw ValidationException::withMessages(['solicitud' => 'La instalación comenzó mientras se revisaba la solicitud. No se puede aprobar la cancelación hasta resolver esa instalación.']);
+            }
+            if (! hash_equals($request->contrato_sha256, $this->contractSnapshot($contract))) {
+                throw ValidationException::withMessages(['solicitud' => 'Los datos del contrato cambiaron desde la solicitud. Rechaza esta solicitud y registra una nueva con evidencia actualizada.']);
+            }
+            if (! Storage::disk('local')->exists($request->evidencia_ruta)
+                || ! hash_equals($request->evidencia_sha256, hash_file('sha256', Storage::disk('local')->path($request->evidencia_ruta)))) {
+                throw ValidationException::withMessages(['solicitud' => 'La evidencia de respaldo ya no coincide con el archivo registrado. No se puede aprobar.']);
+            }
+
+            $reason = $request->categoria.' — '.$request->explicacion;
+            $period = $this->periods->findActivePeriod($contract);
+            if (! $period) {
+                $period = $this->periods->findLatestPeriod($contract)
+                    ? $this->periods->createReactivationPeriod($contract, ['fecha_inicio' => $contract->fecha_inicio, 'duracion_meses' => $contract->duracion_meses])
+                    : $this->periods->createInitialPeriod($contract);
+            }
+            $this->periods->cancel($period, $reason, 'MANUAL', $approverId);
+            $this->sales->annul($contractId);
+            $this->installationOrders->cancelForContract($contractId, $approverId, $reason);
+            $this->contracts->update($contractId, ['estado' => 'CANCELADO', 'periodo_actual' => $period->getKey()]);
+            $this->refreshClientLifecycle((int) $contract->cliente_id);
+            DB::table('solicitudes_cancelacion_contrato')->where('solicitud_cancelacion_id', $requestId)->update([
+                'estado' => 'APROBADA', 'resuelto_por' => $approverId,
+                'resuelto_en' => now('America/Lima'), 'decision_motivo' => 'Cancelación aprobada por Gerencia o Administración.',
+            ]);
+        }, 3);
+    }
+
+    public function rejectCancellation(int $contractId, int $requestId, int $reviewerId, string $reason): void
+    {
+        DB::transaction(function () use ($contractId, $requestId, $reviewerId, $reason): void {
+            $request = DB::table('solicitudes_cancelacion_contrato')->where('solicitud_cancelacion_id', $requestId)
+                ->where('contrato_id', $contractId)->lockForUpdate()->first();
+            if (! $request || $request->estado !== 'PENDIENTE') {
+                throw ValidationException::withMessages(['solicitud' => 'Esta solicitud ya fue resuelta o no está disponible.']);
+            }
+            if ((int) $request->solicitado_por === $reviewerId) {
+                throw ValidationException::withMessages(['solicitud' => 'Otra cuenta debe revisar una solicitud que tú iniciaste.']);
+            }
+            DB::table('solicitudes_cancelacion_contrato')->where('solicitud_cancelacion_id', $requestId)->update([
+                'estado' => 'RECHAZADA', 'resuelto_por' => $reviewerId,
+                'resuelto_en' => now('America/Lima'), 'decision_motivo' => trim($reason),
+            ]);
+        }, 3);
+    }
+
+    public function cancellationHistory(int $contractId)
+    {
+        if (! $this->cancellationWorkflowReady()) return collect();
+
+        return DB::table('solicitudes_cancelacion_contrato as s')
+            ->join('usuarios as solicitante', 'solicitante.usuario_id', '=', 's.solicitado_por')
+            ->leftJoin('usuarios as revisor', 'revisor.usuario_id', '=', 's.resuelto_por')
+            ->where('s.contrato_id', $contractId)->orderByDesc('s.solicitud_cancelacion_id')
+            ->get(['s.*', 'solicitante.nombre_usuario as solicitante_usuario', 'revisor.nombre_usuario as revisor_usuario']);
+    }
+
+    public function cancellationWorkflowReady(): bool
+    {
+        return Schema::hasTable('solicitudes_cancelacion_contrato');
+    }
+
+    private function contractSnapshot(object $contract): string
+    {
+        $values = [];
+        foreach (['cliente_id', 'plan_id', 'zona_id', 'responsable_id', 'fecha_inicio', 'fecha_fin', 'duracion_meses', 'precio_contratado', 'direccion_servicio', 'observaciones', 'estado', 'firma_revision', 'pdf_contrato_ruta'] as $key) {
+            $values[$key] = (string) ($contract->$key ?? '');
+        }
+        $values['pdf_sha256'] = $contract->pdf_contrato_ruta && Storage::disk('local')->exists($contract->pdf_contrato_ruta)
+            ? hash_file('sha256', Storage::disk('local')->path($contract->pdf_contrato_ruta)) : '';
+
+        return hash('sha256', json_encode($values, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+    }
+
     private function validateSelections(array $data, ?object $current = null): object
     {
         $client = $this->contracts->activeClient((int) $data['cliente_id']);
         $zone = $this->contracts->activeZone((int) $data['zona_id']);
         $employee = $this->contracts->activeEmployee((int) $data['responsable_id']);
-        foreach ([
-            ['cliente_id', $client, 'ACTIVO'],
-            ['zona_id', $zone, 'ACTIVA'],
-        ] as [$field, $record, $active]) {
+        foreach ([['zona_id', $zone, 'ACTIVA']] as [$field, $record, $active]) {
             if (! $record || ($record->estado !== $active && (! $current || (int) $current->$field !== (int) $data[$field]))) {
                 throw ValidationException::withMessages([$field => 'Selecciona un registro activo.']);
             }
         }
+        if (! $client || (! in_array($client->estado, ['ACTIVO', 'PENDIENTE'], true)
+            && (! $current || (int) $current->cliente_id !== (int) $data['cliente_id']))) {
+            throw ValidationException::withMessages(['cliente_id' => 'Selecciona un cliente activo o pendiente de instalación.']);
+        }
         if (! $employee) {
-            throw ValidationException::withMessages(['responsable_id' => 'Selecciona un Asistente de Ventas activo como responsable.']);
+            throw ValidationException::withMessages(['responsable_id' => 'La cuenta que registra debe estar vinculada a un Asistente de Ventas activo. Pide a Gerencia que revise el vínculo de empleado.']);
         }
         if ($client?->distrito && $zone && mb_strtolower(trim($client->distrito)) !== mb_strtolower(trim($zone->distrito))) {
             throw ValidationException::withMessages(['zona_id' => 'La zona seleccionada no cubre el distrito del cliente.']);
@@ -377,7 +543,7 @@ class ContractService
             $zone = $this->contracts->activeZone($contract->zona_id);
             $employee = $this->contracts->activeEmployee($contract->responsable_id);
 
-            if (! $client || $client->estado !== 'ACTIVO') {
+            if (! $client || ! in_array($client->estado, ['ACTIVO', 'PENDIENTE', 'INACTIVO'], true)) {
                 throw ValidationException::withMessages([
                     'cliente' => 'El cliente del contrato no está activo. No se puede reactivar.',
                 ]);
@@ -442,6 +608,9 @@ class ContractService
                 'estado' => 'ACTIVO',
                 'periodo_actual' => $nuevoPeriodo->getKey(),
             ]);
+            DB::table('clientes')->where('cliente_id', $contract->cliente_id)->update([
+                'estado' => 'ACTIVO', 'actualizado_en' => now('America/Lima'),
+            ]);
 
             $orderResumed = $this->installationOrders->resumeForReactivatedContract($contractId, $userId);
 
@@ -500,5 +669,25 @@ class ContractService
     public function getCancelledContracts()
     {
         return $this->contracts->getCancelledContracts();
+    }
+
+    /** Keep the client state aligned with its remaining service and installation work. */
+    private function refreshClientLifecycle(int $clientId): void
+    {
+        $hasActiveContract = DB::table('contratos')->where('cliente_id', $clientId)->where('estado', 'ACTIVO')->exists();
+        $hasPendingContract = DB::table('contratos')->where('cliente_id', $clientId)->where('estado', 'PENDIENTE')->exists();
+        $hasOpenInstallation = DB::table('pedidos_instalacion')->where('cliente_id', $clientId)
+            ->whereIn('estado', ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO', 'EN_PROCESO'])->exists();
+
+        $state = $hasActiveContract ? 'ACTIVO' : (($hasPendingContract || $hasOpenInstallation) ? 'PENDIENTE' : null);
+        if ($state === null) {
+            DB::table('clientes')->where('cliente_id', $clientId)->whereIn('estado', ['ACTIVO', 'PENDIENTE'])
+                ->update(['estado' => 'INACTIVO', 'actualizado_en' => now('America/Lima')]);
+
+            return;
+        }
+
+        DB::table('clientes')->where('cliente_id', $clientId)
+            ->update(['estado' => $state, 'actualizado_en' => now('America/Lima')]);
     }
 }

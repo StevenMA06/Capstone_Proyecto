@@ -11,19 +11,24 @@ class ContractRepository
 {
     public const SALES_ASSISTANT_CARGO = 'Asistente de Ventas';
 
-    public function finalizeExpired(string $today, ?callable $beforeFinalize = null): int
+    public function finalizeExpired(string $today, ?callable $beforeFinalize = null, ?callable $afterFinalize = null): int
     {
         // Obtener contratos que serán finalizados
         $contractsToFinalize = Contract::query()
             ->where('estado', 'ACTIVO')
             ->where('fecha_fin', '<', $today)
+            // Do not expire the contract underneath field work already in
+            // progress. It can be finalized on the next run after the order closes.
+            ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('pedidos_instalacion as pi')
+                ->whereColumn('pi.contrato_id', 'contratos.contrato_id')->where('pi.estado', 'EN_PROCESO'))
             ->get();
 
         foreach ($contractsToFinalize as $contract) {
-            DB::transaction(function () use ($contract, $today, $beforeFinalize) {
+            DB::transaction(function () use ($contract, $today, $beforeFinalize, $afterFinalize) {
                 if ($beforeFinalize) $beforeFinalize($contract);
                 // Actualizar estado del contrato
                 $contract->update(['estado' => 'FINALIZADO']);
+                if ($afterFinalize) $afterFinalize($contract);
 
                 // Anular pagos pendientes o vencidos que quedan después de la finalización
                 $anulatedCount = DB::table('pagos')
@@ -117,7 +122,7 @@ class ContractRepository
     public function formOptions(): array
     {
         return [
-            'clients' => DB::table('clientes')->where('estado', 'ACTIVO')->orderBy('nombres_razon_social')->get(),
+            'clients' => DB::table('clientes')->whereIn('estado', ['ACTIVO', 'PENDIENTE'])->orderBy('nombres_razon_social')->get(),
             'zones' => DB::table('zonas_cobertura')->where('estado', 'ACTIVA')->orderBy('nombre')->get(),
             'employees' => $this->salesAssistants()->orderBy('nombres')->orderBy('apellidos')->get(),
             'coverage' => DB::table('plan_zona_cobertura')->get(['plan_id', 'zona_id', 'estado']),
@@ -158,7 +163,7 @@ class ContractRepository
             ->join('zonas_cobertura', 'zonas_cobertura.zona_id', '=', 'contratos.zona_id')
             ->join('empleados', 'empleados.empleado_id', '=', 'contratos.responsable_id')
             ->leftJoin('periodos_contractuales as periodo_vigente', 'periodo_vigente.periodo_id', '=', 'contratos.periodo_actual')
-            ->select('contratos.*', 'clientes.numero_documento', 'clientes.tipo_documento', 'clientes.nombres_razon_social', 'clientes.apellidos', 'clientes.distrito as cliente_distrito', 'planes_servicio.nombre as plan_nombre', 'planes_servicio.numero_plan', 'zonas_cobertura.nombre as zona_nombre', 'empleados.nombres as responsable_nombres', 'empleados.apellidos as responsable_apellidos', 'empleados.cargo as responsable_cargo', 'periodo_vigente.motivo_cancelacion', 'periodo_vigente.fecha_cancelacion', 'periodo_vigente.origen_cancelacion');
+            ->select('contratos.*', 'clientes.numero_documento', 'clientes.tipo_documento', 'clientes.nombres_razon_social', 'clientes.apellidos', 'clientes.correo as cliente_correo', 'clientes.telefono as cliente_telefono', 'clientes.numero_referencia as cliente_telefono_alterno', 'clientes.referencia_direccion as cliente_referencia', 'clientes.distrito as cliente_distrito', 'planes_servicio.nombre as plan_nombre', 'planes_servicio.numero_plan', 'zonas_cobertura.nombre as zona_nombre', 'empleados.nombres as responsable_nombres', 'empleados.apellidos as responsable_apellidos', 'empleados.cargo as responsable_cargo', 'periodo_vigente.motivo_cancelacion', 'periodo_vigente.fecha_cancelacion', 'periodo_vigente.origen_cancelacion');
     }
 
     /**

@@ -113,6 +113,45 @@ class InstallationExecutionTest extends TestCase
         $this->signIn($chief);
     }
 
+    public function test_order_manager_can_send_a_joint_resource_request_without_being_the_assigned_employee(): void
+    {
+        $this->signIn($this->manager)->get('/orders?search=INS-I-0')->assertOk()
+            ->assertSee('Enviar solicitud completa a Almacén');
+
+        $this->post('/orders/'.$this->id.'/resources', [
+            'equipo_id' => $this->equipment,
+            'materials' => [['material_id' => $this->material, 'cantidad_asignada' => '2']],
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $group = DB::table('pedido_solicitudes_recursos')->where('pedido_id', $this->id)->first();
+        $this->assertNotNull($group);
+        $this->assertSame((int) $this->manager->getKey(), (int) $group->solicitado_por);
+        $this->assertSame(1, (int) $group->incluye_equipo);
+        $this->assertSame(1, (int) $group->incluye_material);
+        $this->assertDatabaseCount('pedido_solicitudes_recurso', 2);
+    }
+
+    public function test_technician_ficha_does_not_offer_resource_requests(): void
+    {
+        $this->get($this->url())->assertOk()
+            ->assertDontSee('¿Qué necesitas para esta visita?')
+            ->assertDontSee('Solicitar equipo y materiales a Almacén');
+    }
+
+    public function test_technician_cannot_submit_resource_requests_directly(): void
+    {
+        $requestsBefore = DB::table('pedido_solicitudes_recurso')->where('pedido_id', $this->id)->count();
+        $permissionId = DB::table('permisos')->where('codigo', 'orders.resources.request')->value('permiso_id');
+        DB::table('rol_permiso')->updateOrInsert(
+            ['rol_id' => $this->tech->rol_id, 'permiso_id' => $permissionId], ['permitido' => true]
+        );
+        $this->assertTrue($this->tech->hasPermission('orders.resources.request'));
+        $this->assertFalse(app(\App\Services\InstallationResourceRequestService::class)
+            ->canRequestForOrder($this->tech, DB::table('pedidos_instalacion')->where('pedido_id', $this->id)->first()));
+        $this->post('/orders/'.$this->id.'/equipment', ['equipo_tipo' => 'Router'])->assertForbidden();
+        $this->assertSame($requestsBefore, DB::table('pedido_solicitudes_recurso')->where('pedido_id', $this->id)->count());
+    }
+
     public function test_order_and_technician_detail_identify_the_people_who_coordinated_and_assigned(): void
     {
         $chiefEmployee = Employee::create([
@@ -170,6 +209,10 @@ class InstallationExecutionTest extends TestCase
         $this->assertDatabaseHas('movimientos_inventario', ['pedido_id' => $this->id, 'equipo_id' => $this->equipment, 'tipo_movimiento' => 'ASIGNACION', 'responsable_id' => $chief->getKey()]);
         $this->get('/warehouse/requests?vista=historial')->assertOk()->assertSee('Preparada')
             ->assertSee('Recurso preparado y reservado');
+        $this->get('/warehouse/requests?vista=historial&buscar=INS-I-0&resultado=ENTREGADA')->assertOk()
+            ->assertSee('Solicitud completa preparada y reservada')
+            ->assertSee('Preparó y reservó la solicitud completa')
+            ->assertDontSee('Autorizó o rechazó');
         $this->patch('/warehouse/requests/'.$requestId.'/fulfill')->assertSessionHasErrors('solicitud');
 
         $this->post('/orders/'.$this->id.'/material', ['material_id' => $this->material, 'cantidad_asignada' => '1'])->assertSessionHasNoErrors();
@@ -192,6 +235,9 @@ class InstallationExecutionTest extends TestCase
         $this->assertDatabaseMissing('pedido_materiales', ['pedido_id' => $this->id, 'material_id' => $this->material]);
         $this->get('/warehouse/requests?vista=historial')->assertOk()->assertSee('Motivo registrado:')
             ->assertSee('El recurso no está apto para instalarse')->assertSee('Material no apto');
+        $this->get('/warehouse/requests?vista=historial&buscar=INS-I-0&resultado=RECHAZADA')->assertOk()
+            ->assertSee('Rechazó la solicitud completa')
+            ->assertDontSee('Preparó y reservó la solicitud completa');
     }
 
     public function test_equipment_type_can_be_requested_with_no_free_unit_and_warehouse_selects_the_delivered_unit(): void
@@ -260,6 +306,29 @@ class InstallationExecutionTest extends TestCase
             ->assertSessionHasNoErrors();
         $this->assertDatabaseHas('pedidos_instalacion', ['pedido_id' => $this->id, 'estado' => 'PROGRAMADO',
             'tecnico_id' => $this->tech->empleado_id, 'asignado_por' => $chief->getKey()]);
+    }
+
+    public function test_same_employee_cannot_be_assigned_as_primary_and_secondary_technician(): void
+    {
+        DB::table('empleados')->where('empleado_id', $this->tech->empleado_id)->update(['cargo' => 'Técnico de Campo']);
+        DB::table('pedidos_instalacion')->where('pedido_id', $this->id)->update([
+            'estado' => 'PENDIENTE', 'fase_flujo' => 'PENDIENTE_ASIGNACION',
+            'tecnico_id' => null, 'tecnico_secundario_id' => null, 'asignado_por' => null,
+            'coordinado_en' => now('America/Lima'), 'fecha_programada' => now('America/Lima')->addDay(),
+            'franja_horaria' => '08:00 a 12:00',
+        ]);
+        $chief = User::factory()->create(['rol_id' => Role::where('nombre', Role::INSTALLATIONS)->value('rol_id')]);
+
+        $this->signIn($chief)->patch('/orders/'.$this->id.'/schedule', [
+            'tecnico_id' => $this->tech->empleado_id,
+            'tecnico_secundario_id' => $this->tech->empleado_id,
+        ])->assertSessionHasErrors([
+            'tecnico_secundario_id' => 'El técnico principal y el segundo técnico deben ser personas distintas.',
+        ]);
+
+        $this->assertDatabaseHas('pedidos_instalacion', [
+            'pedido_id' => $this->id, 'tecnico_id' => null, 'tecnico_secundario_id' => null,
+        ]);
     }
 
     public function test_technician_cannot_be_assigned_to_two_installations_in_the_same_hour_but_can_work_another_hour_that_day(): void
@@ -814,6 +883,7 @@ class InstallationExecutionTest extends TestCase
         $this->assertArrayHasKey('Contrato firmado', $folderIds);
         $this->assertDatabaseHas('pedidos_instalacion', ['pedido_id' => $this->id, 'estado' => 'COMPLETADO']);
         $this->assertDatabaseHas('pedido_historial_eventos', ['pedido_id' => $this->id, 'tipo' => 'CIERRE_AUTOMATICO']);
+        $this->assertDatabaseHas('pedido_historial_eventos', ['pedido_id' => $this->id, 'tipo' => 'CLIENTE_ACTIVADO_AUTO']);
     }
 
     public function test_existing_drive_evidence_is_organized_without_uploading_it_again(): void
@@ -934,6 +1004,10 @@ class InstallationExecutionTest extends TestCase
         $this->confirmDriveEvidence();
         $this->assertDatabaseHas('ejecuciones_instalacion', ['pedido_id' => $this->id, 'estado' => 'COMPLETADA', 'fin_en' => '2026-09-26 09:17:00']);
         $this->assertDatabaseHas('pedidos_instalacion', ['pedido_id' => $this->id, 'estado' => 'COMPLETADO']);
+        $this->assertDatabaseHas('clientes', [
+            'cliente_id' => DB::table('pedidos_instalacion')->where('pedido_id', $this->id)->value('cliente_id'),
+            'estado' => 'ACTIVO',
+        ]);
         $this->travel(2)->minutes();
         $this->assertFalse(app(\App\Services\InstallationCompletionService::class)->completeIfReady($this->id));
         $this->assertDatabaseHas('ejecuciones_instalacion', ['pedido_id' => $this->id, 'fin_en' => '2026-09-26 09:17:00']);

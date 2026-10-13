@@ -24,11 +24,15 @@ class TechnicianController extends Controller
             'estado' => ['nullable', Rule::in($states)],
         ], [], ['search' => 'búsqueda', 'fecha' => 'fecha programada', 'estado' => 'estado']);
         $query = $this->installations->assignments($request->user())
-            ->join('clientes as cl', 'cl.cliente_id', '=', 'pedidos_instalacion.cliente_id')
-            ->join('contratos as c', 'c.contrato_id', '=', 'pedidos_instalacion.contrato_id')
+            ->leftJoin('clientes as cl', 'cl.cliente_id', '=', 'pedidos_instalacion.cliente_id')
+            ->leftJoin('contratos as c', 'c.contrato_id', '=', 'pedidos_instalacion.contrato_id')
             ->leftJoin('empleados as e', 'e.empleado_id', '=', 'pedidos_instalacion.tecnico_id')
-            ->select('pedidos_instalacion.*', 'cl.nombres_razon_social', 'cl.apellidos', 'c.direccion_servicio',
-                'e.nombres as tecnico_nombres', 'e.apellidos as tecnico_apellidos');
+            ->leftJoin('empleados as e2', 'e2.empleado_id', '=', 'pedidos_instalacion.tecnico_secundario_id')
+            ->select('pedidos_instalacion.*', 'cl.nombres_razon_social', 'cl.apellidos',
+                'e.nombres as tecnico_nombres', 'e.apellidos as tecnico_apellidos',
+                'e2.nombres as segundo_tecnico_nombres', 'e2.apellidos as segundo_tecnico_apellidos');
+        $query->selectRaw('COALESCE(c.direccion_servicio, pedidos_instalacion.direccion_solicitada, cl.direccion) as direccion_servicio')
+            ->selectRaw('COALESCE(CONCAT_WS(" ", NULLIF(cl.nombres_razon_social, ""), NULLIF(cl.apellidos, "")), pedidos_instalacion.solicitante_nombre) as nombre_solicitud');
         if (! empty($data['pedido_id'])) {
             $query->where('pedidos_instalacion.pedido_id', $data['pedido_id']);
         }
@@ -49,16 +53,25 @@ class TechnicianController extends Controller
         $records = $query->orderByRaw("CASE pedidos_instalacion.estado WHEN 'PENDIENTE' THEN 0 WHEN 'PROGRAMADO' THEN 0 WHEN 'REPROGRAMADO' THEN 0 WHEN 'EN_PROCESO' THEN 1 WHEN 'COMPLETADO' THEN 2 ELSE 3 END")
                 ->orderByRaw('pedidos_instalacion.fecha_programada IS NULL')
                 ->orderBy('pedidos_instalacion.fecha_programada')->orderBy('pedidos_instalacion.pedido_id')->paginate(15)->withQueryString();
+        $cancellationEvents = DB::table('pedido_historial_eventos as ev')
+            ->leftJoin('usuarios as u', 'u.usuario_id', '=', 'ev.usuario_id')
+            ->where('ev.tipo', 'CANCELACION')->whereIn('ev.pedido_id', collect($records->items())->pluck('pedido_id'))
+            ->orderByDesc('ev.registrado_en')->get(['ev.pedido_id', 'ev.motivo', 'ev.registrado_en', 'u.nombre_usuario'])
+            ->groupBy('pedido_id')->map(fn ($events) => $events->first());
         return view('technician.index', [
             'states' => $states,
             'records' => $records,
+            'resourcesPrepared' => collect($records->items())->filter(fn ($record) => $this->installations->resourcesPreparedForStart((int) $record->pedido_id))->pluck('pedido_id'),
             'pendingReprogramming' => DB::table('pedido_reprogramaciones')->where('estado', 'SOLICITADA')
                 ->whereIn('pedido_id', collect($records->items())->pluck('pedido_id'))->pluck('pedido_id'),
+            'cancellationEvents' => $cancellationEvents,
         ]);
     }
 
     public function show(Request $request, int $pedido)
     {
+        $installation = $this->installations->find($request->user(), $pedido);
+        app(\App\Services\InstallationCompletionService::class)->tryCompleteAfterDriveSync($pedido);
         $installation = $this->installations->find($request->user(), $pedido);
         $request->validate(['page' => ['nullable', 'integer', 'min:1']]);
         $contract = DB::table('contratos as c')->leftJoin('planes_servicio as p', 'p.plan_id', '=', 'c.plan_id')
@@ -69,13 +82,20 @@ class TechnicianController extends Controller
         $contractReady = $contract?->firma_revision === 'VERIFICADA' && $contract->pdf_contrato_ruta
             && Storage::disk('local')->exists($contract->pdf_contrato_ruta)
             && $contractSync && $contractSync->source_sha256 === hash_file('sha256', Storage::disk('local')->path($contract->pdf_contrato_ruta));
+        $cancellationEvent = DB::table('pedido_historial_eventos as ev')
+            ->leftJoin('usuarios as u', 'u.usuario_id', '=', 'ev.usuario_id')
+            ->where('ev.pedido_id', $pedido)->where('ev.tipo', 'CANCELACION')
+            ->orderByDesc('ev.registrado_en')->select('ev.motivo', 'ev.registrado_en', 'u.nombre_usuario')->first();
 
         return view('technician.show', [
             'installation' => $installation,
+            'cancellationEvent' => $cancellationEvent,
             'client' => DB::table('clientes')->where('cliente_id', $installation->cliente_id)->first(),
             'contract' => $contract,
             'contractReady' => (bool) $contractReady,
+            'resourcesPrepared' => ! $installation->fase_flujo || $this->installations->resourcesPreparedForStart($pedido),
             'technician' => DB::table('empleados')->where('empleado_id', $installation->tecnico_id)->first(),
+            'secondTechnician' => $installation->tecnico_secundario_id ? DB::table('empleados')->where('empleado_id', $installation->tecnico_secundario_id)->first() : null,
             'coordinator' => $installation->coordinado_por ? User::with('employee')->find($installation->coordinado_por) : null,
             'assigner' => $installation->asignado_por ? User::with('employee')->find($installation->asignado_por) : null,
             'execution' => DB::table('ejecuciones_instalacion')->where('pedido_id', $pedido)->first(),

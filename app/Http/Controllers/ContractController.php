@@ -15,8 +15,15 @@ use Illuminate\Validation\ValidationException;
 class ContractController extends Controller
 {
     private const STATES = ['PENDIENTE', 'ACTIVO', 'FINALIZADO', 'CANCELADO'];
+    private const CANCELLATION_CATEGORIES = [
+        'Solicitud del cliente', 'Imposibilidad técnica', 'Cambio de titularidad',
+        'Acuerdo entre las partes', 'Otro',
+    ];
 
-    public function __construct(private ContractService $contracts) {}
+    public function __construct(
+        private ContractService $contracts,
+        private \App\Services\InstallationCompletionService $installationCompletion
+    ) {}
 
     public function index(Request $request)
     {
@@ -34,29 +41,65 @@ class ContractController extends Controller
             'records' => $this->contracts->search($filters),
             'plans' => $this->contracts->allPlans(),
             'states' => self::STATES,
+            'cancellationWorkflowReady' => $this->contracts->cancellationWorkflowReady(),
+            'pendingCancellationCount' => $request->user()->hasPermission('contracts.cancel.inbox')
+                ? $this->contracts->pendingCancellationCount() : 0,
+            'cancellationCategories' => self::CANCELLATION_CATEGORIES,
         ]);
     }
 
-    public function create()
+    public function cancellationRequests(Request $request)
     {
-        return view('contracts.form', $this->contracts->formData());
+        abort_unless($request->user()->hasPermission('contracts.cancel.inbox'), 403);
+        abort_unless($this->contracts->cancellationWorkflowReady(), 503, 'La bandeja estará disponible cuando se complete la actualización de la base de datos.');
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:180'],
+            'estado' => ['nullable', Rule::in(['PENDIENTE', 'APROBADA', 'RECHAZADA', 'CERRADA'])],
+            'page' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        return view('contracts.cancellations', [
+            'requests' => $this->contracts->cancellationRequests($filters),
+            'states' => ['PENDIENTE' => 'Pendientes', 'APROBADA' => 'Aprobadas', 'RECHAZADA' => 'Rechazadas', 'CERRADA' => 'Cerradas automáticamente'],
+            'pendingCancellationCount' => $this->contracts->pendingCancellationCount(),
+        ]);
+    }
+
+    public function create(Request $request)
+    {
+        return view('contracts.form', $this->contracts->formData(null, $request->user()) + [
+            'selectedClientId' => $request->integer('cliente_id') ?: null,
+        ]);
     }
 
     public function store(StoreContractRequest $request)
     {
-        $id = $this->contracts->create($request->validated(), (int) $request->user()->getKey());
+        $data = $request->validated();
+        if (! $request->user()->isManager()) {
+            $data['responsable_id'] = (int) $request->user()->empleado_id;
+        }
+        $id = $this->contracts->create($data, (int) $request->user()->getKey());
 
-        return redirect()->route('contracts.show', $id)->with('status', 'Contrato registrado correctamente. Su pedido de instalación ya está disponible para coordinar la visita.');
+        return redirect()->route('contracts.show', $id)
+            ->with('status', 'Contrato registrado correctamente. Su pedido de instalación ya está disponible para coordinar la visita.');
     }
 
     public function show(Request $request, int $contract)
     {
         $request->validate(['page' => ['nullable', 'integer', 'min:1']]);
+        $record = $this->contracts->detail($contract);
+        $showFieldEvidenceHistory = $this->installationCompletion->hasVerifiedCompletionEvidence($contract);
 
         return view('contracts.show', [
-            'contract' => $this->contracts->detail($contract),
-            'fieldEvidences' => DB::table('evidencias_contrato')->where('contrato_id', $contract)
-                ->where('tipo', 'CONTRATO_FIRMADO')->orderByDesc('evidencia_contrato_id')->paginate(10),
+            'contract' => $record,
+            'cancellationHistory' => $this->contracts->cancellationHistory($contract),
+            'cancellationWorkflowReady' => $this->contracts->cancellationWorkflowReady(),
+            'cancellationCategories' => self::CANCELLATION_CATEGORIES,
+            'showFieldEvidenceHistory' => $showFieldEvidenceHistory,
+            'fieldEvidences' => $showFieldEvidenceHistory
+                ? DB::table('evidencias_contrato')->where('contrato_id', $contract)
+                    ->where('tipo', 'CONTRATO_FIRMADO')->orderByDesc('evidencia_contrato_id')->paginate(10)
+                : null,
         ]);
     }
 
@@ -73,18 +116,101 @@ class ContractController extends Controller
 
     public function edit(int $contract)
     {
-        abort_if($this->contracts->detail($contract)->estado === 'CANCELADO', 403, 'Los contratos cancelados son únicamente de consulta.');
+        $record = $this->contracts->detail($contract);
+        abort_if($record->estado === 'CANCELADO', 403, 'Los contratos cancelados son únicamente de consulta.');
+        if ($this->contracts->cancellationWorkflowReady()
+            && DB::table('solicitudes_cancelacion_contrato')->where('contrato_id', $contract)->where('estado', 'PENDIENTE')->exists()) {
+            return redirect()->route('contracts.show', $contract)
+                ->withErrors(['contrato' => 'El contrato está bloqueado mientras Gerencia revisa la solicitud de cancelación.']);
+        }
 
-        return view('contracts.form', $this->contracts->formData($contract));
+        return view('contracts.form', $this->contracts->formData($contract, request()->user()) + [
+            'cancellationWorkflowReady' => $this->contracts->cancellationWorkflowReady(),
+            'cancellationCategories' => self::CANCELLATION_CATEGORIES,
+        ]);
     }
 
     public function update(StoreContractRequest $request, int $contract)
     {
-        $feedback = $this->contracts->update($contract, $request->validated(), $request->user()->getKey());
+        $data = $request->validated();
+        if (! $request->user()->isManager()) {
+            $data['responsable_id'] = (int) $this->contracts->detail($contract)->responsable_id;
+        }
+        $feedback = $this->contracts->update($contract, $data, $request->user()->getKey());
 
         return redirect()->route('contracts.show', $contract)
             ->with('status', $feedback['message'])
             ->with('status_kind', $feedback['kind']);
+    }
+
+    public function requestCancellation(Request $request, int $contract)
+    {
+        abort_unless($request->user()->hasPermission('contracts.cancel.request'), 403);
+        $this->ensureCancellationWorkflowReady();
+        $data = $request->validate([
+            'categoria' => ['required', Rule::in(self::CANCELLATION_CATEGORIES)],
+            'explicacion' => ['required', 'string', 'min:15', 'max:400'],
+            'evidencia' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+        ], [
+            'categoria.required' => 'Selecciona el motivo de la cancelación.',
+            'explicacion.min' => 'Explica el caso con al menos 15 caracteres.',
+            'evidencia.required' => 'Adjunta un documento que respalde la solicitud.',
+            'evidencia.mimes' => 'Adjunta un PDF o una imagen JPG, PNG o WEBP.',
+            'evidencia.max' => 'La evidencia no debe superar 10 MB.',
+        ]);
+
+        $this->contracts->requestCancellation($contract, $data, $request->file('evidencia'), (int) $request->user()->getKey());
+
+        return redirect()->route('contracts.show', $contract)->with('status', 'Solicitud registrada. El contrato no cambiará hasta que otra cuenta autorizada revise la evidencia.');
+    }
+
+    public function approveCancellation(Request $request, int $contract, int $cancellationRequest)
+    {
+        abort_unless($request->user()->hasPermission('contracts.cancel.approve'), 403);
+        $this->ensureCancellationWorkflowReady();
+        try {
+            $this->contracts->approveCancellation($contract, $cancellationRequest, (int) $request->user()->getKey());
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        return redirect()->route('contracts.show', $contract)->with('status', 'Cancelación aprobada. El contrato y su pedido asociado quedaron cancelados con el motivo y los responsables registrados.');
+    }
+
+    public function rejectCancellation(Request $request, int $contract, int $cancellationRequest)
+    {
+        abort_unless($request->user()->hasPermission('contracts.cancel.approve'), 403);
+        $this->ensureCancellationWorkflowReady();
+        $data = $request->validate([
+            'decision_motivo' => ['required', 'string', 'min:10', 'max:500'],
+        ], ['decision_motivo.required' => 'Explica por qué se rechaza la solicitud.', 'decision_motivo.min' => 'La explicación debe tener al menos 10 caracteres.']);
+        try {
+            $this->contracts->rejectCancellation($contract, $cancellationRequest,
+                (int) $request->user()->getKey(), $data['decision_motivo']);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        return redirect()->route('contracts.show', $contract)->with('status', 'Solicitud de cancelación rechazada. El contrato conserva su estado.');
+    }
+
+    public function cancellationEvidence(Request $request, int $contract, int $cancellationRequest)
+    {
+        abort_unless($request->user()->hasPermission('contracts.cancel.evidence'), 403);
+        $this->ensureCancellationWorkflowReady();
+        $record = DB::table('solicitudes_cancelacion_contrato')->where('contrato_id', $contract)
+            ->where('solicitud_cancelacion_id', $cancellationRequest)->first();
+        abort_unless($record && preg_match('#^contract-cancellations/[a-f0-9-]+\.(pdf|jpg|jpeg|png|webp)$#D', $record->evidencia_ruta), 404);
+        abort_unless(Storage::disk('local')->exists($record->evidencia_ruta), 404);
+        abort_unless(hash_equals($record->evidencia_sha256, hash_file('sha256', Storage::disk('local')->path($record->evidencia_ruta))), 409, 'La evidencia no coincide con su huella de integridad.');
+
+        return Storage::disk('local')->download($record->evidencia_ruta, $record->evidencia_nombre, ['X-Content-Type-Options' => 'nosniff']);
+    }
+
+    private function ensureCancellationWorkflowReady(): void
+    {
+        abort_unless($this->contracts->cancellationWorkflowReady(), 503,
+            'La gestión de cancelaciones requiere aplicar primero las migraciones pendientes de la base de datos.');
     }
 
     public function pdf(int $contract, ContractPdf $pdf)

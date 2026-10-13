@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', 'Solicitudes a Almacén')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/installations.css') }}?v=28"><script src="{{ asset('js/resource-rejection.js') }}?v=1" defer></script>@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/installations.css') }}?v=29"><script src="{{ asset('js/resource-rejection.js') }}?v=1" defer></script>@endpush
 @section('workspace-content')
 <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><a href="{{ route('dashboard') }}">Inicio</a><span aria-hidden="true">›</span><span aria-current="page">Solicitudes a Almacén</span></nav>
 <header class="installation-heading order-heading"><div><p class="eyebrow">INVENTARIO</p><h1>Solicitudes de instalación</h1><p class="muted">Revisa la disponibilidad y prepara los recursos para cada pedido. Si solicitaste el recurso desde esta misma cuenta, Gerencia debe autorizarlo primero.</p></div></header>
@@ -8,8 +8,17 @@
 @if($errors->any())<div class="notice" role="alert"><strong>Revisa la solicitud:</strong>@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
 <section class="order-list" aria-label="Solicitudes de recursos">
     <header class="installation-list-heading warehouse-list-heading"><div><h2>{{ $view === 'pendientes' ? 'Solicitudes en trámite' : 'Historial de solicitudes' }}</h2><p class="muted">{{ $records->total() }} {{ $view === 'pendientes' ? 'por resolver' : 'resueltas' }}</p></div></header>
-    <nav class="warehouse-view-switch" aria-label="Ver solicitudes"><a href="{{ route('warehouse.requests.index', array_filter(['pedido' => request('pedido')])) }}" @if($view === 'pendientes') aria-current="page" @endif>Pendientes <span class="warehouse-tab-count">{{ $pendingCount }}</span></a><a href="{{ route('warehouse.requests.index', array_filter(['vista' => 'historial', 'pedido' => request('pedido')])) }}" @if($view === 'historial') aria-current="page" @endif>Historial</a></nav>
+    <nav class="warehouse-view-switch" aria-label="Ver solicitudes"><a href="{{ route('warehouse.requests.index', array_filter(['pedido' => request('pedido')])) }}" @if($view === 'pendientes') aria-current="page" @endif>Pendientes <span class="warehouse-tab-count">{{ $pendingCount }}</span></a><a href="{{ route('warehouse.requests.index', array_filter(['vista' => 'historial', 'pedido' => request('pedido'), 'buscar' => $filters['buscar'] ?? null, 'resultado' => $filters['resultado'] ?? null])) }}" @if($view === 'historial') aria-current="page" @endif>Historial</a></nav>
     @if(request()->filled('pedido') && $records->count())<p class="order-resource-summary">Solicitud vinculada al pedido <strong>{{ $records->first()->pedido_codigo }}</strong>. <a href="{{ route('warehouse.requests.index') }}">Volver a todas las solicitudes</a></p>@endif
+    @if($view === 'historial')
+    <form method="GET" action="{{ route('warehouse.requests.index') }}" class="warehouse-history-filter" role="search">
+        <input type="hidden" name="vista" value="historial">
+        @if(request()->filled('pedido'))<input type="hidden" name="pedido" value="{{ request('pedido') }}">@endif
+        <label class="warehouse-history-search"><span>Buscar en el historial</span><input type="search" name="buscar" value="{{ $filters['buscar'] ?? '' }}" placeholder="Pedido, cliente, recurso o usuario" maxlength="150"></label>
+        <label class="warehouse-history-result"><span>Resultado</span><select name="resultado"><option value="">Todos los resultados</option><option value="ENTREGADA" @selected(($filters['resultado'] ?? '') === 'ENTREGADA')>Preparadas</option><option value="RECHAZADA" @selected(($filters['resultado'] ?? '') === 'RECHAZADA')>Rechazadas</option><option value="ANULADA" @selected(($filters['resultado'] ?? '') === 'ANULADA')>Anuladas</option></select></label>
+        <div class="warehouse-history-actions"><button type="submit" class="action-link">Buscar</button><a class="action-link secondary" href="{{ route('warehouse.requests.index', array_filter(['vista' => 'historial', 'pedido' => request('pedido')])) }}">Limpiar</a></div>
+    </form>
+    @endif
     @forelse($records as $group)
     @php
         $items = $group->resources;

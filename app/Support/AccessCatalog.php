@@ -41,6 +41,10 @@ class AccessCatalog
         unset($definitions['payments.status']);
         $definitions += [
             'contracts.update' => ['Actualizar', 'Editar condiciones, adjuntar el contrato firmado, activar o cancelar contratos. Estas operaciones pueden generar ventas y pagos.'],
+            'contracts.cancel.request' => ['Solicitar cancelación', 'Iniciar la cancelación de un contrato con motivo estructurado y evidencia adjunta. La solicitud requiere la decisión de otra cuenta autorizada.'],
+            'contracts.cancel.inbox' => ['Consultar solicitudes de cancelación', 'Acceder a la subsección de solicitudes de cancelación, buscar y filtrar solicitudes y consultar su estado. No permite aprobar ni rechazar solicitudes.'],
+            'contracts.cancel.approve' => ['Resolver cancelaciones', 'Aprobar o rechazar solicitudes documentadas desde la subsección de cancelaciones. No puedes resolver una solicitud iniciada por tu propia cuenta.'],
+            'contracts.cancel.evidence' => ['Consultar evidencia de cancelación', 'Abrir el archivo de respaldo de una solicitud de cancelación conservando el registro de quién lo solicitó y resolvió.'],
             'contracts.reactivate' => ['Reactivar', 'Reactivar un contrato cancelado mediante su flujo de reactivación.'],
             'contracts.documents' => ['Descargar documentos', 'Descargar contrato PDF, borrador para firma y evidencias contractuales. Requiere consultar contratos.'],
             'contracts.assigned' => ['Consultar información asignada', 'Ver código, estado, plan y dirección de contratos vinculados a pedidos asignados al empleado. No abre otras fichas ni documentos.'],
@@ -63,7 +67,8 @@ class AccessCatalog
             'orders.view' => ['Consultar', 'Ver todos los pedidos de instalación y su programación.'],
             'orders.approve' => ['Aprobar reprogramaciones', 'Ver y resolver cambios de fecha pendientes en Pedidos de instalación. Requiere consultar pedidos y una cuenta distinta de quien solicitó el cambio.'],
             'orders.resources.approve' => ['Autorizar recursos de instalación', 'Ver y resolver solicitudes pendientes de autorización en Pedidos de instalación. Requiere consultar pedidos y una cuenta distinta de quien solicitó los recursos.'],
-            'orders.schedule' => ['Preparar recursos y asignar técnico', 'Solicitar equipo y material identificados a Almacén, asignar al técnico cuando estén preparados y reabrir pedidos cancelados si el contrato sigue vigente.'],
+            'orders.schedule' => ['Coordinar y asignar técnicos', 'Confirmar la programación, definir el equipo técnico responsable y reabrir pedidos cancelados cuando corresponda.'],
+            'orders.resources.request' => ['Solicitar recursos para una instalación', 'El personal responsable de pedidos registra los recursos comunicados por el equipo técnico. Requiere permiso para gestionar pedidos y no permite aprobar ni preparar recursos.'],
             'orders.cancel' => ['Cancelar', 'Cancelar pedidos no iniciados conservando su historial.'],
             'orders.assigned' => ['Consultar asignaciones', 'Ver únicamente pedidos asignados al empleado.'],
             'warehouse.view' => ['Consultar solicitudes de Almacén', 'Abrir Solicitudes de instalación y ver los recursos solicitados y su estado. Las autorizaciones pendientes se consultan con el permiso Autorizar recursos de instalación.'],
@@ -88,7 +93,7 @@ class AccessCatalog
             'chatbot.query' => ['Enviar consultas', 'Enviar mensajes e iniciar conversaciones en el chatbot. La respuesta actual es de demostración, sin consulta operativa integrada.'],
         ];
         // Replace the generic description, rather than granting an unrelated sales action.
-        $definitions['contracts.update'][1] = 'Editar condiciones, adjuntar el contrato firmado, activar o cancelar contratos. Estas operaciones pueden generar ventas y pagos.';
+        $definitions['contracts.update'][1] = 'Editar condiciones y adjuntar el contrato firmado. La cancelación se tramita por separado y requiere evidencia y aprobación de otra cuenta autorizada.';
         $result = [];
         foreach ($definitions as $code => [$action, $description]) {
             $result[$code] = ['modulo' => self::MODULES[explode('.', $code)[0]], 'accion' => $action, 'descripcion' => $description];
@@ -106,7 +111,12 @@ class AccessCatalog
         [$module, $action] = explode('.', $code, 2);
         if ($code === 'users.create') return ['users.view','user-roles.view','user-roles.manage'];
         if ($code === 'sales.create') return ['sales.view','contracts.view'];
+        if ($code === 'contracts.cancel.request') return ['contracts.view'];
+        if ($code === 'contracts.cancel.inbox') return ['contracts.view'];
+        if ($code === 'contracts.cancel.approve') return ['contracts.view','contracts.cancel.inbox','contracts.cancel.request','contracts.cancel.evidence'];
+        if ($code === 'contracts.cancel.evidence') return ['contracts.view'];
         if (in_array($code, ['equipments.status','materials.status'])) return [$module.'.view',$module.'.update'];
+        if ($code === 'orders.resources.request') return ['orders.assigned', 'orders.schedule'];
         if (in_array($action, ['view', 'availability', 'assigned', 'related'])) return [];
         return [$module.'.view'];
     }
@@ -123,7 +133,7 @@ class AccessCatalog
         if ($name === Role::OFFICE) return ['office.view','office.coordination','clients.view','clients.create','clients.update','plans.view','sales.view','sales.create','contracts.view','contracts.create','contracts.documents','zones.view','equipments.availability','materials.availability','technician.view','technician.supervise'];
         if ($name === Role::TECHNICIAN) return ['technician.panel','technician.view','technician.start','technician.equipment','technician.material','technician.observation','technician.evidence','plans.view','zones.view','contracts.assigned','equipments.assigned','kardex.related','orders.assigned'];
         if ($name === Role::WAREHOUSE) return array_values(array_filter($all, fn ($p) => (str_starts_with($p, 'equipments.') || str_starts_with($p, 'materials.') || str_starts_with($p, 'warehouse.') || $p === 'kardex.view') && !str_ends_with($p, '.assigned')));
-        if ($name === Role::INSTALLATIONS) return ['technician.panel','technician.view','technician.supervise','technician.start','technician.equipment','technician.material','technician.observation','technician.evidence','clients.view','plans.view','sales.view','contracts.view','contracts.documents','payments.view','equipments.view','materials.view','kardex.view','zones.view','orders.view','orders.schedule','orders.cancel'];
+        if ($name === Role::INSTALLATIONS) return ['technician.panel','technician.view','technician.supervise','technician.start','technician.equipment','technician.material','technician.observation','technician.evidence','clients.view','plans.view','sales.view','contracts.view','contracts.documents','payments.view','equipments.view','materials.view','kardex.view','zones.view','orders.view','orders.assigned','orders.schedule','orders.resources.request','orders.cancel'];
         return []; // TI and custom roles are configured explicitly by checkboxes.
     }
 
@@ -139,7 +149,7 @@ class AccessCatalog
         if (in_array($name, ['logout','session.status','dashboard'])) return null;
         if ($name === 'dashboard.management') return 'dashboard.view';
         if ($name === 'dashboard.office') return 'office.view';
-        if (in_array($name, ['office.coordination.index', 'office.coordination.save'], true)) return 'office.coordination';
+        if (in_array($name, ['office.coordination.index', 'office.coordination.save', 'office.coordination.coverage'], true)) return 'office.coordination';
         if ($name === 'sales.confirm') return 'sales.create';
         if ($name === 'api.contracts.amount') return 'payments.view';
         if ($name === 'executions.index') return 'technician.view';
@@ -149,6 +159,10 @@ class AccessCatalog
         [$module, $action] = array_pad(explode('.', $name, 2), 2, '');
         $special = [
             'contracts.pdf'=>'contracts.documents','contracts.draft'=>'contracts.documents','contracts.evidence'=>'contracts.documents',
+            'contracts.cancellation.request'=>'contracts.cancel.request',
+            'contracts.cancellations'=>'contracts.cancel.inbox',
+            'contracts.cancellation.approve'=>'contracts.cancel.approve','contracts.cancellation.reject'=>'contracts.cancel.approve',
+            'contracts.cancellation.evidence'=>'contracts.cancel.evidence',
             'payments.receipt'=>'payments.receipt','payments.reminders.create'=>'payments.reminders','payments.reminders.attend'=>'payments.reminders',
             'user-roles.update'=>'user-roles.manage','roles.store'=>'roles.manage','roles.update'=>'roles.manage',
             'chatbot.query'=>'chatbot.query','chatbot.new'=>'chatbot.query',
@@ -172,7 +186,8 @@ class AccessCatalog
         if (in_array($name, ['orders.reprogram.approve', 'orders.reprogram.reject'], true)) return 'orders.approve';
         if ($name === 'orders.reprogram.evidence') return 'orders.view';
         if (in_array($name, ['orders.resources.approve', 'orders.resources.reject'], true)) return 'orders.resources.approve';
-        if (in_array($name, ['orders.equipment', 'orders.material', 'orders.resources.request'], true)) return 'orders.schedule';
+        if ($name === 'orders.resources.request') return 'orders.resources.request';
+        if (in_array($name, ['orders.equipment', 'orders.material'], true)) return 'orders.schedule';
         if ($name === 'warehouse.requests.index') return 'warehouse.view';
         if ($name === 'office.coordination.contract') return 'office.coordination';
         if (in_array($name, ['warehouse.requests.fulfill', 'warehouse.requests.reject', 'warehouse.requests.escalate'], true)) return 'warehouse.fulfill';

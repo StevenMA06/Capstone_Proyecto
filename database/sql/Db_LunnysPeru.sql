@@ -17,7 +17,7 @@ CREATE TABLE roles (
     rol_id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nombre              VARCHAR(50) NOT NULL,
     descripcion         VARCHAR(255) NULL,
-    estado              ENUM('ACTIVO','INACTIVO') NOT NULL DEFAULT 'ACTIVO',
+    estado              ENUM('ACTIVO','PENDIENTE','INACTIVO') NOT NULL DEFAULT 'PENDIENTE',
     creado_en           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT uq_roles_nombre UNIQUE (nombre)

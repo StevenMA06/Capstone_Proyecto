@@ -2,16 +2,17 @@
 @section('contracts-title', $contract ? 'Actualizar contrato ' . $contract->codigo : 'Registro de Contrato')
 @section('contracts-crumb', $contract ? 'Actualizar' : 'Nuevo')
 @push('styles')
-    <script src="{{ asset('js/contracts.js') }}?v=5" defer></script>
+    <script src="{{ asset('js/contracts.js') }}?v=6" defer></script>
 @endpush
 @section('contracts-content')
+    @routecan('contracts.index')<div class="contract-form-nav"><a class="secondary contract-return-link" href="{{ route('contracts.index') }}">← Volver al listado</a></div>@endroutecan
     @if ($plans->isEmpty())
         <p class="notice">No hay planes activos. Solicita a Gerencia que registre o active un plan.</p>
     @endif
-    @if ($clients->isEmpty() || $zones->isEmpty() || $employees->isEmpty())
-        <p class="notice">Se necesita al menos un cliente, una zona y un Asistente de Ventas activos.</p>
+    @if ($clients->isEmpty() || $zones->isEmpty() || ($canChooseResponsible && $employees->isEmpty()))
+        <p class="notice">Se necesita al menos un cliente, una zona y, para Gerencia o Administración, un Asistente de Ventas activo.</p>
     @endif
-    @php($selectedClient = $clients->firstWhere('cliente_id', (int) old('cliente_id', $contract->cliente_id ?? 0)))
+    @php($selectedClient = $clients->firstWhere('cliente_id', (int) old('cliente_id', $contract->cliente_id ?? ($selectedClientId ?? 0))))
     @can('contracts.manage')<form method="POST" @if ($contract) enctype="multipart/form-data" @endif
         action="{{ $contract ? route('contracts.update', $contract->contrato_id) : route('contracts.store') }}"
         class="account-form contracts-form" data-coverage="{{ $coverage->toJson() }}"
@@ -27,8 +28,8 @@
                         <option value="">Seleccionar cliente</option>
                         @foreach ($clients as $client)
                             <option value="{{ $client->cliente_id }}" data-district="{{ $client->distrito }}" data-address="{{ $client->direccion }}"
-                                @selected((string) old('cliente_id', $contract->cliente_id ?? '') === (string) $client->cliente_id)>{{ $client->numero_documento }} ·
-                                {{ trim($client->nombres_razon_social . ' ' . $client->apellidos) }}</option>
+                                @selected((string) old('cliente_id', $contract->cliente_id ?? ($selectedClientId ?? '')) === (string) $client->cliente_id)>{{ $client->numero_documento }} ·
+                                {{ trim($client->nombres_razon_social . ' ' . $client->apellidos) }} · {{ $client->estado === 'PENDIENTE' ? 'Pendiente de instalación' : 'Activo' }}</option>
                         @endforeach
                     </select>
                     @error('cliente_id')
@@ -71,7 +72,8 @@
                         id="direccion_servicio" value="{{ $selectedClient?->direccion ?? '' }}"
                         placeholder="Selecciona un cliente" readonly>
                 </div>
-                <div class="contract-field"><label for="responsable_id">Responsable (Asistente de Ventas) *</label><select id="responsable_id"
+                @if ($canChooseResponsible)
+                <div class="contract-field"><label for="responsable_id">Responsable del contrato *</label><select id="responsable_id"
                         name="responsable_id" required
                         @error('responsable_id') aria-invalid="true" aria-describedby="responsable_id-error" @enderror>
                         <option value="">Seleccionar responsable</option>
@@ -84,6 +86,14 @@
                         <p id="responsable_id-error" class="field-error">{{ $message }}</p>
                     @enderror
                 </div>
+                @else
+                <div class="contract-field contract-responsible-summary">
+                    <span class="contract-field-label">Responsable del contrato</span>
+                    <strong>{{ $assignedResponsible ? trim($assignedResponsible->nombres.' '.$assignedResponsible->apellidos) : 'Tu cuenta no tiene un Asistente de Ventas activo asociado' }}</strong>
+                    <small>Se asignará automáticamente la persona vinculada a tu cuenta. Gerencia o Administración puede cambiarla.</small>
+                    @error('responsable_id')<p class="field-error">{{ $message }}</p>@enderror
+                </div>
+                @endif
             </div>
             <div class="contracts-form-column">
                 <div class="contract-field"><label for="fecha_inicio">Fecha de inicio *</label><input id="fecha_inicio"
@@ -105,22 +115,9 @@
                 <div class="contract-field"><label for="fecha_fin">Fecha de finalización</label><input id="fecha_fin"
                         type="text" value="{{ $contract->fecha_fin ?? '' }}" placeholder="Se calcula automáticamente"
                         readonly></div>
-                @if($canCancel)
-                    <div class="contract-field"><label for="estado">Estado</label><select id="estado" name="estado" @error('estado') aria-invalid="true" aria-describedby="estado-error" @enderror>
-                            <option value="">{{ ucfirst(mb_strtolower($contract->estado)) }}</option>
-                            <option value="CANCELADO" @selected(old('estado') === 'CANCELADO')>Cancelar</option>
-                        </select>
-                        @error('estado')<p id="estado-error" class="field-error">{{ $message }}</p>@enderror
-                    </div>
-                    <div class="contract-field contract-cancellation-reason" data-cancel-reason @if(old('estado') !== 'CANCELADO') hidden @endif><label for="motivo_cancelacion">Motivo de cancelación *</label>
-                        <textarea id="motivo_cancelacion" name="motivo_cancelacion" rows="4" maxlength="500" placeholder="Explica de forma clara por qué se cancela el contrato" @error('motivo_cancelacion') aria-invalid="true" aria-describedby="motivo_cancelacion-error" @enderror>{{ old('motivo_cancelacion') }}</textarea><small>Esta justificación quedará registrada en el historial del período contractual.</small>
-                        @error('motivo_cancelacion')<p id="motivo_cancelacion-error" class="field-error">{{ $message }}</p>@enderror
-                    </div>
-                @else
                     <div class="contract-field"><label for="estado_actual">Estado</label><select id="estado_actual" disabled>
                             <option>{{ $contract ? ucfirst(mb_strtolower($contract->estado)) : 'Pendiente' }}</option>
                         </select></div>
-                @endif
                 <div class="contract-field"><label for="observaciones">Observaciones</label>
                     <textarea id="observaciones" name="observaciones" rows="5" maxlength="10000"
                         placeholder="Notas adicionales (opcional)"
@@ -149,18 +146,17 @@
                 </svg><span id="selected-pdf" aria-live="polite">Arrastra un PDF aquí o selecciona uno</span><span id="selected-pdf-hint" class="contract-selected-hint" hidden>Archivo seleccionado · se guardará al pulsar «Guardar cambios».</span><label class="contract-file-button"
                     for="documento_pdf">Seleccionar archivo</label></div><input class="contract-file-input"
                 id="documento_pdf" type="file" name="documento_pdf" accept="application/pdf"
-                @error('documento_pdf') aria-invalid="true" aria-describedby="documento_pdf-error" @enderror><small>Usa el contrato para firma generado por este sistema y firma dentro del recuadro «Firma del cliente». Máximo 10 MB. Si no se detecta el trazo, seguirá pendiente.</small>
-            @error('documento_pdf')
+                @error('documento_pdf') aria-invalid="true" aria-describedby="documento_pdf-error" @enderror><small>Usa el contrato generado por este sistema y verifica que la firma del cliente aparezca sobre la línea «CONTRATO SERVICIO DE INTERNET». Máximo 10 MB.</small>
+                @error('documento_pdf')
                 <p id="documento_pdf-error" class="field-error">{{ $message }}</p>
             @enderror
         </div>
         @endif
-        <div class="form-actions"><button class="action-link" type="submit"
-                @disabled(!$contract && ($plans->isEmpty() || $clients->isEmpty() || $zones->isEmpty() || $employees->isEmpty()))>{{ $contract ? 'Guardar cambios' : 'Guardar contrato' }}</button>
-@routecan('contracts.show')<a
-                class="secondary"
-                href="{{ $contract ? route('contracts.show', $contract->contrato_id) : route('contracts.index') }}">Cancelar</a>@endroutecan
-
+        <div class="form-actions contract-form-actions"><button class="action-link" type="submit"
+                @disabled(!$contract && ($plans->isEmpty() || $clients->isEmpty() || $zones->isEmpty() || ($canChooseResponsible ? $employees->isEmpty() : !$assignedResponsible)))>{{ $contract ? 'Guardar cambios' : 'Guardar contrato' }}</button>
         </div>
     </form>@endcan
+    @if($contract && $cancellationWorkflowReady && auth()->user()->hasPermission('contracts.cancel.request') && in_array($contract->estado, ['PENDIENTE', 'ACTIVO'], true))
+        <div class="cancellation-request-placement">@include('contracts._cancellation-request-form')</div>
+    @endif
 @endsection

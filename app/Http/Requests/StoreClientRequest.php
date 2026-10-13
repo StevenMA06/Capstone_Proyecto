@@ -41,20 +41,13 @@ class StoreClientRequest extends FormRequest
             'latitud' => ['nullable', 'numeric', 'between:-90,90'],
             'longitud' => ['nullable', 'numeric', 'between:-180,180'],
             'numero_referencia' => ['nullable', 'string', 'max:25'],
-            'ip_router' => ['required', 'string', 'ip', 'max:45'],
-            'modelo_router' => ['required', 'string', 'max:100'],
-            'usuario_router' => ['required', 'string', 'max:100'],
-            'ssid' => ['required', 'string', 'max:100'],
-            'contrasena_router' => $this->passwordRules($client, 'contrasena_router'),
-            'contrasena_wifi' => $this->passwordRules($client, 'contrasena_wifi'),
+            'ip_router' => ['nullable', 'string', 'ip', 'max:45'],
+            'modelo_router' => ['nullable', 'string', 'max:100'],
+            'usuario_router' => ['nullable', 'string', 'max:100'],
+            'ssid' => ['nullable', 'string', 'max:100'],
+            'contrasena_router' => ['nullable', 'string', 'max:128'],
+            'contrasena_wifi' => ['nullable', 'string', 'max:128'],
         ];
-    }
-
-    private function passwordRules(mixed $client, string $field): array
-    {
-        $configured = $client instanceof Client && filled($client->getRawOriginal($field));
-
-        return ['bail', $configured ? 'nullable' : 'required', 'string', 'max:128'];
     }
 
     protected function prepareForValidation(): void

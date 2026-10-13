@@ -93,7 +93,7 @@ class ContractSignatureTest extends TestCase
             ]);
             $this->assertDatabaseCount('ventas', 1);
             $this->get('/contracts/'.$contract->contrato_id)->assertOk()->assertSee('Descargar PDF adjunto')->assertDontSee('Descargar contrato para firma');
-            $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertOk()->assertSee('PDF adjunto guardado')->assertSee('Descargar adjunto')->assertSee('name="estado"', false);
+            $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertOk()->assertSee('PDF adjunto guardado')->assertSee('Descargar adjunto')->assertDontSee('name="estado"', false);
             (new Process([$python, base_path('tests/Support/make_signed_contract.py'), $input, $output, 'alter']))->mustRun();
             $this->put('/contracts/'.$contract->contrato_id, $data + [
                 'documento_pdf' => UploadedFile::fake()->createWithContent('alterado.pdf', file_get_contents($output)),
@@ -102,9 +102,9 @@ class ContractSignatureTest extends TestCase
             $this->put('/contracts/'.$contract->contrato_id, $data + ['estado' => 'FINALIZADO'])
                 ->assertSessionHasErrors('estado');
             $this->put('/contracts/'.$contract->contrato_id, $data + ['estado' => 'CANCELADO', 'motivo_cancelacion' => 'Solicitud del cliente'])
-                ->assertSessionHasNoErrors()->assertSessionHas('status_kind', 'cancelled');
-            $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'CANCELADO', 'firma_revision' => 'VERIFICADA']);
-            $this->assertDatabaseHas('ventas', ['contrato_id' => $contract->contrato_id, 'estado' => 'ANULADA']);
+                ->assertSessionHasErrors(['estado', 'motivo_cancelacion']);
+            $this->assertDatabaseHas('contratos', ['contrato_id' => $contract->contrato_id, 'estado' => 'ACTIVO', 'firma_revision' => 'VERIFICADA']);
+            $this->assertDatabaseHas('ventas', ['contrato_id' => $contract->contrato_id, 'estado' => 'CONFIRMADA']);
             $this->assertDatabaseCount('ventas', 1);
             $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertForbidden();
         } finally {
