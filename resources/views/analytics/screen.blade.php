@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', $screen === 'bi' ? 'Panel BI' : 'Indicadores')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/analytics.css') }}?v=11">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/analytics.css') }}?v=12">@endpush
 @section('workspace-content')
 <section class="analytics">
 <header class="an-heading"><div><span class="an-eyebrow">INFORMACIÓN PARA DECIDIR</span><h1>{{ $screen === 'bi' ? 'Panel de gestión' : 'Indicadores de gestión' }}</h1><p>{{ $screen === 'bi' ? 'Compara la actividad y prioriza las acciones de cada módulo.' : 'Revisa la actividad operativa y la medición de tiempos por proceso.' }}</p></div></header>
@@ -57,10 +57,7 @@
 <section class="an-panel" style="margin-top:24px"><header class="an-panel-header"><div><h2>Existencias de materiales</h2><p>Estado actual · hasta 8 materiales, priorizando los que necesitan reposición. Cada cantidad conserva su unidad.</p></div><a class="an-secondary" href="{{ route('reports.index',['modulo'=>'inventario','tipo'=>'materiales_existencias']) }}">Ver inventario completo</a></header>
 @if($materials->isEmpty())<p class="an-empty">No hay materiales activos registrados.</p>@else<div class="an-table-wrap"><table class="an-table"><thead><tr><th>Material</th><th>Disponible</th><th>Mínimo</th><th>Unidad</th><th>Situación</th></tr></thead><tbody>@foreach($materials as $material)<tr><td>{{ $material->nombre }}</td><td>{{ $material->stock_actual }}</td><td>{{ $material->stock_minimo }}</td><td>{{ $material->unidad_medida }}</td><td><span class="an-pill {{ $material->stock_actual <= $material->stock_minimo ? 'warn' : '' }}">{{ $material->stock_actual <= $material->stock_minimo ? 'Reponer' : 'Disponible' }}</span></td></tr>@endforeach</tbody></table></div>@endif</section>
 @endif
-@if($screen==='indicators')
-<h2 class="an-section-title">Eficiencia temporal</h2><p class="an-section-note">Tiempo promedio por proceso, separado de los volúmenes y estados operativos.</p>
-<div class="an-grid">@foreach($items as $key=>$item)<article class="an-card"><span class="an-label">{{ $item['label'] }}</span><h3>{{ ['clientes'=>'Registro de clientes','contratos'=>'Registro de contratos','pagos'=>'Registro de pagos por medios externos','instalaciones'=>'Gestión de pedidos de instalación','inventario'=>'Registro de inventario'][$key] }}</h3><div class="an-number an-kpi-no-measure">Sin medición</div><details><summary>Cómo se calcula</summary><p class="an-kpi-formula">Suma de los tiempos transcurridos entre el inicio y la confirmación de cada operación / operaciones medidas. Unidad: minutos. Solo operaciones finalizadas del período.</p><p class="an-kpi-formula">Se necesita registrar ambos momentos de cada operación. La fecha de creación por sí sola no permite calcular su duración. Objetivo: reducir el tiempo promedio; la meta y línea base deben definirse con Gerencia.</p></details></article>@endforeach</div>
-@endif
+@include('analytics.pretest')
 @if($alerts)<h2 class="an-section-title">Prioridades de seguimiento</h2><div class="an-grid">@foreach($alerts as $alert)<article class="an-card"><span class="an-label">Situación actual</span><h3>{{ $alert['label'] }}</h3><div class="an-number">{{ $alert['value'] }}</div><p class="an-kpi-formula">{{ $alert['detail'] }}</p><a class="an-detail-link" href="{{ route('reports.index',['modulo'=>$alert['module'],'tipo'=>$alert['report'],'desde'=>'2000-01-01','hasta'=>now()->toDateString()]) }}">Revisar registros →</a></article>@endforeach</div>@endif
 </section>
 @endsection
