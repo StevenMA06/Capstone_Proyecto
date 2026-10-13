@@ -16,7 +16,7 @@ class ClientService
     public function create(array $data, User $creator): Client
     {
         return $this->clients->create($this->attributes($data) + [
-            'estado' => 'ACTIVO',
+            'estado' => 'PENDIENTE',
             'creado_por' => $creator->getKey(),
         ]);
     }

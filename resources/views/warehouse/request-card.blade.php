@@ -37,15 +37,21 @@
         @elseif($sameAccount && $items->contains('estado', 'PENDIENTE_ALMACEN'))
             <div class="warehouse-flow is-waiting"><small>PASO 1 DE 2</small><strong>Solicita autorización de la solicitud completa</strong><p>Como registraste estos recursos desde esta cuenta, otra persona de Gerencia debe autorizar el conjunto antes de prepararlo.</p><form method="POST" action="{{ route('warehouse.requests.escalate', $representative->solicitud_id) }}">@csrf @method('PATCH')<button type="submit" class="action-link">Enviar solicitud completa a Gerencia</button></form></div>
         @elseif($canReview)
-            @php($anyShortage = $items->contains(fn ($resourceItem) => $resourceItem->tipo === 'EQUIPO'
-                ? ($resourceItem->equipo_tipo_solicitado ? $availableEquipment->get($resourceItem->equipo_tipo_solicitado, collect())->isEmpty()
-                    : !($resourceItem->equipo_estado === 'DISPONIBLE' && !in_array($resourceItem->equipo_condicion, ['MALO', 'MALOGRADO'], true)))
-                : (float) $resourceItem->material_stock_libre < (float) $resourceItem->cantidad))
+            @php
+                $anyShortage = $items->contains(fn ($resourceItem) => $resourceItem->tipo === 'EQUIPO'
+                    ? ($resourceItem->equipo_tipo_solicitado
+                        ? $availableEquipment->get($resourceItem->equipo_tipo_solicitado, collect())->isEmpty()
+                        : !($resourceItem->equipo_estado === 'DISPONIBLE'
+                            && !in_array($resourceItem->equipo_condicion, ['MALO', 'MALOGRADO'], true)))
+                    : (float) $resourceItem->material_stock_libre < (float) $resourceItem->cantidad);
+            @endphp
             <div class="warehouse-flow {{ $anyShortage ? 'is-waiting' : 'is-ready' }}"><small>PASO ACTUAL · ALMACÉN</small><strong>{{ $anyShortage ? 'Aún no se puede completar la solicitud' : 'Prepara y reserva toda la solicitud' }}</strong><p>{{ $anyShortage ? 'Al menos un recurso no tiene disponibilidad suficiente. Espera a que se reponga o rechaza la solicitud completa con el motivo correspondiente.' : ($items->contains(fn ($resourceItem) => $resourceItem->tipo === 'EQUIPO' && $resourceItem->equipo_tipo_solicitado) ? 'Confirma la unidad libre para los equipos por tipo. Al confirmar, equipo y material quedarán reservados juntos para el pedido.' : 'Verifica los recursos solicitados. El equipo ya está identificado por código, modelo y serie; al confirmar, equipo y material quedarán reservados juntos para el pedido.') }}</p></div>
             @unless($anyShortage)
                 <form method="POST" action="{{ route('warehouse.requests.fulfill', $representative->solicitud_id) }}" class="warehouse-delivery-form warehouse-group-delivery">@csrf @method('PATCH')
                     @foreach($items->where('tipo', 'EQUIPO')->whereNotNull('equipo_tipo_solicitado') as $equipmentRequest)
-                        @php($matchingEquipment = $availableEquipment->get($equipmentRequest->equipo_tipo_solicitado, collect()))
+                        @php
+                            $matchingEquipment = $availableEquipment->get($equipmentRequest->equipo_tipo_solicitado, collect());
+                        @endphp
                         <label>Unidad para {{ $equipmentRequest->equipo_tipo_solicitado }}<select name="equipos[{{ $equipmentRequest->solicitud_id }}]" required><option value="">Selecciona una unidad libre</option>@foreach($matchingEquipment as $equipment)<option value="{{ $equipment->equipo_id }}" @selected(old('equipos.'.$equipmentRequest->solicitud_id) == $equipment->equipo_id)>{{ $equipment->codigo }} · {{ $equipment->nombre }}{{ $equipment->numero_serie ? ' · Serie '.$equipment->numero_serie : '' }}</option>@endforeach</select></label>
                     @endforeach
                     <button type="submit" class="action-link">Preparar y reservar todo</button>
@@ -56,11 +62,17 @@
             <div class="warehouse-flow is-muted"><strong>En espera de revisión de Almacén</strong><p>Esta solicitud requiere una cuenta autorizada para preparar o rechazar los recursos.</p></div>
         @endif
     @else
+        @php
+            $finalActor = $groupLabel === 'Preparada'
+                ? [$representative->atendido_por ? $representative->almacenista : null, $representative->atendido_en, 'Preparó y reservó la solicitud completa']
+                : ($groupLabel === 'Rechazada'
+                    ? [$representative->cerrado_por ? $representative->cerrador : $representative->aprobador,
+                        $representative->cerrado_en ?: $representative->resuelto_en, 'Rechazó la solicitud completa']
+                    : [$representative->cerrador, $representative->cerrado_en, 'Cerró la solicitud']);
+        @endphp
         <div class="warehouse-flow {{ $groupLabel === 'Rechazada' ? 'is-rejected' : ($groupLabel === 'Preparada' ? 'is-ready' : 'is-muted') }}"><small>RESULTADO</small><strong>{{ $groupLabel === 'Preparada' ? 'Solicitud completa preparada y reservada' : ($groupLabel === 'Rechazada' ? 'Solicitud completa rechazada' : 'Solicitud anulada') }}</strong><p>{{ $groupLabel === 'Preparada' ? 'Equipo y material están asignados al pedido. Instalaciones puede continuar con la asignación del técnico.' : ($groupLabel === 'Rechazada' ? 'Instalaciones puede revisar el motivo y registrar una nueva solicitud conjunta.' : 'Los recursos ya no están solicitados para este pedido.') }}</p></div>
         <div class="warehouse-request-timeline">
-            @if($representative->resuelto_por)<p><small>Autorizó o rechazó</small><strong>{{ $representative->aprobador }}</strong><span>{{ \Illuminate\Support\Carbon::parse($representative->resuelto_en)->format('d/m/Y · H:i') }}</span></p>@endif
-            @if($representative->atendido_por)<p><small>Preparó la solicitud completa</small><strong>{{ $representative->almacenista }}</strong><span>{{ \Illuminate\Support\Carbon::parse($representative->atendido_en)->format('d/m/Y · H:i') }}</span></p>@endif
-            @if($representative->cerrado_por)<p><small>Cerró la solicitud</small><strong>{{ $representative->cerrador }}</strong><span>{{ \Illuminate\Support\Carbon::parse($representative->cerrado_en)->format('d/m/Y · H:i') }}</span></p>@endif
+            @if($finalActor[0] && $finalActor[1])<p><small>{{ $finalActor[2] }}</small><strong>{{ $finalActor[0] }}</strong><span>{{ \Illuminate\Support\Carbon::parse($finalActor[1])->format('d/m/Y · H:i') }}</span></p>@endif
         </div>
     @endif
 </article>

@@ -182,6 +182,18 @@
         select.addEventListener('change', update);
         update();
     });
+    document.querySelectorAll('[data-order-cancel-reason]').forEach(select => {
+        const form = select.closest('[data-order-cancel-form]');
+        const wrap = form?.querySelector('[data-cancel-detail-wrap]');
+        const detail = form?.querySelector('[data-cancel-detail]');
+        const update = () => {
+            const other = select.value === 'OTRO';
+            if (wrap) wrap.hidden = !other;
+            if (detail) detail.required = other;
+        };
+        select.addEventListener('change', update);
+        update();
+    });
     const forms = document.querySelectorAll('[data-installation-form], .installation-form');
     const cancelDialog = document.getElementById('order-cancel-confirm');
     let pendingCancelForm;

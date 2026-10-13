@@ -32,31 +32,16 @@ class ContractPdf
 
     private function content(object $contract): array
     {
-        $tokens = [
-            $this->section('DATOS DEL TITULAR Y DEL SERVICIO'),
-            $this->pair('Cliente', trim($contract->nombres_razon_social.' '.$contract->apellidos), 'Documento', $contract->tipo_documento.' '.$contract->numero_documento),
-            $this->pair('Plan contratado', $contract->plan_nombre.' · '.$contract->numero_plan, 'Tarifa mensual', 'S/ '.number_format($contract->precio_contratado, 2)),
-            $this->pair('Zona de cobertura', $contract->zona_nombre, 'Dirección de instalación', $contract->direccion_servicio),
-            $this->pair('Inicio de vigencia', $this->date($contract->fecha_inicio), 'Fin de vigencia', $this->date($contract->fecha_fin)),
-            $this->pair('Duración', $contract->duracion_meses.' meses', 'Responsable comercial', trim($contract->responsable_nombres.' '.$contract->responsable_apellidos)),
-            $this->section('CONDICIONES PRINCIPALES'),
-        ];
-
-        foreach ([
-            '1. Objeto. Lunnys Perú prestará el servicio indicado en este documento en la dirección registrada, sujeto a disponibilidad técnica y cobertura vigente.',
-            '2. Vigencia. El contrato rige desde la fecha de inicio hasta la fecha de finalización señalada. Cualquier renovación o reactivación se registrará como un nuevo período contractual.',
-            '3. Tarifa y pagos. El cliente abonará la tarifa mensual contratada dentro de los plazos comunicados por la empresa. La falta de pago se gestionará según las reglas vigentes del servicio.',
-            '4. Conformidad. Las partes declaran que los datos consignados son correctos y aceptan las condiciones del servicio. La firma del cliente confirma su conocimiento y aceptación.',
-        ] as $clause) {
-            $tokens[] = $this->paragraph($clause);
-        }
-
+        // The printed company form ends at y=254 (the modem choice row). Leave
+        // enough vertical space before the next section starts so the heading
+        // and its background never cover that row.
+        $tokens = [['type' => 'company_form', 'height' => 497]];
         $tokens[] = $this->section('OBSERVACIONES');
         $observations = trim((string) ($contract->observaciones ?? '')) ?: 'Sin observaciones adicionales.';
         foreach ($this->wrap($observations, 92) as $line) {
             $tokens[] = ['type' => 'line', 'text' => $line, 'height' => 13];
         }
-        $tokens[] = ['type' => 'notice', 'text' => 'Documento preparado para la revisión y firma de las partes.', 'height' => 28];
+        $tokens[] = $this->paragraph('El presente contrato será resuelto, a solicitud de una de las partes, para lo cual se tendrá que comunicar dicha decisión con 30 días de anticipación, sin perjuicio de ninguna de las partes.');
 
         return $tokens;
     }
@@ -150,14 +135,16 @@ class ContractPdf
     private function pageStream(array $tokens, object $contract, int $page, int $pageCount, bool $last): string
     {
         $stream = "q 0.035 0.29 0.19 rg 0 755 595 87 re f Q\n";
-        $stream .= $this->text('LUNNYS PERÚ', 50, 814, 16, true, '1 1 1');
-        $stream .= $this->text('CONTRATO DE PRESTACIÓN DE SERVICIO', 50, 788, 13, true, '1 1 1');
-        $stream .= $this->text('Contrato: '.$contract->codigo, 50, 768, 9.5, false, '0.86 0.95 0.89');
+        $stream .= $this->text("LUNNY'S PERU R2D E.I.R.L.", 50, 814, 16, true, '1 1 1');
+        $stream .= $this->text('CONTRATO DE INTERNET', 50, 788, 13, true, '1 1 1');
+        $stream .= $this->text('Código del contrato: '.$contract->codigo, 50, 768, 9.5, false, '0.86 0.95 0.89');
         $stream .= "q 0.035 0.47 0.275 rg 0 750 595 5 re f Q\n";
         $y = 725;
 
         foreach ($tokens as $token) {
-            if ($token['type'] === 'section') {
+            if ($token['type'] === 'company_form') {
+                $stream .= $this->companyForm($contract);
+            } elseif ($token['type'] === 'section') {
                 $stream .= 'q 0.92 0.96 0.93 rg 46 '.($y - 17)." 503 22 re f Q\n";
                 $stream .= $this->text($token['text'], 54, $y - 10, 9, true, '0.035 0.36 0.22');
             } elseif ($token['type'] === 'pair') {
@@ -184,23 +171,73 @@ class ContractPdf
         }
 
         if ($last) {
-            // These fixed boxes are part of the automatic signature detection contract.
-            $clientName = trim($contract->nombres_razon_social.' '.$contract->apellidos);
-            $clientIdentity = $this->clip($clientName.' · '.$contract->tipo_documento.' '.$contract->numero_documento, 61);
-            $responsibleName = trim($contract->responsable_nombres.' '.$contract->responsable_apellidos);
-            $responsibleRole = trim((string) ($contract->responsable_cargo ?? 'Asistente de Ventas')) ?: 'Asistente de Ventas';
-            $responsibleIdentity = $this->clip($responsibleName.' · '.$responsibleRole, 47);
-            $stream .= "q 0.55 0.65 0.59 RG 0.8 w 50 25 270 70 re S 335 25 210 70 re S Q\n";
-            $stream .= $this->text('Firma del cliente', 57, 82, 8.5, true, '0.18 0.31 0.23');
-            $stream .= $this->text('Firma del Asistente de Ventas', 342, 82, 8.5, true, '0.18 0.31 0.23');
-            $stream .= $this->text($clientIdentity, 57, 33, 6.5, false, '0.35 0.43 0.38');
-            $stream .= $this->text($responsibleIdentity, 342, 33, 6.5, false, '0.35 0.43 0.38');
+            // Keep the customer's handwritten signature inside the detector's fixed region.
+            // Match the paper form: signatures above a line, with the role caption below it.
+            // Keep the line below the detector's signature scan area to avoid false positives.
+            $stream .= "q 0.70 0.76 0.72 RG 0.7 w 50 32 m 320 32 l 335 32 m 545 32 l S Q\n";
+            $stream .= $this->text('CONTRATO SERVICIO DE INTERNET', 82, 20, 7.5, true, '0.18 0.31 0.23');
+            $stream .= $this->text('VENDEDOR', 410, 20, 7.5, true, '0.18 0.31 0.23');
         }
-        $stream .= "q 0.035 0.36 0.22 RG 0.5 w 50 113 m 545 113 l S Q\n";
-        $stream .= $this->text('Lunnys Perú · Documento contractual', 50, 104, 7.5, false, '0.42 0.50 0.45');
-        $stream .= $this->text("Página {$page} de {$pageCount}", 485, 104, 7.5, false, '0.42 0.50 0.45');
-
         return $stream;
+    }
+
+    private function companyForm(object $contract): string
+    {
+        $name = trim($contract->nombres_razon_social.' '.$contract->apellidos);
+        $phone = trim((string) ($contract->cliente_telefono ?? ''));
+        $alternate = trim((string) ($contract->cliente_telefono_alterno ?? ''));
+        $reference = trim((string) ($contract->cliente_referencia ?? ''));
+        $email = trim((string) ($contract->cliente_correo ?? ''));
+        $stream = '';
+        $stream .= $this->sectionBar('DATOS DEL CLIENTE', 716);
+        $stream .= $this->field('Nombres y apellidos', $name, 52, 680, 315);
+        $stream .= $this->field('D.N.I.', $contract->tipo_documento.' '.$contract->numero_documento, 380, 680, 165);
+        $stream .= $this->field('Correo', $email ?: 'No registrado', 52, 646, 315);
+        $stream .= $this->field('Nombre previo', '', 380, 646, 165, true);
+        $stream .= $this->field('Fecha de inicio', $this->date($contract->fecha_inicio), 52, 610, 220);
+        $stream .= $this->field('Fecha de término', $this->date($contract->fecha_fin), 310, 610, 235);
+
+        $stream .= $this->sectionBar('TIPO DE INSTALACIÓN', 580);
+        $stream .= $this->choice('Fibra óptica', 52, 548);
+        $stream .= $this->choice('Inalámbrico', 210, 548);
+
+        $stream .= $this->sectionBar('DIRECCIÓN DE INSTALACIÓN', 520);
+        $stream .= $this->field('Dirección', $contract->direccion_servicio, 52, 486, 493);
+        $stream .= $this->field('Barrio / distrito', $contract->cliente_distrito ?? '', 52, 452, 220);
+        $stream .= $this->field('Teléfono', $phone, 310, 452, 235);
+        $stream .= $this->field('Puntos de referencia', $reference ?: 'No registrado', 52, 418, 493);
+        $stream .= $this->field('Celular alterno', $alternate ?: 'No registrado', 52, 384, 220);
+
+        $stream .= $this->sectionBar('SERVICIO A SUMINISTRAR', 352);
+        $stream .= $this->field('Plan contratado', trim($contract->plan_nombre.' · '.$contract->numero_plan), 52, 318, 315);
+        $stream .= $this->field('Mensualidad', 'S/ '.number_format((float) $contract->precio_contratado, 2), 380, 318, 165);
+        $stream .= $this->text('Internet  [X]       Cable  [ ]       Canal Premium  [ ]', 52, 282, 9, false, '0.12 0.20 0.16');
+        $stream .= $this->text('Módem:', 52, 254, 9, true, '0.12 0.20 0.16');
+        $stream .= $this->choice('Comprado', 100, 254);
+        $stream .= $this->choice('Propio', 245, 254);
+        $stream .= $this->choice('Prestado', 390, 254);
+        return $stream;
+    }
+
+    private function sectionBar(string $label, int $y): string
+    {
+        return "q 0.89 0.92 0.90 rg 48 ".($y - 12)." 499 20 re f Q\n".$this->text($label, 54, $y - 5, 8, true, '0.035 0.36 0.22');
+    }
+
+    private function field(string $label, string $value, int $x, int $y, int $width, bool $writeIn = false): string
+    {
+        $stream = '';
+        if ($writeIn) $stream .= "q 0.97 0.98 0.97 rg {$x} ".($y - 17)." {$width} 23 re f Q\n";
+        $stream .= $this->text($label, $x, $y, 7, true, '0.35 0.43 0.38');
+        $stream .= $this->text($this->clip($value, max(12, (int) ($width / 5))), $x, $y - 12, 9, false, '0.12 0.20 0.16');
+        $stream .= "q 0.55 0.65 0.59 RG 0.5 w {$x} ".($y - 17)." m ".($x + $width)." ".($y - 17)." l S Q\n";
+        return $stream;
+    }
+
+    private function choice(string $label, int $x, int $y): string
+    {
+        return $this->text('[ ]', $x, $y, 9, false, '0.12 0.20 0.16')
+            .$this->text($label, $x + 20, $y, 9, false, '0.12 0.20 0.16');
     }
 
     private function text(string $value, float $x, float $y, float $size, bool $bold = false, string $color = '0 0 0'): string

@@ -11,28 +11,25 @@ class InstallationResourceRequestService
 {
     public function __construct(private InstallationOrderService $orders) {}
 
-    public function createRequestGroup(User $actor, int $orderId): int
+    public function createRequestGroup(User $actor, int $orderId, bool $includesEquipment = false, bool $includesMaterials = false): int
     {
-        abort_unless($actor->hasPermission('orders.schedule'), 403);
-        $order = $this->validatedOrder($orderId);
+        abort_unless($actor->hasPermission('orders.resources.request'), 403);
+        $order = $this->validatedOrder($orderId, $actor);
+        if (! $includesEquipment && ! $includesMaterials) $this->fail('recurso', 'Selecciona equipo, material o ambos antes de enviar la solicitud.');
         return (int) DB::table('pedido_solicitudes_recursos')->insertGetId([
             'pedido_id' => $orderId,
             'solicitado_por' => $actor->getKey(),
             'solicitado_en' => now('America/Lima'),
+            'incluye_equipo' => $includesEquipment,
+            'incluye_material' => $includesMaterials,
         ]);
     }
 
     public function requestEquipmentType(User $actor, int $orderId, string $requestedType, ?int $groupId = null): void
     {
-        abort_unless($actor->hasPermission('orders.schedule'), 403);
+        abort_unless($actor->hasPermission('orders.resources.request'), 403);
         DB::transaction(function () use ($actor, $orderId, $requestedType, $groupId): void {
-            $order = $this->orders->editable($orderId);
-            if (! in_array(DB::table('contratos')->where('contrato_id', $order->contrato_id)->value('estado'), ['PENDIENTE', 'ACTIVO'], true)) {
-                $this->fail('pedido', 'El contrato está cancelado o finalizado.');
-            }
-            if (! $order->fecha_programada || ($order->fase_flujo && ! $order->coordinado_en)) {
-                $this->fail('pedido', 'Primero confirma la fecha y franja de la visita con el cliente.');
-            }
+            $order = $this->validatedOrder($orderId, $actor);
             $type = DB::table('equipos')->where('tipo', trim($requestedType))->value('tipo');
             if (! $type) $this->fail('equipo_tipo', 'Selecciona un tipo de equipo registrado.');
             $open = DB::table('pedido_solicitudes_recurso')->where('pedido_id', $orderId)->where('tipo', 'EQUIPO')
@@ -54,15 +51,9 @@ class InstallationResourceRequestService
 
     public function request(User $actor, int $orderId, string $type, int $resourceId, string $amount = '1', ?int $groupId = null): void
     {
-        abort_unless($actor->hasPermission('orders.schedule'), 403);
+        abort_unless($actor->hasPermission('orders.resources.request'), 403);
         DB::transaction(function () use ($actor, $orderId, $type, $resourceId, $amount, $groupId): void {
-            $order = $this->orders->editable($orderId);
-            if (! in_array(DB::table('contratos')->where('contrato_id', $order->contrato_id)->value('estado'), ['PENDIENTE', 'ACTIVO'], true)) {
-                $this->fail('pedido', 'El contrato está cancelado o finalizado.');
-            }
-            if (! $order->fecha_programada || ($order->fase_flujo && ! $order->coordinado_en)) {
-                $this->fail('pedido', 'Primero confirma la fecha y franja de la visita con el cliente.');
-            }
+            $order = $this->validatedOrder($orderId, $actor);
             if (! in_array($type, ['EQUIPO', 'MATERIAL'], true)) $this->fail('recurso', 'Tipo de recurso inválido.');
             $column = $type === 'EQUIPO' ? 'equipo_id' : 'material_id';
             $table = $type === 'EQUIPO' ? 'equipos' : 'materiales';
@@ -102,6 +93,19 @@ class InstallationResourceRequestService
                 'solicitado_en' => now('America/Lima'),
             ]);
         }, 3);
+    }
+
+    public function canRequest(User $actor): bool
+    {
+        return $actor->hasPermission('orders.resources.request');
+    }
+
+    public function canRequestForOrder(User $actor, object $order): bool
+    {
+        if (! $this->canRequest($actor)) return false;
+
+        // The office records the resources communicated by the field team.
+        return $actor->hasPermission('orders.schedule');
     }
 
     public function approve(User $actor, int $requestId): void
@@ -251,10 +255,13 @@ class InstallationResourceRequestService
         }, 3);
     }
 
-    private function validatedOrder(int $orderId): object
+    private function validatedOrder(int $orderId, ?User $actor = null): object
     {
         $order = $this->orders->editable($orderId);
-        if (! in_array(DB::table('contratos')->where('contrato_id', $order->contrato_id)->value('estado'), ['PENDIENTE', 'ACTIVO'], true)) {
+        $actor ??= auth()->user();
+        abort_unless($actor && $this->canRequestForOrder($actor, $order), 403,
+            'Solo una cuenta responsable de gestionar pedidos puede registrar los recursos para Almacén.');
+        if ($order->contrato_id && ! in_array(DB::table('contratos')->where('contrato_id', $order->contrato_id)->value('estado'), ['PENDIENTE', 'ACTIVO'], true)) {
             $this->fail('pedido', 'El contrato está cancelado o finalizado.');
         }
         if (! $order->fecha_programada || ($order->fase_flujo && ! $order->coordinado_en)) {

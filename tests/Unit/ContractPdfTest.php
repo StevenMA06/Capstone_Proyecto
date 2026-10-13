@@ -25,11 +25,18 @@ class ContractPdfTest extends TestCase
         $this->assertStringStartsWith('%PDF-1.4', $pdf);
         $this->assertStringContainsString('CON-001', $pdf);
         $this->assertStringContainsString('89.90', $pdf);
-        $this->assertStringContainsString('CONTRATO DE PRESTACI', $pdf);
+        $this->assertStringContainsString('CONTRATO DE INTERNET', $pdf);
         $this->assertStringContainsString('Ana P', $pdf);
         $this->assertStringContainsString('DNI 12345678', $pdf);
-        $this->assertStringContainsString('Firma del Asistente de Ventas', $pdf);
-        $this->assertStringContainsString('Luis Garc', $pdf);
+        $this->assertStringContainsString('VENDEDOR', $pdf);
+        $this->assertStringContainsString(iconv('UTF-8', 'Windows-1252//TRANSLIT', 'Código del contrato:'), $pdf);
+        $this->assertStringNotContainsString('N.° de contrato', $pdf);
+        $this->assertStringContainsString("LUNNY'S PERU R2D E.I.R.L.", $pdf);
+        $this->assertStringContainsString('Comprado', $pdf);
+        $this->assertStringContainsString('Fecha de inicio', $pdf);
+        $this->assertStringContainsString('1 0 0 1 54 218 Tm (OBSERVACIONES)', $pdf);
+        $this->assertStringNotContainsString('Lunnys Perú · Documento contractual', $pdf);
+        $this->assertStringNotContainsString('Página 1 de 1', $pdf);
         $this->assertStringContainsString('startxref', $pdf);
         $this->assertStringEndsWith('%%EOF', $pdf);
 
@@ -37,6 +44,6 @@ class ContractPdfTest extends TestCase
         $longPdf = (new ContractPdf)->render($record);
         preg_match('/\/Count (\d+)/', $longPdf, $matches);
         $this->assertGreaterThan(1, (int) ($matches[1] ?? 0));
-        $this->assertStringContainsString('Firma del cliente', $longPdf);
+        $this->assertStringContainsString('CONTRATO SERVICIO DE INTERNET', $longPdf);
     }
 }

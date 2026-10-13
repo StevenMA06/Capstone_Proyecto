@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('a[href="#cancelacion-contrato"]').forEach(link => {
+        link.addEventListener('click', event => {
+            const panel = document.getElementById('cancelacion-contrato');
+            if (!panel) return;
+            event.preventDefault();
+            panel.open = true;
+            panel.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+            panel.querySelector('summary')?.focus({ preventScroll: true });
+        });
+    });
     const form = document.querySelector('.contracts-form');
     if (!form) return;
     const client = form.querySelector('#cliente_id');

@@ -24,6 +24,7 @@ class InstallationOrderService
         'OTRO' => 'Otro motivo',
     ];
 
+    /** Create the installation order when a contract is registered. */
     public function createForContract(object $contract, int $actorId): int
     {
         $existing = DB::table('pedidos_instalacion')->where('contrato_id', $contract->contrato_id)->value('pedido_id');
@@ -35,9 +36,47 @@ class InstallationOrderService
             'cliente_id' => $contract->cliente_id,
             'estado' => 'PENDIENTE',
             'fase_flujo' => 'PENDIENTE_COORDINACION',
+            'estado_documentacion' => 'PENDIENTE_INSTALACION',
             'creado_por' => $actorId,
             'fecha_solicitud' => now('America/Lima'),
         ]);
+    }
+
+    /** Link any existing legacy request to its formal client and contract. */
+    public function linkFormalContract(object $contract, int $actorId): ?int
+    {
+        $document = DB::table('clientes')->where('cliente_id', $contract->cliente_id)->value('numero_documento');
+        $order = $document ? DB::table('pedidos_instalacion')->whereNull('contrato_id')->where('documento_cliente', $document)
+            ->whereIn('estado', ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO', 'EN_PROCESO', 'COMPLETADO'])
+            ->orderByRaw('CASE WHEN cliente_id = ? THEN 0 ELSE 1 END', [$contract->cliente_id])
+            ->orderByRaw('CASE WHEN estado IN (\'EN_PROCESO\', \'COMPLETADO\') THEN 0 ELSE 1 END')
+            ->orderByDesc('pedido_id')->lockForUpdate()->first() : null;
+        if (! $order) {
+            if (! in_array($contract->estado ?? null, ['PENDIENTE', 'ACTIVO'], true)) return null;
+            $orderId = $this->createForContract($contract, $actorId);
+            if ($contract->firma_revision === 'VERIFICADA') {
+                DB::afterCommit(fn () => app(InstallationDriveService::class)->syncVerifiedContract($orderId));
+            }
+            return $orderId;
+        }
+
+        DB::table('pedidos_instalacion')->where('pedido_id', $order->pedido_id)->update([
+            'cliente_id' => $contract->cliente_id,
+            'contrato_id' => $contract->contrato_id,
+            'estado_documentacion' => $contract->firma_revision === 'VERIFICADA' ? 'PENDIENTE_VERIFICACION' : 'PENDIENTE_FIRMA',
+            'actualizado_en' => now('America/Lima'),
+        ]);
+        if (DB::getSchemaBuilder()->hasTable('pedido_historial_eventos')) {
+            DB::table('pedido_historial_eventos')->insert([
+                'pedido_id' => $order->pedido_id, 'usuario_id' => $actorId, 'tipo' => 'CONTRATO_VINCULADO',
+                'motivo' => 'Contrato formal asociado a la instalación.',
+                'contexto' => json_encode(['contrato_id' => $contract->contrato_id]), 'registrado_en' => now('America/Lima'),
+            ]);
+        }
+        if ($contract->firma_revision === 'VERIFICADA') {
+            DB::afterCommit(fn () => app(InstallationDriveService::class)->syncVerifiedContract((int) $order->pedido_id));
+        }
+        return (int) $order->pedido_id;
     }
 
     public function coordinate(User $actor, int $id, array $data, ?UploadedFile $evidence = null): bool
@@ -142,10 +181,10 @@ class InstallationOrderService
                 if (! Carbon::parse($change->fecha_nueva, 'America/Lima')->greaterThan(now('America/Lima'))) {
                     $this->fail('fecha_programada', 'La fecha solicitada ya pasó. Registra una nueva solicitud.');
                 }
-                if ($order->tecnico_id) {
-                    Employee::lockForUpdate()->find((int) $order->tecnico_id);
-                    if ($this->hasTechnicianScheduleConflict((int) $order->tecnico_id, $orderId, $change->fecha_nueva)) {
-                        $this->fail('reprogramacion', 'El técnico asignado ya tiene otra instalación ese día a esa hora. Rechaza este cambio o coordina otro horario.');
+                foreach (array_filter([(int) $order->tecnico_id, (int) $order->tecnico_secundario_id]) as $employeeId) {
+                    Employee::lockForUpdate()->find($employeeId);
+                    if ($this->hasTechnicianScheduleConflict($employeeId, $orderId, $change->fecha_nueva)) {
+                        $this->fail('reprogramacion', 'Uno de los técnicos asignados ya tiene otra instalación ese día a esa hora. Rechaza este cambio o coordina otro horario.');
                     }
                 }
                 DB::table('pedidos_instalacion')->where('pedido_id', $orderId)->update([
@@ -175,15 +214,16 @@ class InstallationOrderService
             if ($approve) {
                 DB::afterCommit(function () use ($orderId, $order): void {
                     if ($order->tecnico_id) $this->notifyTechnician($orderId, $order->tecnico_id, 'reprogrammed');
+                    if ($order->tecnico_secundario_id) $this->notifyTechnician($orderId, $order->tecnico_secundario_id, 'reprogrammed');
                     $this->notifyClient($orderId, $order->cliente_id);
                 });
             }
         }, 3);
     }
 
-    public function assign(User $actor, int $id, int $technicianId, ?string $reason = null, ?string $legacyDate = null): void
+    public function assign(User $actor, int $id, int $technicianId, ?string $reason = null, ?string $legacyDate = null, ?int $secondTechnicianId = null): void
     {
-        DB::transaction(function () use ($actor, $id, $technicianId, $reason, $legacyDate): void {
+        DB::transaction(function () use ($actor, $id, $technicianId, $reason, $legacyDate, $secondTechnicianId): void {
             $order = $this->editable($id);
             $this->requireActiveContract($order);
             if (DB::table('pedido_reprogramaciones')->where('pedido_id', $id)->where('estado', 'SOLICITADA')->exists()) {
@@ -195,15 +235,6 @@ class InstallationOrderService
             if (! $order->fase_flujo && ! $legacyDate) {
                 $this->fail('fecha_programada', 'Indica la nueva fecha para este pedido anterior.');
             }
-            $hasEquipment = DB::table('pedido_equipos')->where('pedido_id', $id)
-                ->whereIn('estado_asignacion', ['ASIGNADO', 'UTILIZADO'])->whereNull('fecha_devolucion')->exists();
-            $hasMaterial = DB::table('pedido_materiales')->where('pedido_id', $id)
-                ->whereRaw('cantidad_asignada > cantidad_devuelta')->exists();
-            $hasOpenRequests = DB::table('pedido_solicitudes_recurso')->where('pedido_id', $id)
-                ->whereIn('estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])->exists();
-            if (! $hasEquipment || ! $hasMaterial || $hasOpenRequests) {
-                $this->fail('pedido', 'Antes de asignar al técnico, Almacén debe preparar al menos un equipo y el material necesario, sin solicitudes pendientes.');
-            }
             if ($order->tecnico_id && blank($reason)) {
                 $this->fail('motivo_reprogramacion', 'Justifica el cambio de técnico.');
             }
@@ -211,9 +242,20 @@ class InstallationOrderService
             if (! $technician?->isEligible() || $technician->cargo !== 'Técnico de Campo') {
                 $this->fail('tecnico_id', 'Selecciona un técnico de campo activo.');
             }
+            $secondTechnician = null;
+            if ($secondTechnicianId) {
+                if ($secondTechnicianId === $technicianId) $this->fail('tecnico_secundario_id', 'Selecciona dos técnicos distintos.');
+                $secondTechnician = Employee::lockForUpdate()->find($secondTechnicianId);
+                if (! $secondTechnician?->isEligible() || $secondTechnician->cargo !== 'Técnico de Campo') {
+                    $this->fail('tecnico_secundario_id', 'Selecciona un segundo técnico de campo activo.');
+                }
+            }
             $scheduledAt = $order->fase_flujo ? $order->fecha_programada : $legacyDate;
             if ($this->hasTechnicianScheduleConflict($technicianId, $id, $scheduledAt)) {
                 $this->fail('tecnico_id', 'Este técnico ya tiene otra instalación programada ese día a esta hora. Elige otro horario o técnico.');
+            }
+            if ($secondTechnicianId && $this->hasTechnicianScheduleConflict($secondTechnicianId, $id, $scheduledAt)) {
+                $this->fail('tecnico_secundario_id', 'El segundo técnico ya tiene otra instalación programada ese día a esta hora. Elige otro horario o técnico.');
             }
             $isRescheduledAssignment = $order->estado === 'REPROGRAMADO'
                 || (! $order->fase_flujo && $order->fecha_programada
@@ -221,11 +263,13 @@ class InstallationOrderService
             $when = now('America/Lima');
             DB::table('pedidos_instalacion')->where('pedido_id', $id)->update([
                 'tecnico_id' => $technicianId,
+                'tecnico_secundario_id' => $secondTechnicianId,
                 'fecha_programada' => $order->fase_flujo ? $order->fecha_programada : $legacyDate,
                 'fecha_original' => $order->fecha_original ?? ($order->fase_flujo ? $order->fecha_programada : $legacyDate),
                 'asignado_por' => $actor->getKey(),
                 'asignado_en' => $when,
                 'confirmado_por_tecnico_en' => null,
+                'confirmado_por_tecnico_secundario_en' => null,
                 'notificado_en' => null,
                 'estado' => $order->estado === 'REPROGRAMADO' || (! $order->fase_flujo && $order->fecha_programada && ! Carbon::parse($order->fecha_programada)->equalTo(Carbon::parse($legacyDate)))
                     ? 'REPROGRAMADO' : 'PROGRAMADO',
@@ -234,7 +278,10 @@ class InstallationOrderService
                 'actualizado_en' => $when,
             ]);
             $notificationType = $isRescheduledAssignment ? 'reprogrammed_assignment' : 'assignment';
-            DB::afterCommit(fn () => $this->notifyTechnician($id, $technicianId, $notificationType));
+            DB::afterCommit(function () use ($id, $technicianId, $secondTechnicianId, $notificationType): void {
+                $this->notifyTechnician($id, $technicianId, $notificationType);
+                if ($secondTechnicianId) $this->notifyTechnician($id, $secondTechnicianId, $notificationType);
+            });
         }, 3);
     }
 
@@ -242,13 +289,18 @@ class InstallationOrderService
     {
         DB::transaction(function () use ($technician, $id): void {
             $order = DB::table('pedidos_instalacion')->where('pedido_id', $id)->lockForUpdate()->first();
-            abort_unless($order && (int) $order->tecnico_id === (int) $technician->empleado_id, 404);
+            abort_unless($order && in_array((int) $technician->empleado_id, [(int) $order->tecnico_id, (int) $order->tecnico_secundario_id], true), 404);
             if ($order->fase_flujo === 'CONFIRMADO') return;
             if ($order->fase_flujo !== 'ESPERANDO_CONFIRMACION_TECNICO') {
                 $this->fail('pedido', 'Esta asignación no está pendiente de confirmación.');
             }
+            $column = (int) $order->tecnico_id === (int) $technician->empleado_id
+                ? 'confirmado_por_tecnico_en' : 'confirmado_por_tecnico_secundario_en';
+            $confirmedPrimary = $column === 'confirmado_por_tecnico_en' || $order->confirmado_por_tecnico_en;
+            $confirmedSecondary = ! $order->tecnico_secundario_id || $column === 'confirmado_por_tecnico_secundario_en' || $order->confirmado_por_tecnico_secundario_en;
             DB::table('pedidos_instalacion')->where('pedido_id', $id)->update([
-                'fase_flujo' => 'CONFIRMADO', 'confirmado_por_tecnico_en' => now('America/Lima'),
+                'fase_flujo' => $confirmedPrimary && $confirmedSecondary ? 'CONFIRMADO' : 'ESPERANDO_CONFIRMACION_TECNICO',
+                $column => now('America/Lima'),
                 'actualizado_en' => now('America/Lima'),
             ]);
         }, 3);
@@ -320,7 +372,7 @@ class InstallationOrderService
         return $order;
     }
 
-    public function cancelForContract(int $contractId, int $actorId): void
+    public function cancelForContract(int $contractId, int $actorId, string $reason): void
     {
         $orders = DB::table('pedidos_instalacion')->where('contrato_id', $contractId)->lockForUpdate()->get();
         foreach ($orders as $order) {
@@ -328,14 +380,16 @@ class InstallationOrderService
                 $this->fail('estado', 'La instalación está en proceso. Coordina primero su cierre con el jefe de Instalaciones.');
             }
             if (! in_array($order->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO'], true)) continue;
-            $this->cancelPendingOrder($order, $actorId, 'Contrato cancelado o finalizado.');
+            $this->cancelPendingOrder($order, $actorId, $reason, [
+                'origen' => 'CANCELACION_CONTRATO', 'contrato_id' => $contractId,
+            ]);
         }
     }
 
-    public function cancelOrder(int $id, int $actorId, string $reason): void
+    public function cancelOrder(int $id, int $actorId, string $reason, ?string $reasonCode = null): void
     {
-        DB::transaction(function () use ($id, $actorId, $reason): void {
-            $this->cancelPendingOrder($this->editable($id), $actorId, $reason);
+        DB::transaction(function () use ($id, $actorId, $reason, $reasonCode): void {
+            $this->cancelPendingOrder($this->editable($id), $actorId, $reason, array_filter(['motivo_codigo' => $reasonCode]));
         }, 3);
     }
 
@@ -346,8 +400,8 @@ class InstallationOrderService
             $order = DB::table('pedidos_instalacion')->where('pedido_id', $id)->lockForUpdate()->first();
             abort_unless($order, 404);
             if ($order->estado !== 'CANCELADO') $this->fail('pedido', 'Solo puedes reabrir un pedido cancelado.');
-            $contractState = DB::table('contratos')->where('contrato_id', $order->contrato_id)->value('estado');
-            if (! in_array($contractState, ['PENDIENTE', 'ACTIVO'], true)) {
+            $contractState = $order->contrato_id ? DB::table('contratos')->where('contrato_id', $order->contrato_id)->value('estado') : null;
+            if ($order->contrato_id && ! in_array($contractState, ['PENDIENTE', 'ACTIVO'], true)) {
                 $this->fail('pedido', 'El contrato está cancelado o finalizado. No se puede reabrir este pedido. Registra un contrato nuevo si el cliente desea continuar.');
             }
 
@@ -362,10 +416,7 @@ class InstallationOrderService
             if (! $contract || $contract->estado !== 'ACTIVO') return false;
 
             $order = DB::table('pedidos_instalacion')->where('contrato_id', $contractId)->lockForUpdate()->first();
-            if (! $order) {
-                $this->createForContract($contract, $actorId);
-                return true;
-            }
+            if (! $order) return false;
             if ($order->estado !== 'CANCELADO') return false;
 
             $this->restoreCancelledOrder($order, $actorId, 'Contrato reactivado; pedido retomado automáticamente para coordinar la instalación.');
@@ -379,7 +430,9 @@ class InstallationOrderService
         foreach ($orders as $order) {
             if (! in_array($order->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO'], true)) continue;
             $actorId = (int) ($order->asignado_por ?: $order->coordinado_por ?: $order->creado_por);
-            $this->cancelPendingOrder($order, $actorId, 'Contrato vencido; pedido pendiente cerrado automáticamente.');
+            $this->cancelPendingOrder($order, $actorId, 'Contrato vencido; pedido pendiente cerrado automáticamente.', [
+                'origen' => 'VENCIMIENTO_CONTRATO', 'contrato_id' => $contractId,
+            ]);
         }
     }
 
@@ -401,7 +454,7 @@ class InstallationOrderService
         ]);
     }
 
-    private function cancelPendingOrder(object $order, int $actorId, string $reason): void
+    private function cancelPendingOrder(object $order, int $actorId, string $reason, array $context = []): void
     {
         DB::table('pedido_solicitudes_recurso')->where('pedido_id', $order->pedido_id)
             ->whereIn('estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])->update([
@@ -435,14 +488,14 @@ class InstallationOrderService
         ]);
         DB::table('pedido_historial_eventos')->insert([
             'pedido_id' => $order->pedido_id, 'usuario_id' => $actorId, 'tipo' => 'CANCELACION',
-            'motivo' => $reason, 'contexto' => json_encode(['fecha_programada' => $order->fecha_programada, 'tecnico_id' => $order->tecnico_id]),
+            'motivo' => $reason, 'contexto' => json_encode($context + ['fecha_programada' => $order->fecha_programada, 'tecnico_id' => $order->tecnico_id]),
             'registrado_en' => now('America/Lima'),
         ]);
     }
 
     private function requireActiveContract(object $order): void
     {
-        if (! in_array(DB::table('contratos')->where('contrato_id', $order->contrato_id)->value('estado'), ['PENDIENTE', 'ACTIVO'], true)) {
+        if ($order->contrato_id && ! in_array(DB::table('contratos')->where('contrato_id', $order->contrato_id)->value('estado'), ['PENDIENTE', 'ACTIVO'], true)) {
             $this->fail('pedido', 'El contrato está cancelado o finalizado. No se puede continuar la instalación.');
         }
     }
@@ -452,7 +505,7 @@ class InstallationOrderService
         $scheduled = Carbon::parse($scheduledAt, 'America/Lima');
 
         return DB::table('pedidos_instalacion')
-            ->where('tecnico_id', $technicianId)
+            ->where(fn ($query) => $query->where('tecnico_id', $technicianId)->orWhere('tecnico_secundario_id', $technicianId))
             ->where('pedido_id', '<>', $excludedOrderId)
             ->whereIn('estado', ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO', 'EN_PROCESO'])
             ->whereNotNull('fecha_programada')

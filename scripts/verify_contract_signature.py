@@ -27,7 +27,7 @@ def render(path):
 def contract_code(path):
     pdf = pdfium.PdfDocument(path)
     text = pdf[0].get_textpage().get_text_range() if len(pdf) else ""
-    match = re.search(r"\bContrato\s*:\s*(CON-[A-Z0-9-]+)", text, re.IGNORECASE)
+    match = re.search(r"\b(?:C[oó]digo\s+del\s+contrato|Contrato)\s*:\s*(CON-[A-Z0-9-]+)", text, re.IGNORECASE)
     return match.group(1).upper() if match else None
 
 
@@ -54,6 +54,24 @@ def compare(draft_path, upload_path):
         if index == len(draft) - 1:
             excluded[y1:y2, x1:x2] = True
             excluded[y1:y2, round(350 * 1.5):round(530 * 1.5)] = True
+            # The thin printed signature guides sit immediately below the detection area.
+            line_y1 = round((842 - 35) * 1.5)
+            line_y2 = round((842 - 29) * 1.5)
+            excluded[line_y1:line_y2, round(50 * 1.5):round(545 * 1.5)] = True
+        # The printed paper form includes a few values/choices that the technician
+        # completes by hand after installation. Ignore only those designated fields.
+        editable_pdf_regions = [
+            (380, 629, 545, 640),  # Nombre previo, handwritten value only
+            (50, 541, 68, 555),    # Fibra óptica checkbox
+            (208, 541, 226, 555),  # Inalámbrico checkbox
+            (98, 247, 116, 261),   # Módem comprado
+            (243, 247, 261, 261),  # Módem propio
+            (388, 247, 406, 261),  # Módem prestado
+        ]
+        if index == 0:
+            for left, bottom, right, top in editable_pdf_regions:
+                excluded[round((842 - top) * 1.5):round((842 - bottom) * 1.5),
+                         round(left * 1.5):round(right * 1.5)] = True
 
         expected_ink = expected < 175
         received_ink = received < 175

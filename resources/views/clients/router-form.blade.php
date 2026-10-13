@@ -3,8 +3,8 @@
     <div class="client-router-grid">
         @foreach(['ip_router' => 'IP del router', 'modelo_router' => 'Modelo del router', 'usuario_router' => 'Usuario del router', 'ssid' => 'SSID'] as $name => $label)
         <div>
-            <label for="{{ $name }}">{{ $label }} *</label>
-            <input id="{{ $name }}" name="{{ $name }}" type="text" required maxlength="{{ $name === 'ip_router' ? 45 : 100 }}"
+            <label for="{{ $name }}">{{ $label }} <span class="muted">(se completa tras la instalación)</span></label>
+            <input id="{{ $name }}" name="{{ $name }}" type="text" maxlength="{{ $name === 'ip_router' ? 45 : 100 }}"
                 value="{{ is_scalar(old($name, $client->{$name})) ? old($name, $client->{$name}) : '' }}"
                 @if($name === 'usuario_router') autocomplete="off" autocapitalize="none" spellcheck="false" @endif
                 @error($name) aria-invalid="true" aria-describedby="{{ $name }}-error" @enderror>
@@ -14,9 +14,9 @@
         @foreach(['contrasena_router' => 'Contraseña del router', 'contrasena_wifi' => 'Contraseña WiFi'] as $name => $label)
         @php($configured = $client->exists && filled($client->getRawOriginal($name)))
         <div>
-            <label for="{{ $name }}">{{ $label }} {{ $configured ? '' : '*' }}</label>
+            <label for="{{ $name }}">{{ $label }} <span class="muted">(se completa tras la instalación)</span></label>
             <div class="client-secret-field">
-                <input id="{{ $name }}" name="{{ $name }}" type="password" autocomplete="new-password" maxlength="128" @required(!$configured)
+                <input id="{{ $name }}" name="{{ $name }}" type="password" autocomplete="new-password" maxlength="128"
                     @if($configured) aria-describedby="{{ $name }}-help{{ $errors->has($name) ? ' '.$name.'-error' : '' }}" @elseif($errors->has($name)) aria-describedby="{{ $name }}-error" @endif
                     @error($name) aria-invalid="true" @enderror>
                 <button type="button" class="client-secret-toggle" data-client-secret-toggle aria-controls="{{ $name }}" aria-label="Mostrar {{ mb_strtolower($label) }}" aria-pressed="false" hidden>

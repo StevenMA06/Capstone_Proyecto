@@ -7,6 +7,11 @@
 .contract-feedback--pending .contract-feedback-icon { background: #ad760c; }
 .contracts-panel { min-width: 0; margin-bottom: 22px; padding: 22px; background: #fff; border: 1px solid #e1eae4; border-radius: 12px; }
 .contracts-panel h2 { margin: 0 0 18px; font-size: 19px; }
+.contracts-section-nav { display:flex; gap:5px; margin:0 0 16px; padding:0 4px; border-bottom:1px solid #dce6df; }
+.contracts-section-nav a { display:inline-flex; align-items:center; gap:8px; min-height:42px; margin-bottom:-1px; padding:0 13px; border-bottom:2px solid transparent; color:#5d7466; font-size:12px; font-weight:600; text-decoration:none; }
+.contracts-section-nav a:hover { color:#087846; background:#f8fbf9; text-decoration:none; }
+.contracts-section-nav a[aria-current=page] { border-bottom-color:#087846; color:#087846; }
+.contracts-nav-count { display:grid; place-items:center; min-width:20px; height:20px; padding:0 5px; border-radius:99px; background:#fff0ce; color:#76551c; font-size:10px; font-weight:750; }
 .contracts-filters { display: grid; grid-template-columns: minmax(210px, 1.5fr) repeat(5, minmax(130px, 1fr)) auto; align-items: end; gap: 14px; }
 .contracts-filters label, .contracts-form label, .contracts-status-form label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 700; color: #385647; }
 .contracts-filters input, .contracts-filters select, .contracts-status-form select { box-sizing: border-box; width: 100%; min-height: 41px; padding: 9px 11px; border: 1px solid #cddbd1; border-radius: 7px; background: #fff; color: #243b33; }
@@ -56,13 +61,182 @@
 .contract-file-input:focus-visible + small { outline: 2px solid #087846; }
 .contract-upload small { display: block; margin-top: 7px; font-size: 11px; color: #718678; }
 .contracts-form .form-actions { margin-top: 17px; padding-top: 17px; border-top: 1px solid #e1eae4; }
+.contract-form-nav { display:flex; justify-content:flex-end; margin:0 0 18px; }
+.contract-form-nav .contract-return-link { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:9px 15px; border-radius:8px; color:#315541; font-weight:600; }
+.contract-form-nav .contract-return-link:hover { border-color:#9dc8ac; background:#f4faf6; color:#087846; }
 .contract-status-help { margin: 18px 0 0; font-size: 12px; line-height: 1.6; color: #63776a; }
 .contracts-detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.contracts-detail-toolbar { display:flex; justify-content:space-between; align-items:center; gap:14px; margin:0 0 16px; }
+.contracts-detail-primary,.contracts-detail-navigation { display:flex; align-items:center; flex-wrap:wrap; gap:9px; }
+.contracts-detail-navigation { justify-content:flex-end; }
+.contracts-back-link { padding:8px 3px; color:#5b7364; font-size:12px; font-weight:600; text-decoration:none; }
+.contracts-back-link:hover { color:#087846; text-decoration:underline; }
+.contract-document-menu { position:relative; }
+.contract-document-menu>summary { display:inline-flex; align-items:center; min-height:40px; padding:0 13px; list-style:none; cursor:pointer; }
+.contract-document-menu>summary::-webkit-details-marker { display:none; }
+.contract-document-menu>summary::after { content:'▾'; margin-left:9px; font-size:11px; }
+.contract-document-menu[open]>summary::after { content:'▴'; }
+.contract-document-menu>div { position:absolute; z-index:5; top:calc(100% + 5px); left:0; display:grid; min-width:190px; padding:5px; border:1px solid #dce6df; border-radius:9px; background:#fff; box-shadow:0 8px 24px rgb(20 50 34 / 12%); }
+.contract-document-menu>div a { padding:9px 10px; border-radius:6px; color:#315541; font-size:12px; text-decoration:none; }
+.contract-document-menu>div a:hover,.contract-document-menu>div a:focus-visible { background:#f1f7f3; color:#087846; }
 .contracts-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 25px; margin: 0; }
 .contracts-detail div { min-width: 0; overflow-wrap: anywhere; }
 .contracts-detail dt { font-size: 11px; color: #6f8575; }
 .contracts-detail dd { margin: 5px 0 0; font-size: 14px; font-weight: 600; }
+.cancellation-audit-panel { border-color: #d6e4da; }
+.cancellation-audit-heading, .cancellation-history-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.cancellation-audit-heading h2 { margin-bottom: 0; }
+.cancellation-audit-panel > .contract-status-help { margin-top: 8px; }
+.cancellation-history { display: grid; gap: 12px; margin-top: 18px; }
+.cancellation-inbox { border-color: #eadfbe; background: #fffdf8; }
+.cancellation-inbox-list { display: grid; gap: 10px; margin-top: 14px; }
+.cancellation-inbox-list article { display: grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:16px; padding:14px 16px; border:1px solid #e8e7dc; border-radius:10px; background:#fff; }
+.cancellation-inbox-main { display:grid; gap:10px; min-width:0; }
+.cancellation-inbox-title { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.cancellation-inbox-title>div { display:grid; gap:3px; min-width:0; }
+.cancellation-inbox-title small { color:#718176; font-size:10px; font-weight:700; letter-spacing:.08em; }
+.cancellation-inbox-title strong { color:#244633; font-size:14px; }
+.cancellation-inbox-main dl { display:flex; flex-wrap:wrap; gap:7px 20px; margin:0; }
+.cancellation-inbox-main dl div { display:grid; gap:2px; }
+.cancellation-inbox-main dt { color:#718176; font-size:10px; }
+.cancellation-inbox-main dd { margin:0; color:#365545; font-size:11px; font-weight:650; }
+.cancellation-inbox-main p { max-width:850px; margin:0; color:#52675a; font-size:12px; line-height:1.5; }
+.cancellation-inbox-list article>a { white-space:nowrap; }
+.cancellation-queue-panel { padding:20px; }
+.cancellation-queue-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
+.cancellation-queue-heading h2 { margin:3px 0 5px; }
+.cancellation-queue-heading p:not(.contracts-eyebrow) { margin:0; color:#65766b; font-size:12px; }
+.cancellation-queue-filters { display:grid; grid-template-columns:minmax(220px,1fr) minmax(180px,.45fr) auto; align-items:end; gap:12px; margin:0 0 17px; padding:13px; border:1px solid #e5ebe6; border-radius:9px; background:#f8faf8; }
+.cancellation-queue-filters label { display:block; margin-bottom:5px; color:#385647; font-size:11px; font-weight:700; }
+.cancellation-queue-filters input,.cancellation-queue-filters select { box-sizing:border-box; width:100%; min-height:40px; padding:8px 10px; border:1px solid #cfdbd2; border-radius:7px; background:#fff; font:inherit; font-size:12px; }
+.cancellation-queue-filter-actions { display:flex; align-items:center; gap:8px; }
+.cancellation-queue-filter-actions>* { min-height:40px; }
+.cancellation-queue-list { display:grid; gap:10px; }
+.cancellation-queue-card { display:grid; gap:11px; padding:15px; border:1px solid #e1e8e2; border-radius:10px; background:#fff; }
+.cancellation-queue-card-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.cancellation-queue-card-header>div { display:grid; gap:3px; }
+.cancellation-queue-card-header small { color:#718176; font-size:10px; font-weight:700; letter-spacing:.07em; }
+.cancellation-queue-card-header h3 { margin:0; color:#244633; font-size:14px; }
+.cancellation-queue-facts { display:flex; flex-wrap:wrap; gap:9px 24px; margin:0; }
+.cancellation-queue-facts>div { display:grid; gap:2px; }
+.cancellation-queue-facts dt { color:#718176; font-size:10px; }
+.cancellation-queue-facts dd { margin:0; color:#365545; font-size:11px; font-weight:650; }
+.cancellation-queue-explanation { margin:0; color:#52675a; font-size:12px; line-height:1.5; }
+.cancellation-queue-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; align-items:center; gap:8px; padding-top:9px; border-top:1px solid #edf0ed; }
+.cancellation-queue-empty { display:grid; justify-items:center; gap:4px; padding:38px 16px; border:1px dashed #d6e2d9; border-radius:10px; background:#fafcfb; text-align:center; }
+.cancellation-queue-empty>span { display:grid; place-items:center; width:32px; height:32px; margin-bottom:4px; border-radius:50%; background:#e7f4eb; color:#087846; font-weight:800; }
+.cancellation-queue-empty strong { color:#315541; font-size:13px; }
+.cancellation-queue-empty p { margin:0; color:#718176; font-size:11px; }
+.cancellation-history-item { padding: 16px; border: 1px solid #e0e9e3; border-radius: 10px; background: #fbfdfb; }
+.cancellation-history-item > p { margin: 10px 0; color: #334c3d; line-height: 1.55; }
+.cancellation-history-item dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.cancellation-history-item dt { color: #6f8575; font-size: 11px; }
+.cancellation-history-item dd { margin: 4px 0 0; font-size: 12px; font-weight: 600; }
+.cancellation-state { padding: 5px 9px; border-radius: 999px; background: #f1f4f2; color: #4b6254; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.cancellation-state.is-pending { background: #fff3d8; color: #805612; }
+.cancellation-state.is-approved { background: #e5f5eb; color: #087846; }
+.cancellation-state.is-rejected { background: #fcebea; color: #a83330; }
+.cancellation-history-actions { margin-top: 12px; }
+.cancellation-history-actions a { display: inline-flex; max-width: 100%; overflow-wrap: anywhere; }
+.cancellation-decision-note, .cancellation-review-lock { padding: 10px 12px; border-radius: 7px; background: #f2f6f3; font-size: 12px; }
+.cancellation-review-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; gap:12px; margin-top:14px; padding-top:14px; border-top:1px solid #e4ebe6; }
+.cancellation-review-actions form { display:grid; align-content:start; gap:8px; min-width:0; padding:13px; border:1px solid #e2e9e3; border-radius:9px; background:#fff; }
+.cancellation-review-actions .cancellation-approve-card { border-color:#d3e5d8; background:#f8fcf9; }
+.cancellation-review-actions .cancellation-reject-card { border-color:#ead8d5; background:#fffafa; }
+.cancellation-review-actions form>div strong { color:#294936; font-size:12px; }
+.cancellation-review-actions form>div p { margin:3px 0 0; color:#65766b; font-size:11px; line-height:1.45; }
+.cancellation-review-actions label, .cancellation-request-form label { margin: 8px 0 0; color: #385647; font-size: 12px; font-weight: 700; }
+.cancellation-review-actions textarea, .cancellation-request-form textarea, .cancellation-request-form select, .cancellation-request-form input[type=file] { box-sizing: border-box; width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid #cddbd1; border-radius: 7px; background: #fff; }
+.cancellation-review-actions textarea, .cancellation-request-form textarea { min-height: 84px; resize: vertical; }
+.cancellation-request-placement { margin-top:12px; }
+.cancellation-request-placement { padding-top:14px; border-top:1px solid #e1eae4; }
+.cancellation-request-trigger { display:inline-flex; align-items:center; min-height:38px; padding:0 10px; border:1px solid transparent; border-radius:7px; color:#78624c; font-size:12px; font-weight:600; text-decoration:none; }
+.cancellation-request-trigger:hover,.cancellation-request-trigger:focus-visible { border-color:#ead8d5; background:#fffafa; color:#96382e; text-decoration:none; }
+.cancellation-request-form { margin-top:0; padding:11px 13px; border:1px solid #e5e9e6; border-radius:9px; background:#fbfcfb; }
+.cancellation-request-form summary { display:flex; justify-content:space-between; align-items:center; gap:12px; color:#5d6e63; font-size:12px; font-weight:650; cursor:pointer; }
+.cancellation-request-form summary small { color:#7a887f; font-size:10px; font-weight:400; text-align:right; }
+.cancellation-request-form[open] { border-color:#e7d2ce; background:#fffdfc; }
+.cancellation-request-form[open] summary { color:#8f443b; }
+.cancellation-request-form form { display: grid; gap: 7px; margin-top: 14px; }
+.cancellation-request-form form > p { margin: 0 0 7px; color: #63776a; font-size: 12px; line-height: 1.55; }
+.cancellation-request-form small { color: #718678; font-size: 11px; }
+.cancellation-request-form button { justify-self: start; margin-top: 8px; }
 .contracts-module a:focus-visible, .contracts-module button:focus-visible, .contracts-module input:focus-visible, .contracts-module select:focus-visible, .contracts-module .table-scroll:focus-visible { outline: 2px solid #087846; outline-offset: 2px; }
 @media (max-width: 1500px) { .contracts-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 800px) { .contracts-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .contracts-filters, .contracts-form-grid, .contracts-detail { grid-template-columns: 1fr; } .contracts-form-grid { gap: 15px; } .contracts-toolbar { align-items: stretch; flex-direction: column; } .contracts-form .form-actions { flex-wrap: wrap; } .contract-saved-file { align-items: flex-start; flex-wrap: wrap; } .contract-saved-file a { width: 100%; margin: 3px 0 0 38px; } }
+@media (max-width: 560px) { .contracts-filters, .contracts-form-grid, .contracts-detail, .cancellation-history-item dl, .cancellation-review-actions { grid-template-columns: 1fr; } .contracts-form-grid { gap: 15px; } .contracts-toolbar { align-items: stretch; flex-direction: column; } .contracts-form .form-actions { flex-wrap: wrap; } .contract-saved-file { align-items: flex-start; flex-wrap: wrap; } .contract-saved-file a { width: 100%; margin: 3px 0 0 38px; } .cancellation-inbox-list article { align-items: stretch; grid-template-columns:1fr; } .cancellation-inbox-list article>a { justify-content:center; } .cancellation-inbox-title { flex-direction:column; } .cancellation-inbox-main dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } .cancellation-request-form summary { align-items:flex-start; flex-direction:column; } .cancellation-request-form summary small { text-align:left; } }
+@media (max-width:560px) { .contracts-form .contract-form-actions { align-items:stretch; } .contract-form-actions .action-link { width:100%; box-sizing:border-box; } }
+@media(max-width:760px){.contracts-detail-toolbar{align-items:stretch;flex-direction:column}.contracts-detail-navigation{justify-content:flex-start}.contract-document-menu>div{left:0}.cancellation-queue-filters{grid-template-columns:1fr}.cancellation-queue-filter-actions{justify-content:flex-start}.cancellation-queue-heading{align-items:flex-start;flex-direction:column}}
+
+/* Contrato: jerarquía clara, controles táctiles y distribución adaptable. */
+.contracts-detail-page .management-header h1 { font-size:clamp(1.45rem,2.3vw,2rem); line-height:1.2; overflow-wrap:anywhere; }
+.contracts-detail-page .management-header p { max-width:70ch; line-height:1.5; }
+.contracts-detail-page .contracts-panel { padding:clamp(16px,2.2vw,24px); }
+.contracts-detail-toolbar { align-items:center; padding:0 2px 14px; border-bottom:1px solid #e2eae4; }
+.contracts-detail-primary { align-items:flex-start; }
+.contracts-detail-navigation { align-items:center; }
+.contract-document-menu { min-width:0; }
+.contract-document-menu[open] { flex:1 1 100%; }
+.contract-document-menu>summary { gap:8px; min-height:42px; padding:0 14px; color:#315541; font-size:13px; font-weight:650; }
+.contract-document-menu>div { position:static; min-width:0; margin-top:6px; padding:4px; border-color:#e1e9e3; box-shadow:none; }
+.contract-document-menu>div a { padding:10px 12px; font-size:13px; }
+.contracts-detail-page .contracts-section-nav { display:flex; flex-wrap:wrap; gap:4px; }
+.contracts-detail-page .contracts-section-nav a { min-height:46px; padding:0 16px; font-size:13px; }
+.contracts-panel-heading { display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:17px; }
+.contracts-panel-heading .contracts-eyebrow { margin:0 0 4px; color:#728277; font-size:10px; font-weight:750; letter-spacing:.1em; }
+.contracts-panel-heading h2 { margin:0; font-size:18px; }
+.contracts-detail-page .contracts-detail { grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr)); gap:10px; }
+.contracts-detail-page .contracts-detail>div { display:grid; align-content:start; gap:4px; min-height:58px; padding:11px 13px; border:1px solid #e7ece8; border-radius:9px; background:#fafcfb; }
+.contracts-detail-page .contracts-detail dt { font-size:11px; line-height:1.35; }
+.contracts-detail-page .contracts-detail dd { margin:0; color:#203d2d; font-size:13px; line-height:1.45; overflow-wrap:anywhere; }
+.contracts-data-panel>.contract-status-help { padding:11px 13px; border-radius:8px; background:#f7faf8; }
+.cancellation-audit-heading { align-items:flex-start; }
+.cancellation-audit-heading .contracts-eyebrow { margin:0 0 5px; }
+.cancellation-audit-heading h2 { font-size:18px; }
+.cancellation-audit-panel>.contract-status-help { max-width:78ch; margin:8px 0 16px; font-size:13px; }
+.cancellation-history { gap:14px; margin-top:0; }
+.cancellation-history-item { padding:clamp(14px,2vw,19px); border-color:#e3eae4; border-radius:11px; background:#fcfdfc; }
+.cancellation-history-top { align-items:center; }
+.cancellation-history-top>strong { color:#244633; font-size:15px; }
+.cancellation-history-item>p { margin:10px 0 14px; font-size:13px; line-height:1.55; }
+.cancellation-history-item dl { grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:9px; }
+.cancellation-history-item dl>div { padding:9px 11px; border:1px solid #e7ece8; border-radius:8px; background:#fff; }
+.cancellation-history-item dt { font-size:10px; }
+.cancellation-history-item dd { margin-top:4px; color:#294936; font-size:12px; line-height:1.4; overflow-wrap:anywhere; }
+.cancellation-history-actions { margin-top:12px; }
+.cancellation-history-actions a { min-height:40px; align-items:center; padding:8px 12px; border-radius:8px; font-size:12px; overflow-wrap:anywhere; }
+.cancellation-review-actions { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:14px; padding-top:14px; }
+.cancellation-review-actions form { gap:10px; padding:14px; border-radius:10px; }
+.cancellation-review-actions form>div strong { font-size:13px; }
+.cancellation-review-actions form>div p { font-size:12px; }
+.cancellation-review-actions label { margin:0; font-size:12px; }
+.cancellation-review-actions textarea { min-height:98px; font:inherit; font-size:13px; line-height:1.5; }
+.cancellation-review-actions button { min-height:42px; justify-self:start; padding:9px 14px; font-size:12px; font-weight:650; }
+.cancellation-review-lock { margin:12px 0 0; color:#71571e; background:#fff9ec; line-height:1.5; }
+.cancellation-state { display:inline-flex; align-items:center; min-height:27px; padding:4px 10px; font-size:11px; }
+
+@media(max-width:760px) {
+    .contracts-detail-toolbar { align-items:stretch; gap:10px; }
+    .contracts-detail-primary { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); align-items:start; }
+    .contracts-detail-primary>.action-link,.contract-document-menu>summary { box-sizing:border-box; width:100%; justify-content:center; }
+    .contracts-detail-navigation { justify-content:flex-start; }
+    .contracts-back-link { min-height:40px; display:inline-flex; align-items:center; }
+    .contracts-detail-page .contracts-section-nav { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); }
+    .contracts-detail-page .contracts-section-nav a { justify-content:center; padding:0 8px; text-align:center; }
+    .contracts-detail-page .contracts-detail { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .cancellation-review-actions { grid-template-columns:1fr; }
+    .cancellation-review-actions form { width:100%; box-sizing:border-box; }
+}
+@media(max-width:480px) {
+    .contracts-detail-page .workspace-breadcrumb { margin-bottom:14px; }
+    .contracts-detail-page .management-header { margin-bottom:12px; }
+    .contracts-detail-primary { grid-template-columns:1fr; }
+    .contracts-detail-navigation { padding-left:2px; }
+    .contracts-detail-page .contracts-detail { grid-template-columns:1fr; gap:8px; }
+    .contracts-detail-page .contracts-detail>div { min-height:0; padding:10px 12px; }
+    .contracts-panel-heading { align-items:flex-start; }
+    .cancellation-audit-heading { flex-direction:column; }
+    .cancellation-history-item dl { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .cancellation-history-actions a { width:100%; box-sizing:border-box; justify-content:center; }
+    .cancellation-review-actions button { width:100%; justify-content:center; }
+}

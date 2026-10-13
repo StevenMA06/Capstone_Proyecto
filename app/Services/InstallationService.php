@@ -17,7 +17,9 @@ class InstallationService
     {
         $query = DB::table('pedidos_instalacion');
         if (! $user->hasPermission('technician.supervise')) {
-            $user->empleado_id ? $query->where('tecnico_id', $user->empleado_id) : $query->whereRaw('1 = 0');
+            $user->empleado_id
+                ? $query->where(fn ($builder) => $builder->where('tecnico_id', $user->empleado_id)->orWhere('tecnico_secundario_id', $user->empleado_id))
+                : $query->whereRaw('1 = 0');
         }
 
         return $query;
@@ -36,7 +38,7 @@ class InstallationService
     {
         $record = $this->find($user, $id, true);
         if ($record->fase_flujo) {
-            abort_unless($user->empleado_id && (int) $record->tecnico_id === (int) $user->empleado_id, 403);
+            abort_unless($user->empleado_id && in_array((int) $user->empleado_id, [(int) $record->tecnico_id, (int) $record->tecnico_secundario_id], true), 403);
         }
         return $record;
     }
@@ -56,6 +58,22 @@ class InstallationService
         return $execution;
     }
 
+    public function resourcesPreparedForStart(int $orderId): bool
+    {
+        $latestGroupId = DB::table('pedido_solicitudes_recursos')
+            ->where('pedido_id', $orderId)->orderByDesc('solicitud_grupo_id')->value('solicitud_grupo_id');
+        if (! $latestGroupId) {
+            $hasEquipment = DB::table('pedido_equipos')->where('pedido_id', $orderId)
+                ->whereIn('estado_asignacion', ['ASIGNADO', 'UTILIZADO'])->whereNull('fecha_devolucion')->exists();
+            $hasMaterial = DB::table('pedido_materiales')->where('pedido_id', $orderId)
+                ->whereRaw('cantidad_asignada > cantidad_devuelta')->exists();
+            return $hasEquipment || $hasMaterial;
+        }
+
+        $items = DB::table('pedido_solicitudes_recurso')->where('solicitud_grupo_id', $latestGroupId)->get(['estado']);
+        return $items->isNotEmpty() && $items->every(fn ($item) => $item->estado === 'ENTREGADA');
+    }
+
     public function start(User $user, int $id): void
     {
         DB::transaction(function () use ($user, $id) {
@@ -71,7 +89,7 @@ class InstallationService
             if (DB::table('pedido_reprogramaciones')->where('pedido_id', $id)->where('estado', 'SOLICITADA')->exists()) {
                 $this->fail('instalacion', 'Espera la decisión de Gerencia sobre la nueva fecha antes de iniciar.');
             }
-            if ($record->fase_flujo && ! in_array(DB::table('contratos')->where('contrato_id', $record->contrato_id)->value('estado'), ['PENDIENTE', 'ACTIVO'], true)) {
+            if ($record->fase_flujo && $record->contrato_id && ! in_array(DB::table('contratos')->where('contrato_id', $record->contrato_id)->value('estado'), ['PENDIENTE', 'ACTIVO'], true)) {
                 $this->fail('instalacion', 'El contrato está cancelado o finalizado. No se puede iniciar la instalación.');
             }
             if (! $record->tecnico_id || ! Employee::eligible()->whereKey($record->tecnico_id)->exists()) {
@@ -79,6 +97,9 @@ class InstallationService
             }
             if ($record->fase_flujo && $record->fase_flujo !== 'CONFIRMADO') {
                 $this->fail('instalacion', 'Confirma primero la asignación técnica desde tu panel.');
+            }
+            if ($record->fase_flujo && ! $this->resourcesPreparedForStart($id)) {
+                $this->fail('instalacion', 'Espera a que Almacén prepare todos los recursos de la solicitud antes de iniciar la visita.');
             }
             $execution = DB::table('ejecuciones_instalacion')->where('pedido_id', $id)->first();
             if ($execution && ($execution->estado !== 'PENDIENTE' || $execution->inicio_en || $execution->fin_en)) {

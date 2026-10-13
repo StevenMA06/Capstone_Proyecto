@@ -4,7 +4,7 @@
 @push('styles')<link rel="stylesheet" href="{{ asset('css/installations.css') }}?v=28"><script src="{{ asset('js/installations.js') }}?v=8" defer></script>@endpush
 @section('workspace-content')
 @php($running = $installation->estado === 'EN_PROCESO' && $execution?->inicio_en && $execution->estado === 'EN_PROCESO')
-@php($ownWork = (int) $installation->tecnico_id === (int) auth()->user()->empleado_id)
+@php($ownWork = in_array((int) auth()->user()->empleado_id, [(int) $installation->tecnico_id, (int) $installation->tecnico_secundario_id], true))
 @php($canWork = ! $installation->fase_flujo || $ownWork)
 @php($photoReady = $driveStatus->get('FOTO', collect())->contains('estado', 'CONFIRMADO'))
 @php($pendingEvidence = $driveStatus->flatten()->contains('estado', 'PENDIENTE'))
@@ -14,13 +14,14 @@
 <header class="installation-heading installation-detail-heading">
     <div><p class="eyebrow">EJECUCIÓN DE INSTALACIONES</p><h1>Ficha técnica #{{ $installation->pedido_id }}</h1><p class="installation-detail-code">{{ $installation->codigo }}</p></div>
     <div class="installation-detail-heading-actions"><span class="installation-state state-{{ strtolower($installation->estado) }}">{{ ucfirst(mb_strtolower(str_replace('_', ' ', $installation->estado))) }}</span>
-    @if($installation->fase_flujo === 'ESPERANDO_CONFIRMACION_TECNICO' && (int) $installation->tecnico_id === (int) auth()->user()->empleado_id)
+    @if($installation->fase_flujo === 'ESPERANDO_CONFIRMACION_TECNICO' && $ownWork && !((int) $installation->tecnico_id === (int) auth()->user()->empleado_id ? $installation->confirmado_por_tecnico_en : $installation->confirmado_por_tecnico_secundario_en))
     @routecan('technician.confirm')<form method="POST" action="{{ route('technician.confirm', $installation->pedido_id) }}">@csrf<button class="action-link" type="submit">Confirmar asignación</button></form>@endroutecan
-    @elseif(! $pendingReprogramming && $canWork && (!$installation->fase_flujo || $installation->fase_flujo === 'CONFIRMADO') && (in_array($installation->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO']) || ($installation->estado === 'EN_PROCESO' && ! $execution?->inicio_en)))
+    @elseif(! $pendingReprogramming && $canWork && (!$installation->fase_flujo || ($installation->fase_flujo === 'CONFIRMADO' && $resourcesPrepared)) && (in_array($installation->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO']) || ($installation->estado === 'EN_PROCESO' && ! $execution?->inicio_en)))
     @can('technician.manage')
 @routecan('technician.start')<form method="POST" action="{{ route('technician.start', $installation->pedido_id) }}" data-installation-form>@csrf<button class="action-link" type="submit">Iniciar instalación</button></form>@endroutecan
 @endcan
     @endif
+    @if(! $running && $installation->fase_flujo && $installation->fase_flujo === 'CONFIRMADO' && ! $resourcesPrepared)<p class="order-change-note" role="status">La asignación está confirmada. Espera a que Almacén marque como entregados todos los recursos solicitados; entonces se habilitará el inicio.</p>@endif
     </div>
 </header>
 <div class="installation-visit-overview" aria-label="Visita acordada">
@@ -30,6 +31,7 @@
 </div>
 @if(session('status') && ! session('evidence_result'))<div class="success" role="status">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="field-error" role="alert"><strong>No se pudo guardar:</strong>@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
+@if($installation->estado === 'CANCELADO' && $cancellationEvent)<div class="field-error" role="note"><strong>Pedido cancelado</strong><p><strong>Motivo:</strong> {{ $cancellationEvent->motivo }}</p><small>{{ $cancellationEvent->nombre_usuario ?: 'Proceso automático' }} · {{ \Illuminate\Support\Carbon::parse($cancellationEvent->registrado_en)->format('d/m/Y · H:i') }}</small></div>@endif
 @if($pendingReprogramming)<div class="order-change-note" role="status">Hay una solicitud de nueva fecha pendiente de Gerencia. La visita conserva la fecha actual y no se puede iniciar hasta que Gerencia decida.</div>@endif
 @if($installation->estado === 'REPROGRAMADO' && $installation->fecha_original)<div class="order-change-note" role="status"><strong>Visita reprogramada.</strong> Fecha inicial: {{ \Illuminate\Support\Carbon::parse($installation->fecha_original)->format('d/m/Y · H:i') }}.@if($latestApprovedReprogramming?->motivo_detalle ?? $installation->motivo_reprogramacion) Motivo: {{ $latestApprovedReprogramming?->motivo_detalle ?? $installation->motivo_reprogramacion }}.@endif Revisa la nueva fecha antes de confirmar o iniciar.</div>@endif
 @if($running)<div class="installation-next-step" role="status"><strong>Instalación en curso</strong><span>Registra los recursos utilizados y las fotos de campo. Entrega el contrato físico en la empresa; el personal de Contratos lo escaneará y verificará.</span></div>@endif
@@ -45,14 +47,15 @@
     <summary>Información para el trabajo</summary>
     <div class="installation-detail-sections">
         <section class="installation-detail-block"><h3>Cliente y servicio</h3><dl class="installation-detail-grid">
-            <div><dt>Cliente</dt><dd>{{ trim(($client->nombres_razon_social ?? '').' '.($client->apellidos ?? '')) ?: 'No registrado' }}</dd></div>
-            <div><dt>Teléfono de contacto</dt><dd>{{ $client->telefono ?? 'No registrado' }}</dd></div>
-            <div class="installation-detail-wide"><dt>Dirección de instalación</dt><dd>{{ $contract->direccion_servicio ?? 'No registrada' }}</dd><span>Referencia: {{ $client->referencia_direccion ?? 'Sin referencia' }}</span></div>
+            <div><dt>Cliente</dt><dd>{{ trim(($client->nombres_razon_social ?? '').' '.($client->apellidos ?? '')) ?: ($installation->solicitante_nombre ?: 'No registrado en Mikrowisp') }}</dd></div>
+            <div><dt>Teléfonos de contacto</dt><dd>{{ $client->telefono ?? $installation->telefono_contacto ?? 'No registrado' }}@if($installation->telefono_alternativo) · {{ $installation->telefono_alternativo }}@endif</dd></div>
+            <div class="installation-detail-wide"><dt>Dirección de instalación</dt><dd>{{ $contract->direccion_servicio ?? $installation->direccion_solicitada ?? 'No registrada' }}</dd><span>Referencia: {{ $client->referencia_direccion ?? $installation->referencia_direccion_solicitada ?? 'Sin referencia' }}</span>@if($installation->ubicacion_compartida)<a href="{{ $installation->ubicacion_compartida }}" target="_blank" rel="noopener">Abrir ubicación compartida por WhatsApp</a>@endif</div>
             <div><dt>Contrato</dt><dd>{{ $contract->codigo ?? 'No registrado' }}</dd></div>
-            <div><dt>Plan contratado</dt><dd>{{ $contract->plan_nombre ?? 'No registrado' }}</dd></div>
+            <div><dt>Plan solicitado</dt><dd>{{ $contract->plan_nombre ?? $installation->plan_solicitado ?? 'No registrado' }}</dd></div>
         </dl></section>
         <section class="installation-detail-block"><h3>Personas responsables</h3><dl class="installation-detail-grid installation-detail-people">
-            <div><dt>Técnico instalador</dt><dd>{{ $technician ? trim($technician->nombres.' '.$technician->apellidos) : 'Sin asignar' }}</dd><span>Ejecuta la visita</span></div>
+            <div><dt>Equipo técnico</dt><dd>{{ $technician ? trim($technician->nombres.' '.$technician->apellidos) : 'Sin asignar' }}</dd><span>Responsable principal</span></div>
+            @if($installation->tecnico_secundario_id)<div><dt>Segundo técnico</dt><dd>{{ $secondTechnician ? trim($secondTechnician->nombres.' '.$secondTechnician->apellidos) : 'Asignado' }}</dd><span>Confirma desde su ficha</span></div>@endif
             <div><dt>Coordinación con el cliente</dt><dd>{{ $coordinator?->employee?->full_name ?? ($coordinator ? 'Sin empleado asociado' : 'Sin registrar') }}</dd><span>{{ $installation->canal_coordinacion ? ucfirst(mb_strtolower($installation->canal_coordinacion)).' · ' : '' }}{{ $coordinator ? 'Usuario: '.$coordinator->nombre_usuario : 'Aún no registrada' }}</span></div>
             <div><dt>Responsable de asignación</dt><dd>{{ $assigner?->employee?->full_name ?? ($assigner ? 'Sin empleado asociado' : 'Sin registrar') }}</dd><span>{{ $assigner ? 'Usuario: '.$assigner->nombre_usuario : 'Aún no registrado' }}</span></div>
         </dl></section>
@@ -156,9 +159,9 @@
 </section>
 <section class="installation-panel" id="instalacion-contrato">
     <h2>Contrato físico</h2>
-    <p class="installation-section-help">Al volver a la empresa, entrega el contrato físico al personal de Contratos. Ellos lo escanean, verifican la firma y lo suben una sola vez desde su sección.</p>
-    <p class="installation-evidence-status {{ $contractReady ? 'is-ready' : '' }}">{{ $contractReady ? '✓ PDF firmado verificado en Contratos y confirmado en Drive' : ($contract?->firma_revision === 'VERIFICADA' ? 'Firma verificada; falta confirmar el PDF en Drive' : 'Pendiente de escaneo y verificación de firma en Contratos') }}</p>
-    @routecan('contracts.show')<a class="action-link secondary" href="{{ route('contracts.show', $installation->contrato_id) }}">Ver contrato {{ $contract->codigo }}</a>@endroutecan
+    <p class="installation-section-help">Al terminar la instalación, completa y firma el formato físico con el cliente. Al volver a la empresa, entrégalo a Call Center para que registre al cliente en Mikrowisp y cargue el escaneo una sola vez desde Contratos.</p>
+    <p class="installation-evidence-status {{ $contractReady ? 'is-ready' : '' }}">{{ $contractReady ? '✓ Contrato firmado verificado en Contratos y confirmado en Drive' : ($contract?->firma_revision === 'VERIFICADA' ? 'Firma verificada; falta confirmar el PDF en Drive' : ($installation->estado === 'COMPLETADO' ? 'Trabajo de campo terminado; Call Center debe completar el registro del cliente y el contrato' : 'El contrato físico se completa y firma al terminar el trabajo')) }}</p>
+    @if($contract)@routecan('contracts.show')<a class="action-link secondary" href="{{ route('contracts.show', $installation->contrato_id) }}">Ver contrato {{ $contract->codigo }}</a>@endroutecan @endif
 </section>
 </div>
 @if($running && ($pendingEvidence || ($contract?->firma_revision === 'VERIFICADA' && ! $contractReady)))
@@ -175,11 +178,11 @@
 @endif
 @if($running)
 <section class="installation-panel installation-finish" id="instalacion-cierre" data-installation-section="cierre" tabindex="-1">
-    <h2>Cierre automático</h2>
-    <p>El sistema cerrará el pedido cuando confirme en Google Drive la foto de la instalación y el contrato firmado que el personal de Contratos escanea y verifica.</p>
+    <h2>Cierre automático del trabajo de campo</h2>
+    <p>El sistema marcará la instalación como realizada cuando confirme en Google Drive la foto final. Call Center completará después el registro de Mikrowisp y la carga del contrato firmado en Contratos.</p>
     <div class="installation-readiness" role="status">
         <p class="installation-evidence-status {{ $photoReady ? 'is-ready' : '' }}">{{ $photoReady ? '✓ Foto de la instalación confirmada en Drive' : 'Pendiente: subir la foto de la instalación y confirmar su envío a Drive' }}</p>
-        <p class="installation-evidence-status {{ $contractReady ? 'is-ready' : '' }}">{{ $contractReady ? '✓ Contrato firmado verificado y confirmado en Drive' : ($contract?->firma_revision === 'VERIFICADA' ? 'Pendiente: confirmar en Drive el contrato firmado' : 'Pendiente: el personal de Contratos debe escanear y verificar el contrato firmado') }}</p>
+        <p class="installation-evidence-status {{ $contractReady ? 'is-ready' : '' }}">{{ $contractReady ? '✓ Contrato firmado verificado y confirmado en Drive' : 'Seguimiento administrativo: Call Center registrará al cliente y cargará el contrato firmado después de la visita' }}</p>
     </div>
     @if($photoReady && $contractReady)
         <p class="installation-inline-result" role="status">Las dos evidencias están confirmadas. El sistema está registrando el cierre del pedido.</p>
