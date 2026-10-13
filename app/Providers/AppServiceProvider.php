@@ -26,7 +26,8 @@ class AppServiceProvider extends ServiceProvider
             'manage-users' => ['users.view'], 'manage-employees' => ['employees.view'],
             'manage-plans' => ['plans.create','plans.update','plans.status'], 'manage-zones' => ['zones.create','zones.update','zones.status'], 'view-zones' => ['zones.view'],
             'view-operations' => ['orders.view', 'equipments.view', 'materials.view', 'chatbot.view', 'indicators.view', 'bi.view'],
-            'view-office' => ['sales.view', 'contracts.view', 'plans.view', 'payments.view', 'reports.view'],
+            // DESHABILITADO TEMPORALMENTE - sales.view removido de view-office
+            'view-office' => ['contracts.view', 'plans.view', 'payments.view', 'reports.view'],
             'view-technician' => ['technician.view'], 'view-access-history' => ['access.view'],
             'register-clients' => ['clients.view'], 'manage-payments' => ['payments.view'],
         ];

@@ -88,7 +88,9 @@ Route::middleware(['auth'])->group(function (): void {
 });
 
 Route::middleware(['auth'])->group(function (): void {
-    Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
+    // DESHABILITADO TEMPORALMENTE - Módulo de Ventas
+    // Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
+    
     Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
     Route::get('/contracts/cancellation-requests', [ContractController::class, 'cancellationRequests'])->name('contracts.cancellations');
     Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
@@ -259,7 +261,8 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/orders/{pedido}/reopen', [\App\Http\Controllers\InstallationOrderController::class, 'reopen'])->whereNumber('pedido')->name('orders.reopen');
 });
 
-Route::post('/sales/contracts/{contract}/confirm', [SaleController::class, 'confirm'])->middleware('auth')->whereNumber('contract')->name('sales.confirm');
+// DESHABILITADO TEMPORALMENTE - Confirmación de ventas
+// Route::post('/sales/contracts/{contract}/confirm', [SaleController::class, 'confirm'])->middleware('auth')->whereNumber('contract')->name('sales.confirm');
 
 Route::middleware(['auth', 'throttle:10,1'])->group(function (): void {
     Route::post('/clients/dni-lookup', \App\Http\Controllers\DniLookupController::class)

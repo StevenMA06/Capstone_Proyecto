@@ -10,7 +10,9 @@ class AccessCatalog
     public const MODULES = [
         'dashboard' => 'Panel de Gerencia', 'office' => 'Panel de Call Center',
         'clients' => 'Clientes', 'plans' => 'Planes de servicio', 'contracts' => 'Contratos',
-        'sales' => 'Ventas', 'payments' => 'Pagos', 'zones' => 'Zonas',
+        // DESHABILITADO TEMPORALMENTE
+        // 'sales' => 'Ventas',
+        'payments' => 'Pagos', 'zones' => 'Zonas',
         'employees' => 'Empleados (solo Administrador)', 'users' => 'Usuarios',
         'roles' => 'Roles y permisos', 'user-roles' => 'Asignación de roles',
         'access' => 'Historial de accesos (solo Administrador)',
@@ -48,8 +50,9 @@ class AccessCatalog
             'contracts.reactivate' => ['Reactivar', 'Reactivar un contrato cancelado mediante su flujo de reactivación.'],
             'contracts.documents' => ['Descargar documentos', 'Descargar contrato PDF, borrador para firma y evidencias contractuales. Requiere consultar contratos.'],
             'contracts.assigned' => ['Consultar información asignada', 'Ver código, estado, plan y dirección de contratos vinculados a pedidos asignados al empleado. No abre otras fichas ni documentos.'],
-            'sales.create' => ['Registrar venta por firma', 'Adjuntar el PDF firmado de un contrato pendiente. Al verificar su firma se activa el contrato y se registra la venta; no permite editar condiciones ni cancelar contratos.'],
-            'sales.view' => ['Consultar', 'Ver las ventas y sus totales. Las ventas se generan mediante la activación de contratos; no existe un formulario independiente de venta.'],
+            // DESHABILITADO TEMPORALMENTE - Permisos de ventas
+            // 'sales.create' => ['Registrar venta por firma', 'Adjuntar el PDF firmado de un contrato pendiente. Al verificar su firma se activa el contrato y se registra la venta; no permite editar condiciones ni cancelar contratos.'],
+            // 'sales.view' => ['Consultar', 'Ver las ventas y sus totales. Las ventas se generan mediante la activación de contratos; no existe un formulario independiente de venta.'],
             'payments.complete' => ['Completar pago', 'Marcar un pago como completado.'],
             'payments.cancel' => ['Anular pago', 'Anular un pago conservando su registro.'],
             'payments.reminders' => ['Gestionar recordatorios', 'Crear y atender recordatorios asociados a pagos.'],
@@ -110,7 +113,8 @@ class AccessCatalog
     {
         [$module, $action] = explode('.', $code, 2);
         if ($code === 'users.create') return ['users.view','user-roles.view','user-roles.manage'];
-        if ($code === 'sales.create') return ['sales.view','contracts.view'];
+        // DESHABILITADO TEMPORALMENTE
+        // if ($code === 'sales.create') return ['sales.view','contracts.view'];
         if ($code === 'contracts.cancel.request') return ['contracts.view'];
         if ($code === 'contracts.cancel.inbox') return ['contracts.view'];
         if ($code === 'contracts.cancel.approve') return ['contracts.view','contracts.cancel.inbox','contracts.cancel.request','contracts.cancel.evidence'];
@@ -130,10 +134,21 @@ class AccessCatalog
             // resources remains restricted to warehouse.fulfill.
             && $p !== 'warehouse.fulfill'
             && !in_array($p, ['office.view','technician.panel','technician.start','technician.equipment','technician.material','technician.observation','technician.evidence'])));
-        if ($name === Role::OFFICE) return ['office.view','office.coordination','clients.view','clients.create','clients.update','plans.view','sales.view','sales.create','contracts.view','contracts.create','contracts.documents','zones.view','equipments.availability','materials.availability','technician.view','technician.supervise'];
+        if ($name === Role::OFFICE) return [
+            'office.view','office.coordination','clients.view','clients.create','clients.update','plans.view',
+            // DESHABILITADO TEMPORALMENTE - Permisos de ventas para rol OFFICE
+            // 'sales.view','sales.create',
+            'contracts.view','contracts.create','contracts.documents','zones.view','equipments.availability','materials.availability','technician.view','technician.supervise'
+        ];
         if ($name === Role::TECHNICIAN) return ['technician.panel','technician.view','technician.start','technician.equipment','technician.material','technician.observation','technician.evidence','plans.view','zones.view','contracts.assigned','equipments.assigned','kardex.related','orders.assigned'];
         if ($name === Role::WAREHOUSE) return array_values(array_filter($all, fn ($p) => (str_starts_with($p, 'equipments.') || str_starts_with($p, 'materials.') || str_starts_with($p, 'warehouse.') || $p === 'kardex.view') && !str_ends_with($p, '.assigned')));
-        if ($name === Role::INSTALLATIONS) return ['technician.panel','technician.view','technician.supervise','technician.start','technician.equipment','technician.material','technician.observation','technician.evidence','clients.view','plans.view','sales.view','contracts.view','contracts.documents','payments.view','equipments.view','materials.view','kardex.view','zones.view','orders.view','orders.assigned','orders.schedule','orders.resources.request','orders.cancel'];
+        if ($name === Role::INSTALLATIONS) return [
+            'technician.panel','technician.view','technician.supervise','technician.start','technician.equipment','technician.material','technician.observation','technician.evidence',
+            'clients.view','plans.view',
+            // DESHABILITADO TEMPORALMENTE
+            // 'sales.view',
+            'contracts.view','contracts.documents','payments.view','equipments.view','materials.view','kardex.view','zones.view','orders.view','orders.assigned','orders.schedule','orders.resources.request','orders.cancel'
+        ];
         return []; // TI and custom roles are configured explicitly by checkboxes.
     }
 
@@ -150,7 +165,8 @@ class AccessCatalog
         if ($name === 'dashboard.management') return 'dashboard.view';
         if ($name === 'dashboard.office') return 'office.view';
         if (in_array($name, ['office.coordination.index', 'office.coordination.save', 'office.coordination.coverage'], true)) return 'office.coordination';
-        if ($name === 'sales.confirm') return 'sales.create';
+        // DESHABILITADO TEMPORALMENTE
+        // if ($name === 'sales.confirm') return 'sales.create';
         if ($name === 'api.contracts.amount') return 'payments.view';
         if ($name === 'executions.index') return 'technician.view';
         if ($name === 'technician.index') return 'technician.panel';

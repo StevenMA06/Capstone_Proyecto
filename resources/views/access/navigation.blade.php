@@ -10,7 +10,8 @@ $groups = [
         ['Planes de servicio','file',['plans.view'=>'plans.index']],
         ['Contratos','file',['contracts.view'=>'contracts.index','contracts.assigned'=>'contracts.assigned']],
         ['Solicitudes de cancelación','file',['contracts.cancel.inbox'=>'contracts.cancellations']],
-        ['Ventas','cart',['sales.view'=>'sales.index']],
+        // DESHABILITADO TEMPORALMENTE - Ventas
+        // ['Ventas','cart',['sales.view'=>'sales.index']],
         ['Pagos','money',['payments.view'=>'payments.index']],
         ['Zonas de cobertura','pin',['zones.view'=>'zones.index']],
         ['Coordinación de visitas','tool',['office.coordination'=>'office.coordination.index']],
