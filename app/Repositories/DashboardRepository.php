@@ -38,7 +38,7 @@ class DashboardRepository
 
         return [
             'contracts' => DB::table('contratos')->where('estado', 'ACTIVO')->count(),
-            'payments' => DB::table('pagos')->whereIn('estado', ['PENDIENTE', 'VENCIDO'])->count(),
+            'payments' => DB::table('pagos')->where('estado', 'VENCIDO')->count(),
             'installations' => DB::table('pedidos_instalacion')->where('estado', 'EN_PROCESO')->count(),
             'equipment' => $equipment,
             'materials' => $materials,
