@@ -194,11 +194,16 @@
 .cancellation-audit-heading .contracts-eyebrow { margin:0 0 5px; }
 .cancellation-audit-heading h2 { font-size:18px; }
 .cancellation-audit-panel>.contract-status-help { max-width:78ch; margin:8px 0 16px; font-size:13px; }
-.cancellation-history { gap:14px; margin-top:0; }
+.cancellation-history { gap:14px; margin-top:16px; }
 .cancellation-history-item { padding:clamp(14px,2vw,19px); border-color:#e3eae4; border-radius:11px; background:#fcfdfc; }
 .cancellation-history-top { align-items:center; }
 .cancellation-history-top>strong { color:#244633; font-size:15px; }
 .cancellation-history-item>p { margin:10px 0 14px; font-size:13px; line-height:1.55; }
+.cancellation-reason { display:grid; gap:3px; min-width:0; }
+.cancellation-reason>span, .cancellation-reason-detail>span { color:#718176; font-size:10px; font-weight:600; }
+.cancellation-reason>strong { color:#244633; font-size:14px; overflow-wrap:anywhere; }
+.cancellation-reason-detail { margin:10px 0 14px; }
+.cancellation-reason-detail>p { margin:4px 0 0; color:#334c3d; font-size:13px; line-height:1.55; overflow-wrap:anywhere; }
 .cancellation-history-item dl { grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:9px; }
 .cancellation-history-item dl>div { padding:9px 11px; border:1px solid #e7ece8; border-radius:8px; background:#fff; }
 .cancellation-history-item dt { font-size:10px; }

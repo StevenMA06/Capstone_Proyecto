@@ -128,10 +128,11 @@ class ContractManagementTest extends TestCase
         ]);
         $this->get('/contracts/'.$contract->contrato_id)->assertOk()->assertSee($reason)
             ->assertSee('únicamente para consulta')->assertDontSee('Actualizar contrato')
-            ->assertSee($actor->name)->assertSee($reviewer->name);
+            ->assertSee($actor->name)->assertSee($reviewer->name)->assertSee('Rol al decidir')->assertSee(Role::MANAGER);
         $this->assertDatabaseHas('solicitudes_cancelacion_contrato', [
             'solicitud_cancelacion_id' => $requestId, 'estado' => 'APROBADA',
             'solicitado_por' => $actor->getKey(), 'resuelto_por' => $reviewer->getKey(),
+            'resuelto_roles' => Role::MANAGER,
             'evidencia_sha256' => hash('sha256', "%PDF-1.4\nEvidencia de solicitud de baja\n"),
         ]);
         $this->get('/contracts/'.$contract->contrato_id.'/edit')->assertForbidden();

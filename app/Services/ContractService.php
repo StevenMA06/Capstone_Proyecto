@@ -63,7 +63,8 @@ class ContractService
             ->join('usuarios as u', 'u.usuario_id', '=', 's.solicitado_por')
             ->leftJoin('usuarios as r', 'r.usuario_id', '=', 's.resuelto_por')
             ->select('s.*', 'c.codigo', 'cl.nombres_razon_social', 'cl.apellidos',
-                'u.nombre_usuario as solicitante_usuario', 'r.nombre_usuario as revisor_usuario');
+                'u.nombre_usuario as solicitante_usuario', 'r.nombre_usuario as revisor_usuario')
+            ->selectSub($this->currentReviewerRoles(), 'revisor_roles_actuales');
 
         if (filled($filters['estado'] ?? null)) $query->where('s.estado', $filters['estado']);
         if (filled($filters['q'] ?? null)) {
@@ -357,7 +358,8 @@ class ContractService
             $this->refreshClientLifecycle((int) $contract->cliente_id);
             DB::table('solicitudes_cancelacion_contrato')->where('solicitud_cancelacion_id', $requestId)->update([
                 'estado' => 'APROBADA', 'resuelto_por' => $approverId,
-                'resuelto_en' => now('America/Lima'), 'decision_motivo' => 'Cancelación aprobada por Gerencia o Administración.',
+                'resuelto_roles' => $this->reviewerRoles($approverId),
+                'resuelto_en' => now('America/Lima'), 'decision_motivo' => 'Cancelación aprobada.',
             ]);
         }, 3);
     }
@@ -375,6 +377,7 @@ class ContractService
             }
             DB::table('solicitudes_cancelacion_contrato')->where('solicitud_cancelacion_id', $requestId)->update([
                 'estado' => 'RECHAZADA', 'resuelto_por' => $reviewerId,
+                'resuelto_roles' => $this->reviewerRoles($reviewerId),
                 'resuelto_en' => now('America/Lima'), 'decision_motivo' => trim($reason),
             ]);
         }, 3);
@@ -388,12 +391,35 @@ class ContractService
             ->join('usuarios as solicitante', 'solicitante.usuario_id', '=', 's.solicitado_por')
             ->leftJoin('usuarios as revisor', 'revisor.usuario_id', '=', 's.resuelto_por')
             ->where('s.contrato_id', $contractId)->orderByDesc('s.solicitud_cancelacion_id')
-            ->get(['s.*', 'solicitante.nombre_usuario as solicitante_usuario', 'revisor.nombre_usuario as revisor_usuario']);
+            ->select('s.*', 'solicitante.nombre_usuario as solicitante_usuario', 'revisor.nombre_usuario as revisor_usuario')
+            ->selectSub($this->currentReviewerRoles(), 'revisor_roles_actuales')->get();
     }
 
     public function cancellationWorkflowReady(): bool
     {
-        return Schema::hasTable('solicitudes_cancelacion_contrato');
+        return Schema::hasTable('solicitudes_cancelacion_contrato')
+            && Schema::hasColumn('solicitudes_cancelacion_contrato', 'resuelto_roles');
+    }
+
+    private function reviewerRoles(int $userId): string
+    {
+        $roles = DB::table('usuario_rol as ur')->join('roles as role', 'role.rol_id', '=', 'ur.rol_id')
+            ->where('ur.usuario_id', $userId)->where('role.estado', 'ACTIVO')
+            ->orderBy('role.nombre')->pluck('role.nombre')->implode(', ');
+
+        if ($roles === '') {
+            throw ValidationException::withMessages(['solicitud' => 'La cuenta revisora no tiene un rol activo para registrar la decisión.']);
+        }
+
+        return $roles;
+    }
+
+    private function currentReviewerRoles(): \Closure
+    {
+        return fn ($query) => $query->from('usuario_rol as ur')
+            ->join('roles as role', 'role.rol_id', '=', 'ur.rol_id')
+            ->whereColumn('ur.usuario_id', 's.resuelto_por')->where('role.estado', 'ACTIVO')
+            ->selectRaw("GROUP_CONCAT(DISTINCT role.nombre ORDER BY role.nombre SEPARATOR ', ')");
     }
 
     private function contractSnapshot(object $contract): string
