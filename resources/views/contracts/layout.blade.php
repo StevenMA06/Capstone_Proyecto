@@ -1,6 +1,6 @@
 @extends('layouts.management')
 @section('title', 'Contratos')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/contracts.css') }}?v=17">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/contracts.css') }}?v=19">@endpush
 @section('workspace-content')
 <section class="management contracts-module @yield('contracts-page-class')">
     <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><a href="{{ route('dashboard') }}">Inicio</a><span aria-hidden="true">/</span>@hasSection('contracts-crumb')
