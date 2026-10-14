@@ -39,6 +39,7 @@ $groups = [
         ['Chatbot','chat',['chatbot.view'=>'chatbot.index']],
     ],
 ];
+$groupIcons = ['Paneles' => 'home', 'Comercial' => 'cart', 'Operaciones' => 'tool', 'Inventario' => 'box', 'Administración' => 'users', 'Información' => 'chart'];
 @endphp
 @foreach($groups as $group=>$items)
     @php($links = [])
@@ -49,9 +50,16 @@ $groups = [
         @php($destination = collect($options)->first(fn ($route,$permission)=>auth()->user()->hasPermission($permission)))
         @if($destination) @php($links[]=[$label,$icon,$destination,$params]) @endif
     @endforeach
-    @if(count($links))<p class="nav-section">{{ $group }}</p>@endif
-    @foreach($links as [$label,$icon,$destination,$params])
-        @php($active = request()->routeIs($destination) && (count($params) ? collect($params)->every(fn ($value,$key) => request($key) === $value) : true))
-        <a class="{{ $active ? 'nav-active' : '' }}" @if($active) aria-current="page" @endif href="{{ route($destination, $params) }}">@include('layouts.module-icon',['icon'=>$icon])<span>{{ $label }}</span></a>
-    @endforeach
+    @if(count($links))
+        @php($groupActive = collect($links)->contains(fn ($link) => request()->routeIs($link[2]) || request()->routeIs(explode('.', $link[2])[0].'.*')))
+        <details class="nav-group" @if($groupActive) open @endif>
+            <summary class="nav-section"><span class="nav-group-label"><span class="nav-group-icon">@include('layouts.module-icon', ['icon' => $groupIcons[$group]])</span><span>{{ $group }}</span></span><span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="nav-group-links">
+                @foreach($links as [$label,$icon,$destination,$params])
+                    @php($active = request()->routeIs($destination) && (count($params) ? collect($params)->every(fn ($value,$key) => request($key) === $value) : true))
+                    <a class="{{ $active ? 'nav-active' : '' }}" @if($active) aria-current="page" @endif href="{{ route($destination, $params) }}">@include('layouts.module-icon',['icon'=>$icon])<span>{{ $label }}</span></a>
+                @endforeach
+            </div>
+        </details>
+    @endif
 @endforeach

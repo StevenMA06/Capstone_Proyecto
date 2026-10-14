@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Gestión de clientes') · Lunnys Perú</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v=4">
-    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=13">
+    <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=15">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @include('layouts.session-monitor')
     @stack('styles')
     <link rel="stylesheet" href="{{ asset('css/record-tables.css') }}?v=1">
     <script src="{{ asset('js/validation-es.js') }}?v=1" defer></script>
+    <script src="{{ asset('js/sidebar.js') }}?v=1" defer></script>
 </head>
 <body class="workspace-shell">
 <a class="skip-content" href="#module-content">Ir al contenido</a>
@@ -29,11 +30,14 @@
 </header>
 <div class="workspace-body">
     <aside class="workspace-sidebar" aria-label="Menú de módulos">
-        <div class="module-menu">
-            <nav aria-label="Navegación principal">
-                @include('access.navigation')
-            </nav>
-        </div>
+        <details class="sidebar-disclosure" open>
+            <summary class="sidebar-disclosure-toggle"><span class="sidebar-disclosure-label"><i class="bi bi-list" aria-hidden="true"></i> Menú de módulos</span><span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="module-menu">
+                <nav aria-label="Navegación principal">
+                    @include('access.navigation')
+                </nav>
+            </div>
+        </details>
 
     </aside>
     <main class="workspace-main" id="module-content" tabindex="-1">@yield('workspace-content')</main>

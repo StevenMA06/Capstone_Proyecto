@@ -14,11 +14,11 @@
         @endif
         @if($summary !== null)
         @foreach([
-            ['Contratos activos', 'contracts', 'file'],
-            ['Pagos pendientes', 'payments', 'money'],
-            ['Instalaciones en proceso', 'installations', 'tool'],
-        ] as [$label, $key, $icon])
-        <a class="metric-card summary-metric" @if(auth()->user()->hasPermission(\App\Support\AccessCatalog::forRoute($key.'.index') ?? '')) href="{{ route($key.'.index') }}" @endif><h2>{{ $label }}</h2><p class="metric-value">{{ number_format($summary[$key]) }}</p>@include('layouts.module-icon', ['icon' => $icon])</a>
+            ['Contratos activos', 'contracts', 'file', []],
+            ['Pagos vencidos', 'payments', 'money', ['status' => 'VENCIDO']],
+            ['Instalaciones en proceso', 'installations', 'tool', []],
+        ] as [$label, $key, $icon, $filters])
+        <a class="metric-card summary-metric" @if(auth()->user()->hasPermission(\App\Support\AccessCatalog::forRoute($key.'.index') ?? '')) href="{{ route($key.'.index', $filters) }}" @endif><h2>{{ $label }}</h2><p class="metric-value">{{ number_format($summary[$key]) }}</p>@include('layouts.module-icon', ['icon' => $icon])</a>
         @endforeach
         @foreach(['equipment' => 'Equipos', 'materials' => 'Materiales'] as $key => $label)
         <button type="button" class="metric-card inventory-trigger {{ $summary[$key.'Low'] ? 'metric-alert' : '' }}" data-inventory-open="{{ $key }}-dialog" aria-haspopup="dialog" aria-controls="{{ $key }}-dialog">
@@ -64,12 +64,6 @@
         @endif
     </section>
     @endif
-    <section class="overview-shortcuts">
-        @if($summary !== null)<div class="future-grid">
-            @can('bi.view')<a class="future-shortcut" href="{{ route('bi.index') }}">@include('layouts.module-icon', ['icon' => 'chart'])<div><strong>Business Intelligence</strong><span>Explorar el panel de demostración</span></div><span class="coming-soon">Ver pantalla</span></a>@endcan
-            <div class="future-shortcut" aria-disabled="true">@include('layouts.module-icon', ['icon' => 'chat'])<div><strong>Chatbot IA</strong><span>Asistencia para tu operación</span></div><span class="coming-soon">Próximamente</span></div>
-        </div>@endif
-    </section>
     @if($summary !== null)
         @foreach(['equipment' => 'Equipos', 'materials' => 'Materiales'] as $key => $label)
         <dialog class="inventory-dialog" id="{{ $key }}-dialog" aria-labelledby="{{ $key }}-title">

@@ -14,16 +14,29 @@
 .workspace-account form { margin: 0; }
 .workspace-account .secondary { font-size: 12px; padding: 10px 13px; }
 .workspace-body { display: flex; flex: 1; min-width: 0; }
-.workspace-sidebar { width: 236px; flex-shrink: 0; padding: 20px var(--workspace-inset) 28px; background: #f8f9f7; border-right: 1px solid #dce1db; position: sticky; top: 0; align-self: flex-start; height: 100dvh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #c4cbc3 transparent; }
-.module-menu nav { display: grid; gap: 2px; }
-.module-menu nav>a, .module-menu .nav-pending { min-height: 42px; padding: 10px 12px; border-radius: 3px; display: flex; align-items: center; gap: 12px; color: #343d36; text-decoration: none; font-size: 14px; line-height: 1.4; }
+.workspace-sidebar { width: 248px; flex-shrink: 0; padding: 20px var(--workspace-inset) 28px; background: linear-gradient(180deg,#fbfcfb 0%,#f5f8f5 100%); border-right: 1px solid #dce7dd; position: sticky; top: 0; align-self: flex-start; height: 100dvh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #c4cbc3 transparent; }
+.sidebar-disclosure-toggle { display: none; }
+.module-menu nav { display: grid; gap: 9px; }
+.nav-group { min-width: 0; border: 1px solid transparent; border-radius: 12px; transition: background .2s ease,border-color .2s ease; }
+.nav-group[open] { border-color: #dde9df; background: #fff; box-shadow: 0 3px 12px rgb(26 76 46 / 4%); }
+.nav-group-links { display: grid; gap: 3px; padding: 2px 7px 9px; }
+.nav-group-links>a, .module-menu .nav-pending { min-height: 42px; padding: 9px 10px; border-radius: 8px; display: flex; align-items: center; gap: 11px; color: #33463a; text-decoration: none; font-size: 13px; font-weight: 500; line-height: 1.35; transition: background .18s ease,color .18s ease,transform .18s ease; }
 .module-icon { display: block; flex-shrink: 0; stroke-width: 2; }
-.module-menu .module-icon { width: 20px; height: 20px; flex: 0 0 20px; stroke-width: 1.8; color: #626e64; }
-.module-menu nav>a:hover { background: #ecefea; color: #192d20; }
-.module-menu nav>a:focus-visible { outline: 2px solid #22613d; outline-offset: -2px; }
-.module-menu nav>a.nav-active { background: #e5ece3; color: #184f30; font-weight: 600; box-shadow: inset 3px 0 #287143; }
-.module-menu nav>a.nav-active .module-icon { color: inherit; }
-.nav-section { margin: 22px 12px 6px; color: #606b61; font-size: 11px; font-weight: 600; }
+.module-menu .module-icon { width: 18px; height: 18px; flex: 0 0 18px; stroke-width: 1.8; color: #668074; }
+.nav-group-links>a:hover { background: #eff6f0; color: #11643e; transform: translateX(2px); }
+.nav-group-links>a:focus-visible, .nav-section:focus-visible, .sidebar-disclosure-toggle:focus-visible { outline: 2px solid #22613d; outline-offset: 2px; }
+.nav-group-links>a.nav-active { background: #e7f4eb; color: #075b36; font-weight: 700; box-shadow: inset 3px 0 #087846; }
+.nav-group-links>a.nav-active .module-icon { color: inherit; }
+.nav-section { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; margin: 0; padding: 8px 11px; border-radius: 11px; color: #3b5846; font-size: 12px; font-weight: 700; cursor: pointer; list-style: none; transition: background .18s ease,color .18s ease; }
+.nav-group-label { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.nav-group-icon { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; background: #edf4ee; }
+.nav-group-icon .module-icon { width: 16px; height: 16px; flex-basis: 16px; color: #397455; }
+.nav-group[open]>.nav-section { color: #075b36; }
+.nav-group[open]>.nav-section .nav-group-icon { background: #e2f2e7; }
+.nav-section::-webkit-details-marker, .sidebar-disclosure-toggle::-webkit-details-marker { display: none; }
+.nav-section:hover { background: #eef5ef; color: #075b36; }
+.nav-chevron { display: inline-block; width: 8px; height: 8px; flex: 0 0 8px; border-right: 1.7px solid currentColor; border-bottom: 1.7px solid currentColor; transform: rotate(45deg); opacity: .75; transition: transform .2s ease; }
+.nav-group[open]>.nav-section .nav-chevron, .sidebar-disclosure[open]>.sidebar-disclosure-toggle .nav-chevron { transform: rotate(225deg); }
 .nav-section-future { border-top: 1px solid #dce1db; padding-top: 18px; }
 .module-menu .nav-pending { color: #768075; cursor: default; }
 .module-menu .nav-pending .module-icon { color: #859082; }
@@ -91,10 +104,15 @@
     .workspace-account { width: 100%; gap: 12px; }
     .workspace-account-summary { margin-right: auto; }
     .workspace-body { flex-direction: column; }
-    .workspace-sidebar { width: 100%; height: auto; max-height: 320px; position: static; border-right: 0; border-bottom: 1px solid #dce1db; padding: 12px var(--workspace-inset); }
-    .module-menu nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .module-menu nav>a, .module-menu .nav-pending { font-size: 13px; padding: 10px; gap: 9px; }
-    .nav-section { grid-column: 1/-1; margin-top: 16px; }
+    .workspace-sidebar { width: 100%; height: auto; max-height: none; position: static; overflow: visible; border-right: 0; border-bottom: 1px solid #dce1db; padding: 10px var(--workspace-inset); }
+    .sidebar-disclosure-toggle { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 10px 15px; border: 1px solid #cfe0d2; border-radius: 11px; background: #fff; color: #194932; font-size: 14px; font-weight: 700; cursor: pointer; list-style: none; box-shadow: 0 2px 8px rgb(20 68 41 / 5%); }
+    .sidebar-disclosure-label { display: inline-flex; align-items: center; gap: 10px; }
+    .sidebar-disclosure-label .bi { font-size: 19px; line-height: 1; }
+    .sidebar-disclosure[open]>.sidebar-disclosure-toggle { border-color: #9ec8a9; background: #edf7ef; }
+    .sidebar-disclosure[open]>.module-menu { max-height: min(65dvh, 520px); overflow-y: auto; margin-top: 8px; padding: 8px; border: 1px solid #dce9df; border-radius: 12px; background: #f9fbf9; box-shadow: 0 8px 20px rgb(20 68 41 / 8%); }
+    .module-menu nav { grid-template-columns: 1fr; }
+    .nav-group-links>a, .module-menu .nav-pending { min-height: 44px; font-size: 13px; padding: 10px 12px; }
+    .nav-section { min-height: 48px; }
     .workspace-main { padding: 24px 16px; }
     .workspace-shell .module-heading h1 { font-size: 25px; }
     .workspace-shell .client-filters { grid-template-columns: minmax(0, 1fr); }
