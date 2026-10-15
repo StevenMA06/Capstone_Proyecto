@@ -11,15 +11,13 @@ class AnalyticsQueryRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'desde'=>$this->input('desde',$this->input('fecha_inicio')) ?: ($this->boolean('vista_previa') ? now('America/Lima')->subMonthsNoOverflow(5)->startOfMonth() : now('America/Lima')->startOfMonth())->toDateString(),
+            'desde'=>$this->input('desde',$this->input('fecha_inicio')) ?: now('America/Lima')->startOfMonth()->toDateString(),
             'hasta'=>$this->input('hasta',$this->input('fecha_fin')) ?: now('America/Lima')->toDateString(),
         ]);
     }
     public function rules(): array
     {
-        return [
-            'vista_previa'=>['sometimes','boolean'],
-            'desde'=>['required','date_format:Y-m-d'], 'hasta'=>['required','date_format:Y-m-d','after_or_equal:desde'],
+        return [            'desde'=>['required','date_format:Y-m-d'], 'hasta'=>['required','date_format:Y-m-d','after_or_equal:desde'],
             'proceso'=>['nullable',Rule::in(['all','clientes','contratos','pagos','instalaciones','inventario'])],
             'indicador'=>['nullable',Rule::in(['clientes','contratos','ventas','pagos','instalaciones','equipos','materiales','kardex'])],
             'tipo_grafico'=>['nullable',Rule::in(['line','bar','pie','doughnut','area'])],

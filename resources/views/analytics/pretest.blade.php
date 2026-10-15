@@ -1,6 +1,6 @@
 <section aria-labelledby="temporal-title">
 <h2 class="an-section-title" id="temporal-title">{{ $screen==='bi' ? 'Tiempos de los procesos · pretest' : 'Eficiencia temporal · pretest' }}</h2>
-<p class="an-section-note">{{ $preview ? 'Ejemplos ficticios para visualizar los indicadores.' : 'Observaciones del trabajo actual.' }} Promedios en minutos de casos ordinarios finalizados dentro del período seleccionado, descontando interrupciones ajenas al proceso. No corresponden a tiempos automáticos del sistema web.</p>
+<p class="an-section-note">Observaciones del trabajo actual. Promedios en minutos de casos ordinarios finalizados dentro del período seleccionado, descontando interrupciones ajenas al proceso. No corresponden a tiempos automáticos del sistema web.</p>
 @if(session('status'))<p class="notice success" role="status">{{ session('status') }}</p>@endif
 <div class="an-grid">
 @foreach($pretest['measurements'] as $key=>$measurement)
@@ -10,7 +10,7 @@
 @if($measurement['average']!==null)<p class="an-kpi-formula">Mínimo: {{ number_format($measurement['minimum'],2) }} min · Máximo: {{ number_format($measurement['maximum'],2) }} min</p>@endif
 <details><summary>Ver inicio, fin y cálculo</summary><dl class="an-boundaries"><dt>Inicio</dt><dd>{{ $measurement['start'] }}</dd><dt>Fin</dt><dd>{{ $measurement['end'] }}</dd><dt>Evidencia de cierre</dt><dd>{{ $measurement['evidence'] }}</dd><dt>Alcance</dt><dd>{{ $measurement['scope'] }}</dd><dt>Cálculo</dt><dd>Suma de (fin − inicio − interrupciones ajenas al proceso) / cantidad de casos ordinarios observados. Conversión de segundos a minutos. Objetivo: reducir el tiempo promedio.</dd></dl></details>
 </article>@endforeach</div>
-@if($screen==='indicators' && !$preview && auth()->user()->isManager())
+@if($screen==='indicators' && auth()->user()->isManager())
 <details class="an-panel an-observation"><summary>Registrar observación del pretest</summary><p class="an-description">Ingresa los horarios anotados durante la observación del trabajo actual (hora de Lima). Una referencia identifica el caso sin copiar DNI, contraseñas ni comprobantes. La firma del contrato sola no completa el proceso.</p>
 @if(!$pretest['enabled'])<p>El registro de observaciones aún no está habilitado.</p>@else
 <form method="post" action="{{ route('indicators.pretest.store') }}" class="an-observation-form">@csrf<input type="hidden" name="token" value="{{ old('token', (string)\Illuminate\Support\Str::uuid()) }}">

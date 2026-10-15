@@ -12,14 +12,6 @@ class AnalyticsController extends Controller
         $from=$values['desde'] ?? now()->startOfMonth()->toDateString();
         $to=$values['hasta'] ?? now()->toDateString();
         $process=$values['proceso'] ?? 'all';
-        $preview=$request->boolean('vista_previa');
-        if($preview) {
-            return view('analytics.screen',[
-                ...app(\App\Services\AnalyticsPreviewService::class)->dashboard($from,$to,$process,$values),
-                'preview'=>true,'screen'=>$request->routeIs('bi.index')?'bi':'indicators',
-                'from'=>$from,'to'=>$to,'process'=>$process,'processes'=>AnalyticsService::PROCESSES,
-            ]);
-        }
         $bi=app(\App\Services\BusinessIntelligenceService::class);
         $available=$bi->available($process);
         $indicator=$values['indicador'] ?? array_key_first($available);
@@ -27,7 +19,7 @@ class AnalyticsController extends Controller
         $isBi=$request->routeIs('bi.index');
         $explorer=$isBi ? $bi->chart($indicator,$values['agrupacion'] ?? 'mes',$values['tipo_grafico'] ?? 'bar',$values['medida'] ?? 'cantidad',$from,$to) : null;
         return view('analytics.screen', [
-            'preview'=>false,'explorer'=>$explorer,'chartIndicators'=>$available,
+            'explorer'=>$explorer,'chartIndicators'=>$available,
             'sales'=>($isBi && in_array($process,['all','contratos'],true)) ? $bi->sales($from,$to) : null,
             'staff'=>($isBi && in_array($process,['all','contratos'],true)) ? $bi->staff($from,$to,(int)($values['top'] ?? 10),isset($values['empleado_id'])?(int)$values['empleado_id']:null) : null,
             'screen'=>$request->routeIs('bi.index') ? 'bi' : 'indicators',

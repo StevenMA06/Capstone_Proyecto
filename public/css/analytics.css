@@ -17,7 +17,6 @@
 
 .an-staff-filter{align-items:center;margin-bottom:18px}.an-staff-filter select{width:85px}.an-staff-filter label{margin:0}
 
-.an-preview-toggle{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:14px 0;flex-wrap:wrap}.an-preview-toggle .an-pill{font-size:12px;padding:10px 14px}
 
 /* Charts must not inherit the global 24px SVG icon dimensions. */
 .analytics .an-panel svg{display:block;width:100%;height:auto;max-height:none;min-height:240px;overflow:visible}
