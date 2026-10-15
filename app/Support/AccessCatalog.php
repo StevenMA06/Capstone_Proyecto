@@ -203,6 +203,7 @@ class AccessCatalog
         if ($name === 'orders.reprogram.evidence') return 'orders.view';
         if (in_array($name, ['orders.resources.approve', 'orders.resources.reject'], true)) return 'orders.resources.approve';
         if ($name === 'orders.resources.request') return 'orders.resources.request';
+        if ($name === 'orders.available-technicians') return 'orders.schedule';
         if (in_array($name, ['orders.equipment', 'orders.material'], true)) return 'orders.schedule';
         if ($name === 'warehouse.requests.index') return 'warehouse.view';
         if ($name === 'office.coordination.contract') return 'office.coordination';

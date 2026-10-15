@@ -118,6 +118,7 @@ class TechnicianController extends Controller
             'incidents' => DB::table('incidencias_instalacion')->where('pedido_id', $pedido)->orderByDesc('incidencia_id')->get(),
             'driveStatus' => DB::table('evidencias_drive_instalacion')->where('pedido_id', $pedido)->get()->groupBy('tipo'),
             'driveConfigured' => $this->drive->configured(),
+            'driveAuthorizationExpired' => $this->drive->authorizationExpired($pedido),
             'pendingReprogramming' => DB::table('pedido_reprogramaciones')->where('pedido_id', $pedido)
                 ->where('estado', 'SOLICITADA')->first(),
             'latestApprovedReprogramming' => DB::table('pedido_reprogramaciones')->where('pedido_id', $pedido)
@@ -167,7 +168,11 @@ class TechnicianController extends Controller
     public function syncEvidence(Request $request, int $pedido)
     {
         $count = $this->installations->syncPending($request->user(), $pedido);
-        return $this->saved($pedido, $count ? 'Evidencias confirmadas en Google Drive: '.$count.'.' : 'Los archivos siguen pendientes en Drive. Comprueba la conexión o informa al responsable del sistema.', 'instalacion-evidencias')
+        $message = $this->drive->authorizationExpired($pedido)
+            ? 'La autorización de Google Drive expiró o fue revocada. El responsable del sistema debe reconectarla antes de reintentar.'
+            : ($count ? 'Evidencias confirmadas en Google Drive: '.$count.'.'
+                : 'Los archivos siguen pendientes en Drive. Comprueba la conexión o informa al responsable del sistema.');
+        return $this->saved($pedido, $message, 'instalacion-evidencias')
             ->with('evidence_result', 'DRIVE');
     }
 
@@ -228,8 +233,10 @@ class TechnicianController extends Controller
         $state = DB::table('evidencias_drive_instalacion')->where('pedido_id', $pedido)
             ->where('tipo', 'FOTO')->orderByDesc('sincronizacion_id')->value('estado');
         return $this->saved($pedido, $state === 'CONFIRMADO'
-            ? 'Archivo guardado y confirmado en Google Drive.'
-            : 'Archivo guardado en el sistema. Falta confirmar su envío a Google Drive.', 'instalacion-fotos')
+            ? 'Foto guardada en la carpeta del pedido y confirmada en Google Drive.'
+            : ($this->drive->authorizationExpired($pedido)
+                ? 'Foto guardada en el sistema. Google Drive rechazó la conexión: el responsable debe renovar la autorización para enviarla.'
+                : 'Foto guardada en el sistema. Falta confirmar su envío a Google Drive.'), 'instalacion-fotos')
             ->with('evidence_result', 'FOTO');
     }
 

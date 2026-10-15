@@ -148,11 +148,17 @@ class AccessMatrixTest extends TestCase
         $new=DB::table('pedidos_instalacion')->orderByDesc('pedido_id')->first();
         $this->signIn($office)->patch('/orders/'.$new->pedido_id.'/schedule',[])->assertForbidden();
         $this->patch('/orders/'.$new->pedido_id.'/coordinate', [])->assertNotFound();
+        DB::table('contratos')->where('contrato_id', $contractId)->update(['fecha_inicio' => now('America/Lima')->subDay()->toDateString()]);
         $this->get('/dashboard/call-center/visitas?search=ORD-C-NUEVO')->assertOk()
             ->assertSee('Confirmar fecha de visita')->assertSee('ORD-C-NUEVO')
             ->assertSee('name="fecha_visita"', false)
-            ->assertSee('value="'.$base->fecha_inicio.'"', false)
+            ->assertSee('value="" required data-visit-date', false)
+            ->assertSee('ya no tiene un horario disponible')
             ->assertSee('Mañana · 08:00 a 12:00');
+        $futureContractDate = now('America/Lima')->addDays(2)->toDateString();
+        DB::table('contratos')->where('contrato_id', $contractId)->update(['fecha_inicio' => $futureContractDate]);
+        $this->get('/dashboard/call-center/visitas?search=ORD-C-NUEVO')->assertOk()
+            ->assertSee('value="'.$futureContractDate.'" required data-visit-date', false);
         $this->signIn($chief)->get('/orders?search=ORD-C-NUEVO')->assertOk()
             ->assertSee('order-next-attention')->assertSee('Call Center debe confirmar la fecha con el cliente');
         $this->signIn($office);

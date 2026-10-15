@@ -9,7 +9,8 @@ return new class extends Migration {
     public function up(): void
     {
         foreach (['orders.intake.create', 'orders.resources.request'] as $code) {
-            $permission = AccessCatalog::permissions()[$code];
+            $permission = AccessCatalog::permissions()[$code] ?? null;
+            if (! $permission) continue;
             DB::table('permisos')->updateOrInsert(['codigo' => $code], $permission + ['estado' => 'ACTIVO']);
         }
 

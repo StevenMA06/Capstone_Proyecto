@@ -114,6 +114,10 @@ class InstallationCompletionService
                     ->update(['estado_documentacion' => 'COMPLETA', 'actualizado_en' => $time]);
             }
 
+            if ($order->contrato_id) {
+                app(ContractService::class)->activateAfterCompletedInstallation((int) $order->contrato_id);
+            }
+
             $activated = false;
             if ($contractReady && $order->cliente_id) {
                 $activated = DB::table('clientes')->where('cliente_id', $order->cliente_id)

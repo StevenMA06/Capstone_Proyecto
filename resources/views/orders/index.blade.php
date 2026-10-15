@@ -2,7 +2,7 @@
 @section('title', 'Pedidos de instalación')
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/installations.css') }}?v=29">
-<script src="{{ asset('js/installations.js') }}?v=9" defer></script>
+<script src="{{ asset('js/installations.js') }}?v=12" defer></script>
 <script src="{{ asset('js/resource-rejection.js') }}?v=1" defer></script>
 @endpush
 @section('workspace-content')
@@ -48,14 +48,21 @@
         $latestApproved = $history->firstWhere('estado', 'APROBADA');
         $editable = in_array($record->estado, ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO'], true);
         $canOperate = auth()->user()->hasPermission('orders.schedule');
-        $coordinated = (bool) $record->coordinado_en || (! $record->fase_flujo && (bool) $record->fecha_programada);
+        $coordinated = (bool) $record->fecha_programada;
         $assigned = (bool) $record->tecnico_id;
+        $assignmentStockBlocked = ! $assigned && $equipmentOptions->isEmpty()
+            && $assignedEquipment->get($record->pedido_id, collect())->isEmpty();
         $openResourceRequests = $resources->whereIn('estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA']);
-        $resourceReady = $assignedEquipment->get($record->pedido_id, collect())->isNotEmpty() || $assignedMaterials->get($record->pedido_id, collect())->isNotEmpty();
-        $resourcesPrepared = $openResourceRequests->isEmpty() && ($latestResourceState === 'ENTREGADA' || (! $latestResourceState && $resourceReady));
-        $canStartResourceRequest = $openResourceRequests->isEmpty() && in_array($latestResourceState, [null, 'RECHAZADA', 'ANULADA'], true);
+        $equipmentReady = $assignedEquipment->get($record->pedido_id, collect())->isNotEmpty();
+        $resourcesPrepared = $equipmentReady && $openResourceRequests->isEmpty()
+            && ($latestResourceState === 'ENTREGADA' || ! $latestResourceState);
+        $canStartResourceRequest = $openResourceRequests->isEmpty()
+            && (in_array($latestResourceState, [null, 'RECHAZADA', 'ANULADA'], true) || ! $equipmentReady);
         $needsEquipmentRequest = $canStartResourceRequest;
         $needsMaterialRequest = $canStartResourceRequest;
+        $equipmentStockBlocked = $needsEquipmentRequest && $equipmentOptions->isEmpty()
+            && $assignedEquipment->get($record->pedido_id, collect())->isEmpty()
+            && $openResourceRequests->where('tipo', 'EQUIPO')->isEmpty();
         $reservedMaterialIds = $assignedMaterials->get($record->pedido_id, collect())->pluck('material_id')
             ->merge($openResourceRequests->where('tipo', 'MATERIAL')->pluck('material_id'))->filter()->unique();
         $availableMaterialsForOrder = $materials->reject(fn ($material) => $reservedMaterialIds->contains((int) $material->material_id));
@@ -74,38 +81,14 @@
             $record->estado === 'EN_PROCESO' => 'Instalación en ejecución',
             (bool) $pending => 'Solicitud de cambio pendiente de aprobación de Gerencia',
             $resourcesForManager->isNotEmpty() => 'Gerencia debe autorizar los recursos solicitados',
-            ! $coordinated => '1 · Call Center debe confirmar la fecha con el cliente',
-            ! $assigned => '2 · Define el técnico responsable de la visita',
-            $needsEquipmentRequest && $needsMaterialRequest => '3 · Registra equipo y material para la visita',
-            $needsEquipmentRequest => '3 · Registra el equipo para la visita',
-            $needsMaterialRequest => '3 · Registra el material para la visita',
-            ! $resourcesPrepared => '3 · Almacén debe preparar los recursos solicitados',
+            ! $coordinated => '1 · Asistente de Ventas debe confirmar la fecha con el cliente',
+            $needsEquipmentRequest && $needsMaterialRequest => '2 · Solicita equipo y material a Almacén',
+            $needsEquipmentRequest => '2 · Solicita el equipo a Almacén',
+            $needsMaterialRequest => '2 · Solicita el material a Almacén',
+            ! $resourcesPrepared => '2 · Almacén debe preparar los recursos solicitados',
+            ! $assigned => '3 · Asigna al técnico instalador',
             $record->fase_flujo === 'ESPERANDO_CONFIRMACION_TECNICO' => '4 · El técnico debe confirmar la asignación',
             default => 'Pedido listo para la ejecución',
-        };
-        $nextStepUrl = match (true) {
-            (bool) $pending && auth()->user()->hasPermission('orders.approve') => route('orders.index', ['reprogramacion' => 'pendiente', 'search' => $record->codigo]).'#pedido-'.$record->pedido_id,
-            $record->estado === 'COMPLETADO' && $record->estado_documentacion !== 'COMPLETA' && $record->contrato_id && auth()->user()->hasPermission('contracts.update') => route('contracts.edit', $record->contrato_id),
-            $record->estado === 'COMPLETADO' && $record->estado_documentacion !== 'COMPLETA' && $record->cliente_id && auth()->user()->hasPermission('contracts.create') => route('contracts.create', ['cliente_id' => $record->cliente_id]),
-            $resourcesForManager->isNotEmpty() && auth()->user()->hasPermission('orders.resources.approve') => route('orders.index', ['recursos' => 'pendiente', 'search' => $record->codigo]).'#pedido-'.$record->pedido_id,
-            ! $coordinated && auth()->user()->hasPermission('office.coordination') => route('office.coordination.index', ['search' => $record->codigo]).'#visita-'.$record->pedido_id,
-            ! $assigned && $canOperate => '#asignar-tecnico-'.$record->pedido_id,
-            $needsResourceRequest && $canRequestResources => '#solicitar-recursos-'.$record->pedido_id,
-            ! $resourcesPrepared && $openResourceRequests->isNotEmpty() && auth()->user()->hasPermission('warehouse.view') => route('warehouse.requests.index', ['pedido' => $record->pedido_id]).($openResourceRequests->first()->solicitud_grupo_id ? '#solicitud-grupo-'.$openResourceRequests->first()->solicitud_grupo_id : ''),
-            in_array($record->estado, ['EN_PROCESO', 'PROGRAMADO', 'REPROGRAMADO'], true) && $record->tecnico_id && auth()->user()->hasPermission('technician.view') => route('technician.show', $record->pedido_id),
-            default => null,
-        };
-        $nextStepAction = match (true) {
-            (bool) $pending && auth()->user()->hasPermission('orders.approve') => 'Revisar solicitud de cambio',
-            $record->estado === 'COMPLETADO' && $record->estado_documentacion !== 'COMPLETA' && $record->contrato_id && auth()->user()->hasPermission('contracts.update') => 'Revisar contrato y cargar escaneo firmado',
-            $record->estado === 'COMPLETADO' && $record->estado_documentacion !== 'COMPLETA' && $record->cliente_id && auth()->user()->hasPermission('contracts.create') => 'Crear contrato y cargar escaneo firmado',
-            $resourcesForManager->isNotEmpty() && auth()->user()->hasPermission('orders.resources.approve') => 'Revisar solicitud de recursos',
-            ! $coordinated && auth()->user()->hasPermission('office.coordination') => 'Confirmar visita con el cliente',
-            ! $assigned && $canOperate => 'Definir técnico',
-            $needsResourceRequest && $canRequestResources => 'Solicitar recursos',
-            ! $resourcesPrepared && $openResourceRequests->isNotEmpty() && auth()->user()->hasPermission('warehouse.view') => 'Ver solicitud en Almacén',
-            $record->tecnico_id && auth()->user()->hasPermission('technician.view') => 'Abrir ficha técnica',
-            default => null,
         };
     @endphp
     <article class="installation-panel order-card" id="pedido-{{ $record->pedido_id }}">
@@ -121,11 +104,7 @@
             <div class="order-card-contract-start"><small>Inicio del contrato</small><strong>{{ $record->contrato_fecha_inicio ? \Illuminate\Support\Carbon::parse($record->contrato_fecha_inicio)->format('d/m/Y') : 'Sin registrar' }}</strong></div>
             <div class="order-card-technician"><small>Equipo técnico</small><strong>{{ $record->tecnico_nombre ?: 'Sin asignar' }}</strong>@if($record->tecnico_secundario_nombre)<span>+ {{ $record->tecnico_secundario_nombre }}</span>@endif</div>
         </div>
-        @if($pending)
-            <div class="order-next order-next-attention" role="{{ $nextStepUrl ? 'group' : 'status' }}"><small>CAMBIO DE FECHA PENDIENTE</small><strong>Gerencia debe revisar un cambio de fecha</strong><span>Se solicita {{ \Illuminate\Support\Carbon::parse($pending->fecha_nueva)->format('d/m/Y · H:i') }} · {{ $pending->franja_nueva }}. La visita vigente se mantiene hasta que Gerencia decida.</span>@if($nextStepUrl && $nextStepAction)<a class="order-next-link" href="{{ $nextStepUrl }}">{{ $nextStepAction }} <span aria-hidden="true">→</span></a>@endif</div>
-        @else
-            <div class="order-next {{ $record->estado === 'CANCELADO' ? 'order-next-muted' : ($record->estado === 'COMPLETADO' || $nextStep === 'Pedido listo para la ejecución' ? '' : 'order-next-attention') }}" role="{{ $nextStepUrl ? 'group' : 'status' }}"><small>{{ in_array($record->estado, ['COMPLETADO', 'CANCELADO'], true) ? 'RESULTADO' : 'SIGUIENTE PASO' }}</small><strong>{{ $nextStep }}</strong>@if($nextStepUrl && $nextStepAction)<a class="order-next-link" href="{{ $nextStepUrl }}">{{ $nextStepAction }} <span aria-hidden="true">→</span></a>@endif</div>
-        @endif
+        @if($pending)<div class="order-next order-next-attention" role="status"><small>CAMBIO DE FECHA PENDIENTE</small><strong>Gerencia debe revisar un cambio de fecha</strong><span>Se solicita {{ \Illuminate\Support\Carbon::parse($pending->fecha_nueva)->format('d/m/Y · H:i') }} · {{ $pending->franja_nueva }}. La visita vigente se mantiene hasta que Gerencia decida.</span></div>@endif
         @if($openResourceRequests->isNotEmpty() && !$showManagerResourceReview)<p class="order-resource-summary">{{ $openResourceRequests->count() }} {{ $openResourceRequests->count() === 1 ? 'recurso solicitado' : 'recursos solicitados' }} en trámite. @if(auth()->user()->hasPermission('warehouse.view'))<a href="{{ route('warehouse.requests.index') }}">Abrir solicitudes de Almacén</a>@endif</p>@endif
         @if($showManagerResourceReview)@include('orders.resource-approval')@endif
         <div class="order-card-toolbar" id="acciones-{{ $record->pedido_id }}">
@@ -178,7 +157,8 @@
                         @endif
                     </div>
                     @endif
-                    @if($needsResourceRequest)
+                    @if($equipmentStockBlocked)<div class="order-next order-next-attention" role="status"><strong>No hay equipos disponibles</strong><span>La solicitud a Almacén estará habilitada cuando se reabastezca el stock de equipos.</span></div>@endif
+                    @if($needsResourceRequest && ! $equipmentStockBlocked)
                     <form method="POST" action="{{ route('orders.resources.request', $record->pedido_id) }}" class="order-resource-request-form" data-installation-form data-return-anchor="solicitar-recursos-{{ $record->pedido_id }}">@csrf
                         <input type="hidden" name="form_context" value="resources-{{ $record->pedido_id }}">
                         <p class="order-resource-form-intro">{{ $needsEquipmentRequest && $needsMaterialRequest ? 'Selecciona el equipo y agrega todos los materiales que necesita esta visita. Almacén revisará la solicitud completa y registrará la entrega antes de iniciar.' : 'Completa los recursos que faltan. Puedes agregar varios materiales a una sola solicitud.' }}</p>
@@ -235,8 +215,8 @@
             <div class="order-flow-overview"><div><p class="order-step-label">AVANCE DE LA INSTALACIÓN</p><h4>Estado actual</h4></div><p>{{ $nextStep }}</p></div>
             <ol class="order-flow-stages" aria-label="Avance del pedido">
                 <li class="{{ $coordinated ? 'is-done' : 'is-current' }}"><span class="order-flow-number">1</span><div><strong>Visita confirmada</strong><small>{{ $coordinated ? 'Asistente de ventas registró la fecha' : 'Pendiente de coordinar' }}</small></div></li>
-                <li class="{{ $assigned ? 'is-done' : ($coordinated ? 'is-current' : '') }}"><span class="order-flow-number">2</span><div><strong>Técnico responsable</strong><small>{{ $assigned ? 'Equipo de trabajo definido' : 'Se define antes de pedir sus recursos' }}</small></div></li>
-                <li class="{{ $resourcesPrepared ? 'is-done' : ($assigned ? 'is-current' : '') }}"><span class="order-flow-number">3</span><div><strong>Recursos preparados</strong><small>{{ $resourcesPrepared ? 'Equipo y material listos' : ($openResourceRequests->isNotEmpty() ? 'En revisión por Gerencia o Almacén' : 'Pendiente de registrar los recursos necesarios') }}</small></div></li>
+                <li class="{{ $resourcesPrepared ? 'is-done' : ($coordinated ? 'is-current' : '') }}"><span class="order-flow-number">2</span><div><strong>Recursos preparados</strong><small>{{ $resourcesPrepared ? 'Equipo y material listos' : ($openResourceRequests->isNotEmpty() ? 'En revisión por Gerencia o Almacén' : 'Pendiente de registrar los recursos necesarios') }}</small></div></li>
+                <li class="{{ $assigned ? 'is-done' : ($resourcesPrepared ? 'is-current' : '') }}"><span class="order-flow-number">3</span><div><strong>Técnico responsable</strong><small>{{ $assigned ? 'Equipo de trabajo definido' : 'Se asigna después de preparar los recursos' }}</small></div></li>
             </ol>
             <div class="order-flow-facts">
                 <div><small>Contrato</small><strong>{{ $record->contrato_codigo ?: 'Se registrará después de instalar' }}</strong></div>
@@ -250,20 +230,23 @@
             @if($editable && $canOperate && $canSchedule && !$pending)
             <div class="order-actions">
                 @can('orders.schedule')
-                <details class="order-action order-assignment-action" id="asignar-tecnico-{{ $record->pedido_id }}" @if($scheduleContext) open @endif><summary>{{ $record->tecnico_id ? 'Cambiar técnico asignado' : 'Definir técnico responsable · Paso 2' }}</summary>
+                @if(! $record->tecnico_id && ! $resourcesPrepared)<div class="order-next order-next-attention" role="status"><strong>Asignación de técnico en espera</strong><span>{{ $assignmentStockBlocked ? 'No hay equipos disponibles. Podrás asignar al técnico cuando se reabastezca el stock y Almacén prepare los recursos.' : 'Solicita los recursos y espera a que Almacén los prepare antes de asignar un técnico.' }}</span></div>@else
+                <details class="order-action order-assignment-action" id="asignar-tecnico-{{ $record->pedido_id }}" @if($scheduleContext) open @endif><summary>{{ $record->tecnico_id ? 'Cambiar técnico asignado' : 'Asignar técnico · Paso 3' }}</summary>
                     <div class="order-assignment-body">
                     <div class="order-assignment-context"><div><small>Visita confirmada</small><strong>{{ $visitDate ? ucfirst($visitDate->locale('es')->isoFormat('dddd D [de] MMMM [de] YYYY')) : 'Fecha pendiente de registro' }}</strong><span>Inicio {{ $visitDate?->format('H:i') ?: 'por definir' }} · Franja {{ $record->franja_horaria ?: 'por confirmar' }}</span></div><div><small>Después de asignar</small><span>El técnico recibirá un correo para confirmar la visita. La asignación quedará pendiente hasta que responda.</span></div></div>
-                    <form method="POST" action="{{ route('orders.schedule', $record->pedido_id) }}" class="order-form order-assignment-form" data-installation-form>@csrf @method('PATCH')
+                    @php($visitTechnicians = $availableTechniciansByOrder->get($record->pedido_id, collect()))
+                    <form method="POST" action="{{ route('orders.schedule', $record->pedido_id) }}" class="order-form order-assignment-form" data-installation-form data-availability-url="{{ route('orders.available-technicians', $record->pedido_id) }}">@csrf @method('PATCH')
                         <input type="hidden" name="form_context" value="schedule-{{ $record->pedido_id }}">
                         @if(! $record->fase_flujo)<label class="order-assignment-date">Fecha y hora de visita<input type="datetime-local" name="fecha_programada" value="{{ $scheduleContext ? old('fecha_programada') : '' }}" required><small>Este pedido todavía no tiene una visita confirmada.</small></label>@endif
-                        <label class="order-assignment-technician">Técnico responsable<select name="tecnico_id" required><option value="">Selecciona un técnico</option>@foreach($technicians as $technician)<option value="{{ $technician->getKey() }}" @selected(($scheduleContext ? old('tecnico_id') : $record->tecnico_id) == $technician->getKey())>{{ $technician->full_name }}</option>@endforeach</select><small>Revisa que no tenga otra visita ese mismo día y hora.</small></label>
-                        <label class="order-assignment-technician">Segundo técnico (opcional)<select name="tecnico_secundario_id"><option value="">La realizará solo el responsable</option>@foreach($technicians as $technician)<option value="{{ $technician->getKey() }}" @selected(($scheduleContext ? old('tecnico_secundario_id') : $record->tecnico_secundario_id) == $technician->getKey())>{{ $technician->full_name }}</option>@endforeach</select><small>La mayoría de instalaciones se realizan en pareja. Ambos deberán confirmar.</small></label>
+                        <label class="order-assignment-technician">Técnico responsable<select name="tecnico_id" required @disabled($visitTechnicians->isEmpty())><option value="">{{ $visitTechnicians->isEmpty() ? ($visitDate ? 'Sin técnicos libres en este horario' : 'Selecciona primero la fecha y hora') : 'Selecciona un técnico' }}</option>@foreach($visitTechnicians as $technician)<option value="{{ $technician->getKey() }}" @selected(($scheduleContext ? old('tecnico_id') : $record->tecnico_id) == $technician->getKey())>{{ $technician->full_name }}</option>@endforeach</select><small>Solo aparecen técnicos libres el día, hora y franja de esta visita.</small></label>
+                        <label class="order-assignment-technician">Segundo técnico (opcional)<select name="tecnico_secundario_id" @disabled($visitTechnicians->isEmpty())><option value="">Técnico de apoyo</option>@foreach($visitTechnicians as $technician)<option value="{{ $technician->getKey() }}" @selected(($scheduleContext ? old('tecnico_secundario_id') : $record->tecnico_secundario_id) == $technician->getKey())>{{ $technician->full_name }}</option>@endforeach</select><small>También debe estar libre en el horario de la visita.</small></label>
                         <p class="order-assignment-responsible">La asignación quedará registrada a nombre de <strong>{{ auth()->user()->employee?->full_name ?? 'Cuenta sin empleado asociado' }}</strong>.</p>
                         @if($record->tecnico_id)<label>Motivo del cambio<textarea name="motivo_reprogramacion" maxlength="500" rows="2" required>{{ $scheduleContext ? old('motivo_reprogramacion') : '' }}</textarea></label>@endif
                         <div class="order-assignment-submit"><button type="submit" class="action-link">{{ $record->tecnico_id ? 'Guardar cambio y avisar' : 'Confirmar asignación y avisar' }}</button></div>
                     </form>
                     </div>
                 </details>
+                @endif
                 @endcan
             </div>
             @endif

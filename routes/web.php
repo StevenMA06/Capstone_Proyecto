@@ -249,6 +249,7 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/orders/{pedido}/reprogramming/{reprogramacion}/reject', [\App\Http\Controllers\InstallationOrderController::class, 'rejectReprogramming'])->whereNumber('pedido')->whereNumber('reprogramacion')->name('orders.reprogram.reject');
     Route::get('/orders/{pedido}/reprogramming/{reprogramacion}/evidence', [\App\Http\Controllers\InstallationOrderController::class, 'downloadReprogrammingEvidence'])->whereNumber('pedido')->whereNumber('reprogramacion')->name('orders.reprogram.evidence');
     Route::patch('/orders/{pedido}/schedule', [\App\Http\Controllers\InstallationOrderController::class, 'schedule'])->whereNumber('pedido')->name('orders.schedule');
+    Route::get('/orders/{pedido}/available-technicians', [\App\Http\Controllers\InstallationOrderController::class, 'availableTechnicians'])->whereNumber('pedido')->name('orders.available-technicians');
     Route::post('/orders/{pedido}/resources', [\App\Http\Controllers\InstallationOrderController::class, 'requestResources'])->whereNumber('pedido')->name('orders.resources.request');
     Route::post('/orders/{pedido}/equipment', [\App\Http\Controllers\InstallationOrderController::class, 'equipment'])->whereNumber('pedido')->name('orders.equipment');
     Route::post('/orders/{pedido}/material', [\App\Http\Controllers\InstallationOrderController::class, 'material'])->whereNumber('pedido')->name('orders.material');

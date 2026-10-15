@@ -167,7 +167,7 @@
 @if($running && ($pendingEvidence || ($contract?->firma_revision === 'VERIFICADA' && ! $contractReady)))
 <div class="installation-drive-help installation-panel" data-installation-section="evidencias">
     <strong>Hay archivos pendientes de confirmar en Google Drive</strong>
-    <p>El cierre seguirá bloqueado hasta que Drive confirme la foto de instalación y el PDF firmado que se subió en Contratos.</p>
+    <p>{{ $driveAuthorizationExpired ? 'La autorización de Google Drive expiró o fue revocada. El responsable del sistema debe renovar la conexión; después se podrá reintentar el envío de los archivos pendientes.' : 'El cierre seguirá bloqueado hasta que Drive confirme la foto de instalación y el PDF firmado que se subió en Contratos.' }}</p>
     @if($driveConfigured && $canWork)
         @routecan('technician.syncEvidence')<form method="POST" action="{{ route('technician.syncEvidence', $installation->pedido_id) }}" data-return-anchor="instalacion-evidencias">@csrf<button type="submit" class="action-link secondary">Reintentar envío a Drive</button></form>@endroutecan
     @elseif(! $driveConfigured)

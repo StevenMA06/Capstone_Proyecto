@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Employee;
 use App\Services\InstallationOrderService;
 use App\Services\InstallationResourceRequestService;
 use App\Support\ResourceRejectionReasons;
@@ -83,6 +82,9 @@ class InstallationOrderController extends Controller
         $records = $query->orderByRaw("CASE p.estado WHEN 'PENDIENTE' THEN 0 WHEN 'REPROGRAMADO' THEN 1 WHEN 'PROGRAMADO' THEN 2 WHEN 'EN_PROCESO' THEN 3 ELSE 4 END")
             ->orderByRaw('p.fecha_programada IS NULL')->orderBy('p.fecha_programada')->orderByDesc('p.pedido_id')
             ->paginate(12)->withQueryString();
+        $availableTechniciansByOrder = collect($records->items())->mapWithKeys(fn ($order) => [
+            $order->pedido_id => $this->orders->availableTechniciansForVisit((int) $order->pedido_id, $order->fecha_programada, $order->franja_horaria),
+        ]);
         $ids = collect($records->items())->pluck('pedido_id');
         $reprogramming = DB::table('pedido_reprogramaciones as r')
             ->join('usuarios as s', 's.usuario_id', '=', 'r.solicitado_por')
@@ -134,14 +136,13 @@ class InstallationOrderController extends Controller
             'pendingResourceApprovalCount' => DB::table('pedido_solicitudes_recursos as g')->whereExists(fn ($query) => $query
                 ->selectRaw('1')->from('pedido_solicitudes_recurso as s')->whereColumn('s.solicitud_grupo_id', 'g.solicitud_grupo_id')
                 ->where('s.estado', 'PENDIENTE_GERENCIA'))->count(),
-            'technicians' => $request->user()->hasPermission('orders.schedule')
-                ? Employee::eligible()->where('cargo', 'Técnico de Campo')->get() : collect(),
-            'equipmentOptions' => $request->user()->hasPermission('orders.resources.request')
+            'availableTechniciansByOrder' => $availableTechniciansByOrder,
+            'equipmentOptions' => ($request->user()->hasPermission('orders.resources.request') || $request->user()->hasPermission('orders.schedule'))
                 ? DB::table('equipos as e')->where('e.estado', 'DISPONIBLE')->whereNotIn('e.condicion', ['MALO', 'MALOGRADO'])
                     ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('pedido_solicitudes_recurso as s')
                         ->whereIn('s.estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])
                         ->where(fn ($requestQuery) => $requestQuery->whereColumn('s.equipo_id', 'e.equipo_id')
-                            ->orWhereColumn('s.equipo_tipo_solicitado', 'e.tipo')))
+                            ->orWhereRaw('s.equipo_tipo_solicitado COLLATE utf8mb4_unicode_ci = e.tipo COLLATE utf8mb4_unicode_ci')))
                     ->orderBy('e.tipo')->orderBy('e.modelo')->orderBy('e.numero_serie')->get('e.*') : collect(),
             'materials' => $request->user()->hasPermission('orders.resources.request')
                 ? DB::table('materiales as m')->leftJoinSub(
@@ -218,6 +219,18 @@ class InstallationOrderController extends Controller
         $code = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->value('codigo');
         return redirect()->to(route('orders.index', ['search' => $code]).'#pedido-'.$pedido)
             ->with('status', 'Equipo técnico definido para la visita. Cada técnico recibirá un aviso y deberá confirmar antes de iniciar.');
+    }
+
+    public function availableTechnicians(Request $request, int $pedido)
+    {
+        abort_unless($request->user()->hasPermission('orders.schedule'), 403);
+        $order = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->first(['fecha_programada', 'franja_horaria', 'fase_flujo']);
+        abort_unless($order, 404);
+        $data = $request->validate(['fecha_programada' => ['nullable', 'date_format:Y-m-d\\TH:i', 'after:now']]);
+        $scheduledAt = $order->fase_flujo ? $order->fecha_programada : ($data['fecha_programada'] ?? null);
+
+        return response()->json(['technicians' => $this->orders->availableTechniciansForVisit($pedido, $scheduledAt, $order->franja_horaria)
+            ->map(fn ($technician) => ['id' => $technician->getKey(), 'name' => $technician->full_name])->values()]);
     }
 
     public function equipment(Request $request, int $pedido)
