@@ -232,14 +232,16 @@ class ContractService
                     }
                     $signed = $result['status'] === 'signed';
                     $expiredAtConfirmation = $signed && $attributes['fecha_fin'] < now()->toDateString();
-                    $newState = $expiredAtConfirmation ? 'FINALIZADO' : ($signed ? 'ACTIVO' : 'PENDIENTE');
+                    $installationCompleted = DB::table('pedidos_instalacion')
+                        ->where('contrato_id', $id)->where('estado', 'COMPLETADO')->exists();
+                    $newState = $expiredAtConfirmation ? 'FINALIZADO' : ($signed && $installationCompleted ? 'ACTIVO' : 'PENDIENTE');
 
                     $this->contracts->update($id, [
                         'estado' => $newState,
                         'firma_revision' => $signed ? 'VERIFICADA' : 'SIN_FIRMA',
                         'firma_validada_en' => $signed ? now() : null,
                     ]);
-                    if ($signed) {
+                    if ($newState === 'ACTIVO') {
                         $this->sales->confirm($this->contracts->find($id));
                     }
 
@@ -251,7 +253,9 @@ class ContractService
                     $feedback = $expiredAtConfirmation
                         ? ['message' => 'Se detectó la firma del cliente. El contrato quedó finalizado porque su vigencia ya terminó.', 'kind' => 'finalized']
                         : ($signed
-                        ? ['message' => 'Se detectó la firma del cliente y el contrato se activó automáticamente. Se generaron los pagos mensuales correspondientes.', 'kind' => 'activated']
+                        ? ($newState === 'ACTIVO'
+                            ? ['message' => 'Se verificó la firma y la instalación completada. El contrato está activo.', 'kind' => 'activated']
+                            : ['message' => 'Se verificó la firma. El contrato seguirá pendiente hasta completar el pedido de instalación.', 'kind' => 'pending'])
                         : ['message' => 'Se guardó el PDF. No se detectó la firma del cliente; el contrato sigue pendiente.', 'kind' => 'pending']);
                 }
             });
@@ -275,6 +279,24 @@ class ContractService
         }
 
         return $feedback;
+    }
+
+    public function activateAfterCompletedInstallation(int $contractId): bool
+    {
+        $contract = $this->contracts->find($contractId, true);
+        if ($contract->estado !== 'PENDIENTE' || $contract->firma_revision !== 'VERIFICADA'
+            || ! $contract->pdf_contrato_ruta || ! Storage::disk('local')->exists($contract->pdf_contrato_ruta)
+            || ! DB::table('pedidos_instalacion')->where('contrato_id', $contractId)->where('estado', 'COMPLETADO')->exists()) {
+            return false;
+        }
+        $newState = $contract->fecha_fin < now('America/Lima')->toDateString() ? 'FINALIZADO' : 'ACTIVO';
+        $this->contracts->update($contractId, ['estado' => $newState]);
+        if ($newState === 'ACTIVO') {
+            $this->sales->confirm($this->contracts->find($contractId));
+            $this->activateContractWithPayments($contractId, auth()->id() ?? 1);
+        }
+
+        return $newState === 'ACTIVO';
     }
 
     public function requestCancellation(int $contractId, array $data, UploadedFile $evidence, int $userId): int
@@ -553,6 +575,11 @@ class ContractService
             if ($contract->estado !== 'CANCELADO') {
                 throw ValidationException::withMessages([
                     'contrato' => 'Solo se pueden reactivar contratos cancelados. Estado actual: '.ucfirst(strtolower($contract->estado)).'.',
+                ]);
+            }
+            if (! DB::table('pedidos_instalacion')->where('contrato_id', $contractId)->where('estado', 'COMPLETADO')->exists()) {
+                throw ValidationException::withMessages([
+                    'contrato' => 'Para reactivar el contrato debe existir un pedido de instalación completado.',
                 ]);
             }
 

@@ -240,41 +240,38 @@ class InstallationExecutionTest extends TestCase
             ->assertDontSee('Preparó y reservó la solicitud completa');
     }
 
-    public function test_equipment_type_can_be_requested_with_no_free_unit_and_warehouse_selects_the_delivered_unit(): void
+    public function test_resource_request_waits_for_equipment_restock(): void
     {
         DB::table('equipos')->where('equipo_id', $this->equipment)->update(['estado' => 'ASIGNADO']);
         $chief = User::factory()->create(['rol_id' => Role::where('nombre', Role::INSTALLATIONS)->value('rol_id')]);
+        DB::table('pedidos_instalacion')->where('pedido_id', $this->id)->update([
+            'tecnico_id' => null, 'fase_flujo' => 'PENDIENTE_ASIGNACION',
+            'coordinado_en' => now('America/Lima'), 'fecha_programada' => now('America/Lima')->addDay(),
+            'franja_horaria' => '08:00 a 12:00',
+        ]);
 
         $this->signIn($chief)->get('/orders?search=INS-I-0')->assertOk()
-            ->assertSee('value="Router" data-available="0"', false);
-        $this->post('/orders/'.$this->id.'/equipment', ['equipo_tipo' => 'Router'])->assertSessionHasNoErrors();
-        $requestId = DB::table('pedido_solicitudes_recurso')->where('pedido_id', $this->id)->where('tipo', 'EQUIPO')->value('solicitud_id');
-        $this->assertDatabaseHas('pedido_solicitudes_recurso', [
-            'solicitud_id' => $requestId, 'equipo_tipo_solicitado' => 'Router',
-            'equipo_id' => null, 'estado' => 'PENDIENTE_ALMACEN',
-        ]);
-        $this->get('/orders?search=INS-I-0')->assertOk()
-            ->assertSee('Equipo tipo Router')->assertSee('Solicita el material a Almacén');
+            ->assertSee('No hay equipos disponibles')->assertSee('Asignación de técnico en espera')
+            ->assertDontSee('Enviar solicitud completa a Almacén')->assertDontSee('Confirmar asignación y avisar');
+        $this->patch('/orders/'.$this->id.'/schedule', ['tecnico_id' => $this->tech->empleado_id])
+            ->assertSessionHasErrors('equipo_id');
         $this->post('/orders/'.$this->id.'/equipment', ['equipo_tipo' => 'Router'])->assertSessionHasErrors('equipo_tipo');
+        $this->post('/orders/'.$this->id.'/resources', [
+            'materials' => [['material_id' => $this->material, 'cantidad_asignada' => '2']],
+        ])->assertSessionHasErrors('equipo_id');
+        $this->assertDatabaseCount('pedido_solicitudes_recursos', 0);
 
-        $warehouse = User::factory()->create(['rol_id' => Role::where('nombre', Role::WAREHOUSE)->value('rol_id')]);
-        $this->signIn($warehouse)->get('/warehouse/requests')->assertOk()
-            ->assertSee('Equipo tipo Router')->assertSee('No hay unidades libres de este tipo');
-        $this->patch('/warehouse/requests/'.$requestId.'/fulfill')->assertSessionHasErrors('equipo_id');
-
-        $switch = DB::table('equipos')->insertGetId([
-            'codigo' => 'EQ-SWITCH-INS', 'nombre' => 'Switch', 'tipo' => 'Switch', 'creado_por' => $this->manager->getKey(),
-        ]);
         $router = DB::table('equipos')->insertGetId([
             'codigo' => 'EQ-ROUTER-INS', 'nombre' => 'Router nuevo', 'tipo' => 'Router', 'creado_por' => $this->manager->getKey(),
         ]);
-        $this->patch('/warehouse/requests/'.$requestId.'/fulfill', ['equipo_id' => $switch])->assertSessionHasErrors('equipo_id');
-        $this->get('/warehouse/requests')->assertOk()->assertSee('EQ-ROUTER-INS');
-        $this->patch('/warehouse/requests/'.$requestId.'/fulfill', ['equipo_id' => $router])->assertSessionHasNoErrors();
+        $this->get('/orders?search=INS-I-0')->assertOk()->assertSee('Enviar solicitud completa a Almacén');
+        $this->post('/orders/'.$this->id.'/resources', [
+            'equipo_id' => $router,
+            'materials' => [['material_id' => $this->material, 'cantidad_asignada' => '2']],
+        ])->assertSessionHasNoErrors();
         $this->assertDatabaseHas('pedido_solicitudes_recurso', [
-            'solicitud_id' => $requestId, 'equipo_id' => $router, 'estado' => 'ENTREGADA',
+            'pedido_id' => $this->id, 'equipo_id' => $router, 'estado' => 'PENDIENTE_ALMACEN',
         ]);
-        $this->assertDatabaseHas('pedido_equipos', ['pedido_id' => $this->id, 'equipo_id' => $router]);
     }
 
     public function test_technician_can_only_be_assigned_after_warehouse_prepares_equipment_and_material(): void
@@ -301,7 +298,7 @@ class InstallationExecutionTest extends TestCase
             ->assertSessionHasErrors('pedido');
         $this->signIn($warehouse)->patch('/warehouse/requests/'.$requests['MATERIAL'].'/fulfill')->assertSessionHasNoErrors();
         $this->signIn($chief)->get('/orders?search=INS-I-0')->assertOk()
-            ->assertSee('3 · Asigna al técnico instalador')->assertSee('3. Asignar técnico');
+            ->assertSee('3 · Asigna al técnico instalador')->assertSee('Asignar técnico · Paso 3');
         $this->patch('/orders/'.$this->id.'/schedule', ['tecnico_id' => $this->tech->empleado_id])
             ->assertSessionHasNoErrors();
         $this->assertDatabaseHas('pedidos_instalacion', ['pedido_id' => $this->id, 'estado' => 'PROGRAMADO',
@@ -331,7 +328,7 @@ class InstallationExecutionTest extends TestCase
         ]);
     }
 
-    public function test_technician_cannot_be_assigned_to_two_installations_in_the_same_hour_but_can_work_another_hour_that_day(): void
+    public function test_technician_is_hidden_during_a_busy_window_but_available_in_another_window(): void
     {
         DB::table('empleados')->where('empleado_id', $this->tech->empleado_id)->update(['cargo' => 'Técnico de Campo']);
         $visitTime = now('America/Lima')->addDays(2)->setTime(10, 20);
@@ -348,6 +345,12 @@ class InstallationExecutionTest extends TestCase
         $this->requestAndDeliverResources($chief);
         Mail::fake();
 
+        $this->signIn($chief)->get('/orders?search=INS-I-0')->assertOk()
+            ->assertSee('Sin técnicos libres en este horario')
+            ->assertDontSee('<option value="'.$this->tech->empleado_id.'"', false);
+        $this->getJson('/orders/'.$this->id.'/available-technicians')->assertOk()
+            ->assertExactJson(['technicians' => []]);
+
         $this->signIn($chief)->patch('/orders/'.$this->id.'/schedule', ['tecnico_id' => $this->tech->empleado_id])
             ->assertSessionHasErrors('tecnico_id');
         $this->assertDatabaseHas('pedidos_instalacion', ['pedido_id' => $this->id, 'tecnico_id' => null]);
@@ -355,11 +358,37 @@ class InstallationExecutionTest extends TestCase
         DB::table('pedidos_instalacion')->where('pedido_id', $this->other)->update([
             'fecha_programada' => $visitTime->copy()->setTime(11, 10)->format('Y-m-d H:i:s'),
         ]);
+        $this->getJson('/orders/'.$this->id.'/available-technicians')->assertOk()
+            ->assertExactJson(['technicians' => []]);
+        DB::table('pedidos_instalacion')->where('pedido_id', $this->other)->update([
+            'fecha_programada' => $visitTime->copy()->setTime(14, 10)->format('Y-m-d H:i:s'),
+            'franja_horaria' => '14:00 a 18:00',
+        ]);
+        $this->getJson('/orders/'.$this->id.'/available-technicians')->assertOk()
+            ->assertJsonFragment(['id' => $this->tech->empleado_id]);
         $this->patch('/orders/'.$this->id.'/schedule', ['tecnico_id' => $this->tech->empleado_id])
             ->assertSessionHasNoErrors();
         $this->assertDatabaseHas('pedidos_instalacion', [
             'pedido_id' => $this->id, 'tecnico_id' => $this->tech->empleado_id, 'estado' => 'PROGRAMADO',
         ]);
+    }
+
+    public function test_legacy_visit_rechecks_technicians_when_its_date_changes(): void
+    {
+        DB::table('empleados')->where('empleado_id', $this->tech->empleado_id)->update(['cargo' => 'Técnico de Campo']);
+        $day = now('America/Lima')->addDays(2)->format('Y-m-d');
+        DB::table('pedidos_instalacion')->where('pedido_id', $this->id)->update([
+            'fase_flujo' => null, 'fecha_programada' => null, 'tecnico_id' => null,
+        ]);
+        DB::table('pedidos_instalacion')->where('pedido_id', $this->other)->update([
+            'estado' => 'PROGRAMADO', 'tecnico_id' => $this->tech->empleado_id,
+            'fecha_programada' => $day.' 10:00:00', 'franja_horaria' => '08:00 a 12:00',
+        ]);
+        $chief = User::factory()->create(['rol_id' => Role::where('nombre', Role::INSTALLATIONS)->value('rol_id')]);
+        $this->signIn($chief)->getJson('/orders/'.$this->id.'/available-technicians?fecha_programada='.$day.'T10:30')
+            ->assertOk()->assertExactJson(['technicians' => []]);
+        $this->getJson('/orders/'.$this->id.'/available-technicians?fecha_programada='.$day.'T14:30')
+            ->assertOk()->assertJsonFragment(['id' => $this->tech->empleado_id]);
     }
 
     public function test_one_submission_records_equipment_and_multiple_materials_as_one_request_group(): void
@@ -662,6 +691,56 @@ class InstallationExecutionTest extends TestCase
         config()->set('services.installation_drive.client_secret', 'demo-secret');
         config()->set('services.installation_drive.refresh_token', 'demo-refresh');
         $this->get($this->url())->assertOk()->assertSee('Reintentar envío a Drive');
+    }
+
+    public function test_photo_upload_immediately_creates_its_drive_folder_and_confirms_the_file(): void
+    {
+        config()->set('services.installation_drive', [
+            'client_id' => 'demo-client', 'client_secret' => 'demo-secret',
+            'refresh_token' => 'demo-refresh', 'folder_id' => 'demo-folder', 'credentials_path' => null,
+        ]);
+        $folders = [];
+        Http::fake(function ($request) use (&$folders) {
+            $url = $request->url();
+            if (str_contains($url, 'oauth2.googleapis.com/token')) return Http::response(['access_token' => 'demo-access']);
+            if (str_contains($url, '/upload/drive/v3/files')) return Http::response(['id' => 'drive-photo']);
+            if ($request->method() === 'GET' && str_contains($url, '/drive/v3/files?')) return Http::response(['files' => []]);
+            if ($request->method() === 'POST' && str_contains($url, '/drive/v3/files?')) {
+                $name = $request->data()['name'];
+                $folders[$name] = 'folder-'.count($folders);
+                return Http::response(['id' => $folders[$name]]);
+            }
+            if (str_contains($url, '/drive/v3/files/drive-photo')) {
+                return Http::response(['parents' => [$folders['Fotos de la instalación']], 'trashed' => false]);
+            }
+            return Http::response([], 404);
+        });
+
+        $this->start();
+        $this->post($this->url('evidence'), ['evidence' => $this->photo()])
+            ->assertSessionHasNoErrors()->assertSessionHas('status', 'Foto guardada en la carpeta del pedido y confirmada en Google Drive.');
+        $this->assertArrayHasKey('Fotos de la instalación', $folders);
+        $this->assertDatabaseHas('evidencias_drive_instalacion', [
+            'pedido_id' => $this->id, 'tipo' => 'FOTO', 'estado' => 'CONFIRMADO', 'drive_file_id' => 'drive-photo',
+        ]);
+    }
+
+    public function test_revoked_drive_token_keeps_photo_pending_and_explains_reconnection(): void
+    {
+        config()->set('services.installation_drive', [
+            'client_id' => 'demo-client', 'client_secret' => 'demo-secret',
+            'refresh_token' => 'demo-refresh', 'folder_id' => 'demo-folder', 'credentials_path' => null,
+        ]);
+        Http::fake(['https://oauth2.googleapis.com/token' => Http::response([
+            'error' => 'invalid_grant', 'error_description' => 'Token has been expired or revoked.',
+        ], 400)]);
+        $this->start();
+        $this->post($this->url('evidence'), ['evidence' => $this->photo()])
+            ->assertSessionHasNoErrors()->assertSessionHas('status', 'Foto guardada en el sistema. Google Drive rechazó la conexión: el responsable debe renovar la autorización para enviarla.');
+        $this->assertDatabaseHas('evidencias_drive_instalacion', [
+            'pedido_id' => $this->id, 'tipo' => 'FOTO', 'estado' => 'PENDIENTE', 'error' => 'AUTH_EXPIRED',
+        ]);
+        $this->get($this->url())->assertOk()->assertSee('La autorización de Google Drive expiró o fue revocada.');
     }
 
     public function test_pending_order_reprogramming_updates_date_and_state_before_assignment(): void

@@ -16,6 +16,12 @@ class InstallationResourceRequestService
         abort_unless($actor->hasPermission('orders.resources.request'), 403);
         $order = $this->validatedOrder($orderId, $actor);
         if (! $includesEquipment && ! $includesMaterials) $this->fail('recurso', 'Selecciona equipo, material o ambos antes de enviar la solicitud.');
+        if (! $this->hasAvailableEquipment() && ! DB::table('pedido_equipos')->where('pedido_id', $orderId)
+            ->whereIn('estado_asignacion', ['ASIGNADO', 'UTILIZADO'])->whereNull('fecha_devolucion')->exists()
+            && ! DB::table('pedido_solicitudes_recurso')->where('pedido_id', $orderId)->where('tipo', 'EQUIPO')
+                ->whereIn('estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])->exists()) {
+            $this->fail('equipo_id', 'No hay equipos disponibles. La solicitud a Almacén estará habilitada después del reabastecimiento de stock.');
+        }
         return (int) DB::table('pedido_solicitudes_recursos')->insertGetId([
             'pedido_id' => $orderId,
             'solicitado_por' => $actor->getKey(),
@@ -32,6 +38,9 @@ class InstallationResourceRequestService
             $order = $this->validatedOrder($orderId, $actor);
             $type = DB::table('equipos')->where('tipo', trim($requestedType))->value('tipo');
             if (! $type) $this->fail('equipo_tipo', 'Selecciona un tipo de equipo registrado.');
+            if (! $this->hasAvailableEquipment($type)) {
+                $this->fail('equipo_tipo', 'No hay equipos disponibles de este tipo. Espera el reabastecimiento de stock.');
+            }
             $open = DB::table('pedido_solicitudes_recurso')->where('pedido_id', $orderId)->where('tipo', 'EQUIPO')
                 ->whereIn('estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])
                 ->where(function ($query) use ($type): void {
@@ -98,6 +107,18 @@ class InstallationResourceRequestService
     public function canRequest(User $actor): bool
     {
         return $actor->hasPermission('orders.resources.request');
+    }
+
+    private function hasAvailableEquipment(?string $type = null): bool
+    {
+        return DB::table('equipos as e')->where('e.estado', 'DISPONIBLE')
+            ->whereNotIn('e.condicion', ['MALO', 'MALOGRADO'])
+            ->when($type, fn ($query) => $query->where('e.tipo', $type))
+            ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('pedido_solicitudes_recurso as s')
+                ->whereIn('s.estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])
+                ->where(fn ($request) => $request->whereColumn('s.equipo_id', 'e.equipo_id')
+                    ->orWhereRaw('s.equipo_tipo_solicitado COLLATE utf8mb4_unicode_ci = e.tipo COLLATE utf8mb4_unicode_ci')))
+            ->exists();
     }
 
     public function canRequestForOrder(User $actor, object $order): bool

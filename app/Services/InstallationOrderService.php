@@ -86,7 +86,7 @@ class InstallationOrderService
             return DB::transaction(function () use ($actor, $id, $data, $evidence, &$storedPath): bool {
             $order = $this->editable($id);
             $this->requireActiveContract($order);
-            $alreadyScheduled = (bool) $order->coordinado_en || (! $order->fase_flujo && (bool) $order->fecha_programada);
+            $alreadyScheduled = (bool) $order->fecha_programada;
             if ($alreadyScheduled) {
                 if (! isset(self::REPROGRAM_REASONS[$data['motivo_codigo'] ?? ''])) {
                     $this->fail('motivo_codigo', 'Selecciona el motivo de la reprogramación.');
@@ -183,8 +183,8 @@ class InstallationOrderService
                 }
                 foreach (array_filter([(int) $order->tecnico_id, (int) $order->tecnico_secundario_id]) as $employeeId) {
                     Employee::lockForUpdate()->find($employeeId);
-                    if ($this->hasTechnicianScheduleConflict($employeeId, $orderId, $change->fecha_nueva)) {
-                        $this->fail('reprogramacion', 'Uno de los técnicos asignados ya tiene otra instalación ese día a esa hora. Rechaza este cambio o coordina otro horario.');
+                    if ($this->hasTechnicianScheduleConflict($employeeId, $orderId, $change->fecha_nueva, $change->franja_nueva)) {
+                        $this->fail('reprogramacion', 'Uno de los técnicos asignados ya tiene otra instalación ese día en esa franja. Rechaza este cambio o coordina otra franja.');
                     }
                 }
                 DB::table('pedidos_instalacion')->where('pedido_id', $orderId)->update([
@@ -235,6 +235,24 @@ class InstallationOrderService
             if (! $order->fase_flujo && ! $legacyDate) {
                 $this->fail('fecha_programada', 'Indica la nueva fecha para este pedido anterior.');
             }
+            if (! $order->tecnico_id
+                && ! DB::table('pedido_equipos')->where('pedido_id', $id)
+                    ->whereIn('estado_asignacion', ['ASIGNADO', 'UTILIZADO'])->whereNull('fecha_devolucion')->exists()
+                && ! DB::table('equipos as e')->where('e.estado', 'DISPONIBLE')
+                    ->whereNotIn('e.condicion', ['MALO', 'MALOGRADO'])
+                    ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('pedido_solicitudes_recurso as s')
+                        ->whereIn('s.estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])
+                        ->where(fn ($request) => $request->whereColumn('s.equipo_id', 'e.equipo_id')
+                            ->orWhereRaw('s.equipo_tipo_solicitado COLLATE utf8mb4_unicode_ci = e.tipo COLLATE utf8mb4_unicode_ci')))
+                    ->exists()) {
+                $this->fail('equipo_id', 'No hay equipos disponibles. Espera el reabastecimiento de stock antes de asignar un técnico.');
+            }
+            if (! $order->tecnico_id && (! DB::table('pedido_equipos')->where('pedido_id', $id)
+                ->whereIn('estado_asignacion', ['ASIGNADO', 'UTILIZADO'])->whereNull('fecha_devolucion')->exists()
+                || DB::table('pedido_solicitudes_recurso')->where('pedido_id', $id)
+                    ->whereIn('estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])->exists())) {
+                $this->fail('pedido', 'Primero solicita los recursos y espera a que Almacén los prepare antes de asignar al técnico.');
+            }
             if ($order->tecnico_id && blank($reason)) {
                 $this->fail('motivo_reprogramacion', 'Justifica el cambio de técnico.');
             }
@@ -251,11 +269,11 @@ class InstallationOrderService
                 }
             }
             $scheduledAt = $order->fase_flujo ? $order->fecha_programada : $legacyDate;
-            if ($this->hasTechnicianScheduleConflict($technicianId, $id, $scheduledAt)) {
-                $this->fail('tecnico_id', 'Este técnico ya tiene otra instalación programada ese día a esta hora. Elige otro horario o técnico.');
+            if ($this->hasTechnicianScheduleConflict($technicianId, $id, $scheduledAt, $order->franja_horaria)) {
+                $this->fail('tecnico_id', 'Este técnico ya tiene otra instalación ese día en esa franja. Elige otra franja o técnico.');
             }
-            if ($secondTechnicianId && $this->hasTechnicianScheduleConflict($secondTechnicianId, $id, $scheduledAt)) {
-                $this->fail('tecnico_secundario_id', 'El segundo técnico ya tiene otra instalación programada ese día a esta hora. Elige otro horario o técnico.');
+            if ($secondTechnicianId && $this->hasTechnicianScheduleConflict($secondTechnicianId, $id, $scheduledAt, $order->franja_horaria)) {
+                $this->fail('tecnico_secundario_id', 'El segundo técnico ya tiene otra instalación ese día en esa franja. Elige otra franja o técnico.');
             }
             $isRescheduledAssignment = $order->estado === 'REPROGRAMADO'
                 || (! $order->fase_flujo && $order->fecha_programada
@@ -500,18 +518,39 @@ class InstallationOrderService
         }
     }
 
-    private function hasTechnicianScheduleConflict(int $technicianId, int $excludedOrderId, string $scheduledAt): bool
+    public function availableTechniciansForVisit(int $orderId, ?string $scheduledAt, ?string $window = null)
+    {
+        if (! $scheduledAt) return collect();
+        $busyIds = $this->busyTechnicianIds($orderId, $scheduledAt, $window);
+
+        return Employee::eligible()->where('cargo', 'Técnico de Campo')
+            ->when($busyIds !== [], fn ($query) => $query->whereNotIn('empleado_id', $busyIds))
+            ->orderBy('nombres')->orderBy('apellidos')->get();
+    }
+
+    private function hasTechnicianScheduleConflict(int $technicianId, int $excludedOrderId, string $scheduledAt, ?string $window = null): bool
+    {
+        return in_array($technicianId, $this->busyTechnicianIds($excludedOrderId, $scheduledAt, $window), true);
+    }
+
+    private function busyTechnicianIds(int $excludedOrderId, string $scheduledAt, ?string $window = null): array
     {
         $scheduled = Carbon::parse($scheduledAt, 'America/Lima');
+        $window ??= $scheduled->hour < 12 ? '08:00 a 12:00' : '14:00 a 18:00';
 
         return DB::table('pedidos_instalacion')
-            ->where(fn ($query) => $query->where('tecnico_id', $technicianId)->orWhere('tecnico_secundario_id', $technicianId))
             ->where('pedido_id', '<>', $excludedOrderId)
             ->whereIn('estado', ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO', 'EN_PROCESO'])
             ->whereNotNull('fecha_programada')
             ->whereDate('fecha_programada', $scheduled->toDateString())
-            ->get(['fecha_programada'])
-            ->contains(fn ($visit) => Carbon::parse($visit->fecha_programada, 'America/Lima')->hour === $scheduled->hour);
+            ->where(fn ($query) => $query->whereNotNull('tecnico_id')->orWhereNotNull('tecnico_secundario_id'))
+            ->get(['estado', 'fecha_programada', 'franja_horaria', 'tecnico_id', 'tecnico_secundario_id'])
+            ->filter(fn ($visit) => $visit->estado === 'EN_PROCESO'
+                || ($visit->franja_horaria ?: (Carbon::parse($visit->fecha_programada, 'America/Lima')->hour < 12
+                    ? '08:00 a 12:00' : '14:00 a 18:00')) === $window
+                || Carbon::parse($visit->fecha_programada, 'America/Lima')->hour === $scheduled->hour)
+            ->flatMap(fn ($visit) => [$visit->tecnico_id, $visit->tecnico_secundario_id])
+            ->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
     }
 
     private function notifyTechnician(int $id, int $employeeId, string $event = 'assignment'): void

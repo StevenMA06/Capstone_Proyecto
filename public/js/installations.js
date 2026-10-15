@@ -17,7 +17,15 @@
         const panels = [];
         for (let panel = target.closest('details'); panel; panel = panel.parentElement?.closest('details')) panels.push(panel);
         panels.reverse().forEach(panel => { panel.open = true; });
-        scrollTargetIntoView(target);
+        const destination = target.id.startsWith('asignar-tecnico-')
+            ? target.querySelector('select[name="tecnico_id"]') || target.querySelector('summary')
+            : target.id.startsWith('solicitar-recursos-')
+                ? target.querySelector('.order-resource-request-form select[name="equipo_id"]')
+                    || target.querySelector('.order-resource-request-form select[name^="materials"]')
+                    || target.querySelector('.order-next')
+                    || target.querySelector('summary')
+                : target;
+        scrollTargetIntoView(destination);
     };
     window.addEventListener('hashchange', revealOrderAnchor);
     window.addEventListener('popstate', revealOrderAnchor);
@@ -33,6 +41,59 @@
     });
     if (location.hash) revealOrderAnchor();
     if (document.readyState !== 'complete') window.addEventListener('load', revealOrderAnchor, { once: true });
+
+    document.querySelectorAll('.order-assignment-form').forEach(form => {
+        const primary = form.querySelector('select[name="tecnico_id"]');
+        const secondary = form.querySelector('select[name="tecnico_secundario_id"]');
+        const visitDate = form.querySelector('input[name="fecha_programada"]');
+        if (!primary || !secondary) return;
+        const updateSecondaryOptions = () => {
+            if (primary.value && secondary.value === primary.value) secondary.value = '';
+            secondary.querySelectorAll('option[value]:not([value=""])').forEach(option => {
+                const isPrimary = primary.value !== '' && option.value === primary.value;
+                option.hidden = isPrimary;
+                option.disabled = isPrimary;
+            });
+        };
+        primary.addEventListener('change', updateSecondaryOptions);
+        updateSecondaryOptions();
+        if (!visitDate) return;
+        let requestNumber = 0;
+        const setChoices = (technicians, message) => {
+            const selectedPrimary = primary.value;
+            const selectedSecondary = secondary.value;
+            const choices = technicians.map(technician => ({ value: String(technician.id), text: technician.name }));
+            primary.replaceChildren(new Option(message, ''), ...choices.map(item => new Option(item.text, item.value)));
+            secondary.replaceChildren(new Option('Técnico de apoyo', ''), ...choices.map(item => new Option(item.text, item.value)));
+            primary.disabled = choices.length === 0;
+            secondary.disabled = choices.length === 0;
+            if (choices.some(item => item.value === selectedPrimary)) primary.value = selectedPrimary;
+            if (choices.some(item => item.value === selectedSecondary)) secondary.value = selectedSecondary;
+            updateSecondaryOptions();
+        };
+        const refreshAvailability = async () => {
+            const currentRequest = ++requestNumber;
+            if (!visitDate.value) {
+                setChoices([], 'Selecciona primero la fecha y hora');
+                return;
+            }
+            primary.disabled = true;
+            secondary.disabled = true;
+            try {
+                const url = new URL(form.dataset.availabilityUrl, location.href);
+                url.searchParams.set('fecha_programada', visitDate.value);
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('availability');
+                const result = await response.json();
+                if (currentRequest !== requestNumber) return;
+                setChoices(result.technicians, result.technicians.length ? 'Selecciona un técnico' : 'Sin técnicos libres en este horario');
+            } catch (_) {
+                if (currentRequest === requestNumber) setChoices([], 'No se pudo verificar la disponibilidad');
+            }
+        };
+        visitDate.addEventListener('change', refreshAvailability);
+        if (visitDate.value) refreshAvailability();
+    });
 
     const formatInventoryQuantity = value => new Intl.NumberFormat('es-PE', { maximumFractionDigits: 3 }).format(value);
     const renderMaterialAvailability = (status, { available, unit, requested, enough, wholePackage, packaging, factor, baseUnit }) => {

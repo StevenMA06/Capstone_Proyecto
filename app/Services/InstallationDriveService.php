@@ -36,6 +36,15 @@ class InstallationDriveService
         return filled(config('services.installation_drive.folder_id')) && ($oauth || $serviceAccount);
     }
 
+    public function authorizationExpired(int $orderId): bool
+    {
+        return DB::table('evidencias_drive_instalacion')->where('pedido_id', $orderId)
+            ->where('estado', 'PENDIENTE')
+            ->where(fn ($query) => $query->where('error', 'like', '%invalid_grant%')
+                ->orWhere('error', 'AUTH_EXPIRED'))
+            ->exists();
+    }
+
     public function sync(int $orderId, string $type, int $evidenceId, string $path, ?string $name, ?string $mime): bool
     {
         $key = ['tipo' => $type, 'evidencia_id' => $evidenceId];
@@ -95,8 +104,10 @@ class InstallationDriveService
                 'confirmado_en' => now('America/Lima'), 'updated_at' => now('America/Lima'),
             ]);
         } catch (\Throwable $error) {
+            $storedError = str_contains($error->getMessage(), 'invalid_grant')
+                ? 'AUTH_EXPIRED' : mb_substr($error->getMessage(), 0, 500);
             DB::table('evidencias_drive_instalacion')->where($key)->update([
-                'estado' => 'PENDIENTE', 'error' => mb_substr($error->getMessage(), 0, 500),
+                'estado' => 'PENDIENTE', 'error' => $storedError,
                 'updated_at' => now('America/Lima'),
             ]);
             Log::warning('Evidencia pendiente de confirmar en Drive', ['pedido_id' => $orderId, 'tipo' => $type,

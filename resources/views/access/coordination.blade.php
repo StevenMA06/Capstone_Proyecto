@@ -17,13 +17,18 @@
     <header class="installation-list-heading"><div><h2 id="visit-list-title">Visitas de instalación</h2><p class="muted">{{ $records->total() }} {{ $records->total() === 1 ? 'pedido encontrado' : 'pedidos encontrados' }}</p></div></header>
     @forelse($records as $record)
         @php
-            $coordinated = (bool) $record->coordinado_en || (! $record->fase_flujo && (bool) $record->fecha_programada);
+            $coordinated = (bool) $record->fecha_programada;
             $visitDate = $record->fecha_programada ? \Illuminate\Support\Carbon::parse($record->fecha_programada) : null;
             $change = $latestChanges->get($record->pedido_id);
             $pending = $change?->estado === 'SOLICITADA';
             $context = old('form_context') === 'visit-'.$record->pedido_id;
-            $contractVisitDate = ! $coordinated && $record->contrato_fecha_inicio
-                ? \Illuminate\Support\Carbon::parse($record->contrato_fecha_inicio)->format('Y-m-d') : null;
+            $localNow = now('America/Lima');
+            $firstAvailableDay = $localNow->gte($localNow->copy()->startOfDay()->setTime(17, 30))
+                ? $localNow->copy()->addDay()->toDateString() : $localNow->toDateString();
+            $contractStartDate = ! $coordinated && $record->contrato_fecha_inicio
+                ? \Illuminate\Support\Carbon::parse($record->contrato_fecha_inicio, 'America/Lima') : null;
+            $contractDateAvailable = $contractStartDate && $contractStartDate->toDateString() >= $firstAvailableDay;
+            $contractVisitDate = $contractDateAvailable ? $contractStartDate->format('Y-m-d') : null;
             $coordinationStepUrl = $pending
                 ? (auth()->user()->hasPermission('orders.approve') ? route('orders.index', ['reprogramacion' => 'pendiente']).'#pedido-'.$record->pedido_id : null)
                 : ((! $coordinated || $change?->estado === 'RECHAZADA') ? '#coordinar-visita-'.$record->pedido_id : null);
@@ -63,7 +68,7 @@
                     <form method="POST" action="{{ route('office.coordination.save', $record->pedido_id) }}" enctype="multipart/form-data" class="order-form coordination-form" data-coordination-form>@csrf @method('PATCH')
                         <input type="hidden" name="form_context" value="visit-{{ $record->pedido_id }}">
                         <p class="coordination-form-intro">{{ $coordinated ? 'Acuerda el cambio con el cliente. Gerencia revisará la evidencia antes de modificar la visita vigente.' : 'Confirma cobertura y disponibilidad del equipo. Registra aquí el día y la hora exactos que ya acordaste; esta acción confirma la visita.' }}</p>
-                        <label>1. {{ $coordinated ? 'Nuevo día acordado' : 'Día acordado' }}<input type="date" name="fecha_visita" min="{{ now('America/Lima')->toDateString() }}" value="{{ $context ? old('fecha_visita', $contractVisitDate) : $contractVisitDate }}" required data-visit-date><small>{{ $contractVisitDate ? 'Fecha tomada del inicio del contrato. Confírmala con el cliente y ajústala si corresponde.' : 'Selecciona el día confirmado con el cliente.' }}</small></label>
+                        <label>1. {{ $coordinated ? 'Nuevo día acordado' : 'Día acordado' }}<input type="date" name="fecha_visita" min="{{ $firstAvailableDay }}" value="{{ $context ? old('fecha_visita', $contractVisitDate) : $contractVisitDate }}" required data-visit-date><small>@if($contractVisitDate)Fecha tomada del inicio del contrato. Confírmala con el cliente y ajústala si corresponde.@elseif($contractStartDate)La fecha del contrato ({{ $contractStartDate->format('d/m/Y') }}) ya no tiene un horario disponible. Acuerda y selecciona una nueva fecha.@else Selecciona el día confirmado con el cliente.@endif</small></label>
                         <label>2. Franja horaria<select name="franja_horaria" required data-visit-window><option value="">Selecciona mañana o tarde</option>@foreach($visitWindows as $window => $bounds)<option value="{{ $window }}" @selected($context && old('franja_horaria') === $window)>{{ $window === '08:00 a 12:00' ? 'Mañana' : 'Tarde' }} · {{ $window }}</option>@endforeach</select><small>Selecciona la franja acordada con el cliente.</small></label>
                         <label>3. Hora de inicio<select name="hora_inicio" required data-visit-time><option value="">Primero selecciona la franja</option>@foreach($visitTimes as $window => $times)@foreach($times as $time)<option value="{{ $time }}" data-window="{{ $window }}" @selected($context && old('hora_inicio') === $time)>{{ $time }}</option>@endforeach @endforeach</select><small>La hora debe estar dentro de la franja elegida.</small></label>
                         <label>4. Medio de confirmación<select name="canal_coordinacion" required data-visit-channel><option value="">Selecciona cómo lo acordaron</option>@foreach(['LLAMADA'=>'Llamada','WHATSAPP'=>'WhatsApp','CORREO'=>'Correo','PRESENCIAL'=>'Presencial'] as $key=>$label)<option value="{{ $key }}" @selected($context && old('canal_coordinacion') === $key)>{{ $label }}</option>@endforeach</select><small>Deja registrado el canal usado con el cliente.</small></label>
