@@ -221,6 +221,19 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/indicators', [\App\Http\Controllers\AnalyticsController::class, 'index'])->middleware('can:indicators.view')->name('indicators.index');
     Route::post('/indicators/pretest', [\App\Http\Controllers\PretestObservationController::class, 'store'])->middleware(['can:indicators.view', 'throttle:20,1'])->name('indicators.pretest.store');
     Route::get('/bi', [\App\Http\Controllers\AnalyticsController::class, 'index'])->middleware('can:bi.view')->name('bi.index');
+    Route::get('/analytics/avg-client-registration-time', [\App\Http\Controllers\AnalyticsController::class, 'avgClientRegistrationTime'])->middleware('can:indicators.view')->name('indicators.data.avgClientRegistrationTime');
+    Route::get('/analytics/avg-contract-registration-time', [\App\Http\Controllers\AnalyticsController::class, 'avgContractRegistrationTime'])->middleware('can:indicators.view')->name('indicators.data.avgContractRegistrationTime');
+    Route::get('/analytics/avg-reactivation-time', [\App\Http\Controllers\AnalyticsController::class, 'avgReactivationTime'])->middleware('can:indicators.view')->name('indicators.data.avgReactivationTime');
+    Route::get('/analytics/avg-order-processing-time', [\App\Http\Controllers\AnalyticsController::class, 'avgOrderProcessingTime'])->middleware('can:indicators.view')->name('indicators.data.avgOrderProcessingTime');
+    Route::get('/analytics/avg-information-access-time', [\App\Http\Controllers\AnalyticsController::class, 'avgInformationAccessTime'])->middleware('can:indicators.view')->name('indicators.data.avgInformationAccessTime');
+    Route::get('/analytics/avg-inventory-registration-time', [\App\Http\Controllers\AnalyticsController::class, 'avgInventoryRegistrationTime'])->middleware('can:indicators.view')->name('indicators.data.avgInventoryRegistrationTime');
+    Route::get('/analytics/inventory-time-by-type', [\App\Http\Controllers\AnalyticsController::class, 'inventoryTimeByType'])->middleware('can:indicators.view')->name('indicators.data.inventoryTimeByType');
+    Route::get('/bi/filter-by-process', [\App\Http\Controllers\BusinessIntelligenceController::class, 'filterByProcess'])->middleware('can:bi.view')->name('bi.data.filterByProcess');
+    Route::get('/bi/staff-participation', [\App\Http\Controllers\BusinessIntelligenceController::class, 'staffParticipation'])->middleware('can:bi.view')->name('bi.data.staffParticipation');
+    Route::get('/bi/generate-chart', [\App\Http\Controllers\BusinessIntelligenceController::class, 'generateChart'])->middleware('can:bi.view')->name('bi.data.generateChart');
+    Route::get('/bi/avg-inventory-time', [\App\Http\Controllers\BusinessIntelligenceController::class, 'avgInventoryTime'])->middleware('can:bi.view')->name('bi.data.avgInventoryTime');
+    Route::get('/bi/time-by-module', [\App\Http\Controllers\BusinessIntelligenceController::class, 'timeByModule'])->middleware('can:bi.view')->name('bi.data.timeByModule');
+    Route::get('/bi/registration-evolution', [\App\Http\Controllers\BusinessIntelligenceController::class, 'registrationEvolution'])->middleware('can:bi.view')->name('bi.data.registrationEvolution');
 });
 
 Route::middleware(['auth'])->group(function (): void {

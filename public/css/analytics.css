@@ -10,4 +10,20 @@
 
 /* Management analytics: clearly distinguish navigation, actions and data. */
 .an-catalog-item{min-height:0!important;font-weight:650;padding:16px;text-align:center}.an-catalog-panel p{margin-bottom:16px}.an-detail-link{display:inline-block;color:#08764f;font-size:13px;font-weight:650;margin-top:12px;text-underline-offset:4px}.analytics a.an-secondary,.analytics a.an-reset{text-decoration:none;display:inline-block;box-sizing:border-box}.an-chart-details{margin-top:20px}.analytics summary{cursor:pointer;color:#08764f;font-weight:600;font-size:13px;padding:8px 0}.an-panel svg{display:block;width:100%;max-height:230px}.an-trend{overflow-x:auto}.an-trend-col{min-width:55px}.an-legend>span{font-size:12px;line-height:1.6}.an-bars{margin:20px 0}.an-bar-row{grid-template-columns:135px minmax(30px,1fr) 45px}.an-section-title{margin-top:32px}.analytics .an-number{font-variant-numeric:tabular-nums}.an-pagination a{font-size:12px}.an-card details{border-top:1px solid #e8eeea;margin-top:12px}.an-panel .an-empty{padding:35px 15px}.an-panel-header .an-actions{align-items:center}.an-grid{margin-bottom:22px}
+
 .an-boundaries{font-size:13px;line-height:1.7}.an-boundaries dt{font-weight:700;margin-top:12px}.an-boundaries dd{margin:3px 0;color:#526b5d}.an-observation{margin:20px 0}.an-observation-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:20px}.analytics textarea{box-sizing:border-box;width:100%;border:1px solid #c8d6cd;border-radius:7px;padding:12px;font:inherit;color:#264e3b}.analytics .an-check{display:flex;align-items:center;gap:10px;line-height:1.6;font-weight:400}.analytics .an-check input{width:18px;min-height:18px;flex-shrink:0}.an-observation>summary{font-size:16px}@media(max-width:720px){.an-observation-form{grid-template-columns:1fr}}
+
+.an-explorer-bars{max-height:420px;overflow:auto;margin:24px 0}.an-explorer-bars .an-bar-row{grid-template-columns:minmax(130px,1fr) minmax(100px,3fr) 100px}.an-pie>div{visibility:hidden}.an-chart-values{max-height:350px;overflow:auto}.an-observation .an-filters{padding:16px;margin-bottom:20px}@media(max-width:720px){.an-explorer-bars .an-bar-row{grid-template-columns:110px minmax(70px,1fr) 75px}}
+
+.an-staff-filter{align-items:center;margin-bottom:18px}.an-staff-filter select{width:85px}.an-staff-filter label{margin:0}
+
+.an-preview-toggle{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:14px 0;flex-wrap:wrap}.an-preview-toggle .an-pill{font-size:12px;padding:10px 14px}
+
+/* Charts must not inherit the global 24px SVG icon dimensions. */
+.analytics .an-panel svg{display:block;width:100%;height:auto;max-height:none;min-height:240px;overflow:visible}
+.analytics .an-panel svg text{fill:#526d5b;stroke:none;font-family:inherit;font-size:12px;font-weight:500}
+.analytics .an-panel svg .an-point-value{fill:#103f2b;font-weight:700}
+.analytics .an-chart-canvas{overflow-x:auto;padding:10px 0 4px}
+.analytics .an-chart-canvas svg{min-width:500px;min-height:260px;aspect-ratio:600/260}
+.analytics .an-trend{height:270px;padding:20px 0 10px}.analytics .an-trend-col span,.analytics .an-trend-col strong{font-size:13px}
+@media(max-width:720px){.analytics .an-chart-canvas svg{min-width:500px}.analytics .an-panel svg{min-height:220px}}
