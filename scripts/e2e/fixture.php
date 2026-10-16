@@ -61,7 +61,9 @@ try {
         $planData = ['nombre' => "QA Fibra {$tag}", 'tipo_servicio' => 'Internet residencial',
             'velocidad_mbps' => 100, 'precio_mensual' => '79.90', 'descripcion' => 'Plan ficticio E2E',
             'condiciones' => 'Instalación sujeta a cobertura'];
-        $output = match ($command) {
+        $output = str_starts_with($command, 'commercial-')
+            ? (require __DIR__.'/commercial-fixtures.php')($command, $argv[2] ?? '', $actor, $clientData, $planData)
+            : match ($command) {
             'client-data' => $clientData,
             'client' => Client::create($clientData + ['creado_por' => $actor->getKey(), 'estado' => 'PENDIENTE'])->only(['cliente_id', 'numero_documento', 'correo', 'telefono', 'nombres_razon_social', 'apellidos', 'ip_router']),
             'plan-data' => $planData,

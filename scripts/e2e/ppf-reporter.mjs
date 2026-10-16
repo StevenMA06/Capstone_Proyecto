@@ -14,7 +14,7 @@ export default class PpfReporter {
         this.results.push({ cp, cycle: test.repeatEachIndex + 1, status: state,
             actualStatus: result.status, durationMs: result.duration, title: test.title,
             started: result.startTime.toISOString(), retry: result.retry,
-            error: result.error?.message || '', annotations: test.annotations,
+            error: result.error?.message || '', errors: result.errors.map(error => error.message || String(error)), annotations: test.annotations,
             evidence: result.attachments.map(a => ({ name: a.name, path: a.path || '(adjunto en reporte HTML)' })),
         });
     }
@@ -24,7 +24,7 @@ export default class PpfReporter {
         const version = require('@playwright/test/package.json').version;
         writeFileSync(path.join(runDir, 'resumen-ppf.json'), JSON.stringify({
             runId, playwright: version, dniMode, suiteStatus: result.status, cases: this.results,
-            scope: 'Solo cuatro CP de clientes/planes del PPF final. No certifica los demás módulos, segundo factor ni hardware mínimo.',
+            scope: 'Casos ejecutados de clientes, planes, contratos y pagos. No certifica otros módulos, segundo factor, Drive real ni hardware mínimo. Los prerrequisitos preparados por fixture no certifican sus módulos.',
         }, null, 2));
         const lines = [
             '# Registro de ejecución para el PPF', '', `Ejecución: ${runId}. Playwright ${version}. DNI: ${dniMode}.`, '',
@@ -32,6 +32,7 @@ export default class PpfReporter {
             ...this.results.map(r => `| ${r.cp} | ${r.cycle} | ${r.status} | ${r.durationMs} |`), '',
             'PARCIAL significa que la interfaz utilizó una respuesta DNI simulada: no acredita API Perú real.',
             'Cada caso contiene pasos positivos y negativos. Un rechazo esperado cuenta como OK.',
+            'No OK puede indicar una diferencia funcional con el PPF, incluso si todos los pasos del script terminaron. Consulta los errores y adjuntos.',
             'La ejecución no mide requisitos mínimos de hardware. Registra las condiciones reales si realizas ese segundo escenario.',
         ];
         writeFileSync(path.join(runDir, 'tabla-ppf.md'), lines.join('\n'));

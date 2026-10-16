@@ -1,6 +1,6 @@
 # Ejecución del PPF con Playwright
 
-Esta suite recorre los cuatro casos de tus módulos presentes en `PPF_Plan_Pruebas_Funcionales(1).docx`: CP-CLI-01, CP-CLI-02, CP-PLA-01 y CP-PLA-02. Cada caso incluye sus comprobaciones positivas y negativas, capturas y datos persistidos. Los otros 24 casos del documento no están automatizados por esta suite. Usuarios y Control de acceso tampoco figuran en esa versión del PPF.
+Esta suite automatiza ocho casos: CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02 y CP-PAG-01/02. Los cuatro nuevos casos de contratos y pagos se contrastaron con `PPF_Plan_Pruebas_Funcionales.docx`. Incluyen capturas, documentos y comprobaciones de persistencia. Los otros 20 casos del PPF no están automatizados. Usuarios y Control de acceso tampoco se certifican con esta suite.
 
 ## Preparación en Windows
 
@@ -30,7 +30,7 @@ El servidor usa configuración de pruebas, correo en memoria y segundo factor de
 npm run e2e:headed -- e2e/planes.spec.ts -g CP-PLA-01
 ```
 
-Después ejecuta los cuatro casos:
+Después ejecuta la suite:
 
 ```powershell
 npm run e2e
@@ -38,6 +38,45 @@ npm run e2e:report
 ```
 
 Los casos revisan redirección, datos después de recargar, registros en la base, rechazo de duplicados y ausencia de cambios parciales. El precio cero se verifica tanto con la validación nativa como con el servidor. El plan inactivo se comprueba en el selector y enviando un identificador manipulado con una sesión real.
+
+## Contratos y pagos: cuatro casos nuevos
+
+Instala Python 3.10 o superior y las dependencias del validador y documentos ficticios:
+
+```powershell
+python -m pip install -r scripts/e2e/requirements.txt
+```
+
+Si Python no está en PATH, configura `E2E_SIGNATURE_PYTHON=C:/ruta/a/python.exe` en `.env.e2e`. Ese mismo ejecutable se usa para generar el trazo ficticio y ejecutar el validador real de contratos. No se simula su respuesta ni se desactiva la verificación. El trazo sintético no es una firma personal ni una firma digital criptográfica.
+
+```powershell
+# Observar los cuatro casos nuevos:
+npm run e2e:headed -- e2e/contratos.spec.ts e2e/pagos.spec.ts
+# Ejecutar cinco ciclos de esos cuatro casos:
+npm run e2e:cycles -- e2e/contratos.spec.ts e2e/pagos.spec.ts
+npm run e2e:report
+```
+
+| Caso | Comprobaciones |
+|---|---|
+| CP-CON-01 | Registro por interfaz, código único, firma procesada por el validador real, contrato pendiente sin pedido completado y activación después de preparar ese prerrequisito. |
+| CP-CON-02 | Solicitud con motivo y respaldo, autoaprobación bloqueada en interfaz y servidor, aprobación desde otra cuenta, cancelación del pedido y conservación de responsables, rol, fechas y evidencia. |
+| CP-PAG-01 | Registro y búsqueda, errores de periodo/fecha/monto, método obligatorio, confirmación, redirección prevista en el PPF y PDF cuyos datos coinciden con el pago y contrato. |
+| CP-PAG-02 | Comando real de vencimientos, contraste del umbral de cuatro días del PPF, conservación de pagos realizados, rechazo de método vacío, efectivo sin operación y transferencia con operación obligatoria. |
+
+Los fixtures preparan datos únicos en la base E2E. En CP-CON-01 preparan el pedido completado; en pagos preparan un contrato activo y obligaciones de prueba. Estos prerrequisitos NO acreditan instalaciones, firma de los contratos preparados para pagos ni Drive. No se usan credenciales ni solicitudes reales a Google Drive. No se inyectan errores internos de servidor o del generador PDF: esos escenarios de contingencia quedan fuera de esta ejecución y no deben declararse validados.
+
+### Diferencias del PPF con main observadas al preparar los casos
+
+Las pruebas mantienen las expectativas del documento mediante aserciones que permiten continuar y reunir evidencia antes de informar `No OK`:
+
+- CP-PAG-01 espera volver al listado tras confirmar. El controlador actual redirige a la ficha del pago.
+- CP-PAG-02 describe `VENCIDO` después de cuatro días. El comando actual lo asigna al día siguiente; al superar cuatro días cambia a `IMPAGO`.
+- CP-PAG-02 exige número de operación para transferencia. El formulario y el backend actuales permiten omitirlo.
+- El comando `UpdateOverduePayments.php` contiene un error de sintaxis que impide ejecutarlo. La prueba conserva el error como `No OK`; sus pagos vencidos iniciales están preparados explícitamente para poder probar también la confirmación por interfaz.
+- La generación de comprobantes se prueba con las dependencias reales de Composer instaladas. Si falta DomPDF en el entorno, la confirmación puede guardar el pago y fallar antes de producir el PDF; la prueba no presenta esa situación como comprobante generado.
+
+Un resultado rojo en estas aserciones identifica una diferencia funcional real, no un fallo técnico del script. Antes de registrar el resultado como satisfactorio hay que corregir el sistema o acordar una actualización del PPF. Esta entrega añade pruebas; no modifica esas reglas ni el documento Word.
 
 ## Consulta de DNI
 
