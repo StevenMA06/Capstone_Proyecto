@@ -61,7 +61,9 @@ try {
         $planData = ['nombre' => "QA Fibra {$tag}", 'tipo_servicio' => 'Internet residencial',
             'velocidad_mbps' => 100, 'precio_mensual' => '79.90', 'descripcion' => 'Plan ficticio E2E',
             'condiciones' => 'Instalación sujeta a cobertura'];
-        if (str_starts_with($command, 'kz-')) {
+        if (str_starts_with($command, 'pi-')) {
+            $output = (require __DIR__.'/installation-fixtures.php')($command, $argv[2] ?? '', $actor, $clientData, $planData);
+        } elseif (str_starts_with($command, 'kz-')) {
             $output = (require __DIR__.'/kardex-zone-fixtures.php')($command, $argv[2] ?? '', $actor, $clientData, $planData);
         } elseif (str_starts_with($command, 'inventory-')) {
             $output = (require __DIR__.'/inventory-fixtures.php')($command, $argv[2] ?? '', $actor, $clientData, $planData);
