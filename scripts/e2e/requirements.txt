@@ -1,0 +1,6 @@
+# Validador real de contratos + generación de documentos ficticios de prueba.
+numpy>=1.26,<3
+pypdfium2>=4,<6
+Pillow>=10,<13
+pypdf>=5,<7
+reportlab>=4,<5
