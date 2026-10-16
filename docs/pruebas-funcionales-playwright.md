@@ -1,6 +1,6 @@
 # Ejecución del PPF con Playwright
 
-Esta suite automatiza ocho casos: CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02 y CP-PAG-01/02. Los cuatro nuevos casos de contratos y pagos se contrastaron con `PPF_Plan_Pruebas_Funcionales.docx`. Incluyen capturas, documentos y comprobaciones de persistencia. Los otros 20 casos del PPF no están automatizados. Usuarios y Control de acceso tampoco se certifican con esta suite.
+Esta suite automatiza doce casos: CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02 y CP-MAT-01/02. Los casos se contrastaron con el PPF facilitado por el usuario. Incluyen capturas, documentos y comprobaciones de persistencia. Los otros 16 casos del PPF no están automatizados. Usuarios y Control de acceso tampoco se certifican con esta suite.
 
 ## Preparación en Windows
 
@@ -77,6 +77,27 @@ Las pruebas mantienen las expectativas del documento mediante aserciones que per
 - La generación de comprobantes se prueba con las dependencias reales de Composer instaladas. Si falta DomPDF en el entorno, la confirmación puede guardar el pago y fallar antes de producir el PDF; la prueba no presenta esa situación como comprobante generado.
 
 Un resultado rojo en estas aserciones identifica una diferencia funcional real, no un fallo técnico del script. Antes de registrar el resultado como satisfactorio hay que corregir el sistema o acordar una actualización del PPF. Esta entrega añade pruebas; no modifica esas reglas ni el documento Word.
+
+## Equipos y materiales
+
+```powershell
+npm run e2e:headed -- e2e/equipos.spec.ts e2e/materiales.spec.ts
+npm run e2e:cycles -- e2e/equipos.spec.ts e2e/materiales.spec.ts
+npm run e2e:report
+```
+
+Estos casos no requieren API de DNI ni Python. Necesitan las dependencias del proyecto instaladas y la configuración MySQL exclusiva de `.env.e2e`. Cada ciclo genera series y nombres nuevos, sin borrar los datos de otros casos.
+
+| Caso | Comprobaciones |
+|---|---|
+| CP-EQU-01 | Obligatorios, registro por interfaz, estado Disponible, código automático, ficha y listado, entrada al Kardex y rechazo de serie duplicada sin alterar el original. |
+| CP-EQU-02 | Búsqueda por serie, cambio Nuevo → Regular, inhabilitación confirmada y conservación de la ficha, exclusión del selector y rechazo por servidor de una solicitud manipulada. Se conserva un equipo disponible de control para comprobar que el selector funciona. |
+| CP-MAT-01 | Obligatorios, registro con código automático, stock inicial 10 metros, ingreso de 5 → stock 15, Kardex con fecha y responsable, rechazo de ingresos 0 y -1 en navegador y servidor sin cambios parciales. |
+| CP-MAT-02 | Salida 20 de 100 metros → stock 80, registro en Kardex y rechazo de salidas 0, -1 y 81 sin cambiar stock ni movimientos. |
+
+El pedido y su visita coordinada se preparan por CLI para CP-EQU-02: ese prerrequisito no certifica RF-PED ni instalaciones. Las creaciones y cambios de inventario evaluados se realizan mediante la interfaz real. Los materiales del escenario utilizan metros, sin empaques; no se acredita la variante condicional de conversión de empaques. El título de CP-MAT-02 dice «Salida más ajuste», pero sus pasos y resultados describen únicamente salidas: esta prueba sigue esos pasos y no declara probado el ajuste manual.
+
+La comprobación de mensajes obligatorios conserva la expectativa del PPF. Si el JavaScript bloquea el registro pero deja vacíos los mensajes de los campos, el caso queda `No OK`; la prueba continúa para verificar el registro válido y las demás restricciones. También se envía una solicitud inválida al servidor con la sesión real, comprobando respuesta 422 y ausencia de registros nuevos. No se confunde el rechazo correcto del servidor con una advertencia visible en el formulario.
 
 ## Consulta de DNI
 

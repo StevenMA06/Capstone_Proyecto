@@ -61,7 +61,9 @@ try {
         $planData = ['nombre' => "QA Fibra {$tag}", 'tipo_servicio' => 'Internet residencial',
             'velocidad_mbps' => 100, 'precio_mensual' => '79.90', 'descripcion' => 'Plan ficticio E2E',
             'condiciones' => 'Instalación sujeta a cobertura'];
-        $output = str_starts_with($command, 'commercial-')
+        $output = str_starts_with($command, 'inventory-')
+            ? (require __DIR__.'/inventory-fixtures.php')($command, $argv[2] ?? '', $actor, $clientData, $planData)
+            : (str_starts_with($command, 'commercial-')
             ? (require __DIR__.'/commercial-fixtures.php')($command, $argv[2] ?? '', $actor, $clientData, $planData)
             : match ($command) {
             'client-data' => $clientData,
@@ -73,7 +75,7 @@ try {
             'contract-count' => ['count' => DB::table('contratos')->count()],
             'contract-data' => ['cliente_id' => Client::create($clientData + ['creado_por' => $actor->getKey(), 'estado' => 'PENDIENTE'])->getKey(), 'zona_id' => DB::table('zonas_cobertura')->where('codigo', 'QA-E2E')->value('zona_id'), 'responsable_id' => Employee::where('numero_documento', 'QA-E2E-VENTAS')->value('empleado_id'), 'fecha_inicio' => now('America/Lima')->addDay()->toDateString(), 'duracion_meses' => 12],
             default => throw new RuntimeException('Operación E2E desconocida.'),
-        };
+        });
     }
     echo json_encode($output, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 } catch (Throwable $error) {
