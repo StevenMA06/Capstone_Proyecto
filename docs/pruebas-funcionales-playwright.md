@@ -1,6 +1,6 @@
 # Ejecución del PPF con Playwright
 
-Esta suite incorpora dieciséis casos: CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02 y CP-ZON-01/02. Los casos se contrastaron con el PPF facilitado por el usuario. Incluyen capturas, documentos y comprobaciones de persistencia. Los otros 12 casos del PPF no están automatizados. Incorporar el script no significa que el caso esté aprobado: consulta el resultado de su ejecución. Usuarios y Control de acceso tampoco se certifican con esta suite.
+Esta suite incorpora veinte casos: CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02 y CP-INS-01/02. Los casos se contrastaron con el PPF facilitado por el usuario. Incluyen capturas, documentos y comprobaciones de persistencia. Los otros 8 casos del PPF no están automatizados. Incorporar el script no significa que el caso esté aprobado: consulta el resultado de su ejecución. Usuarios y Control de acceso tampoco se certifican con esta suite. Consulta `pruebas-pedidos-instalaciones.md` para el alcance de pedidos, instalaciones y la opción Drive real.
 
 ## Preparación en Windows
 

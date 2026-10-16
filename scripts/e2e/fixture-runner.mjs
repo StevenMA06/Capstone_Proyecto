@@ -3,7 +3,7 @@ import { root, php } from './environment.mjs';
 
 function diagnostic(value) {
     let text = String(value || '').trim();
-    for (const key of ['DB_PASSWORD', 'E2E_DB_PASSWORD', 'APIPERU_API_KEY', 'E2E_APIPERU_API_KEY']) {
+    for (const key of ['DB_PASSWORD', 'E2E_DB_PASSWORD', 'APIPERU_API_KEY', 'E2E_APIPERU_API_KEY', 'INSTALLATION_DRIVE_CLIENT_SECRET', 'INSTALLATION_DRIVE_REFRESH_TOKEN', 'E2E_INSTALLATION_DRIVE_CLIENT_SECRET', 'E2E_INSTALLATION_DRIVE_REFRESH_TOKEN']) {
         const secret = process.env[key];
         if (secret) text = text.replaceAll(secret, '[oculto]');
     }
