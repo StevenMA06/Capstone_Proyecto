@@ -28,3 +28,11 @@ Homestead.yaml
 Thumbs.db
 
 /artisan-local.ps1
+
+# Pruebas funcionales: configuración, sesiones y evidencias locales.
+/.env.e2e
+/artifacts/e2e/
+/playwright-report/
+/test-results/
+/playwright/.auth/
+

@@ -1,0 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+import { root } from './environment.mjs';
+const require = createRequire(import.meta.url);
+const { html } = JSON.parse(readFileSync(path.join(root, 'artifacts/e2e/ultimo.json'), 'utf8'));
+const cli = path.join(path.dirname(require.resolve('playwright/package.json')), 'cli.js');
+const result = spawnSync(process.execPath, [cli, 'show-report', html], { stdio: 'inherit' });
+process.exit(result.status ?? 1);
