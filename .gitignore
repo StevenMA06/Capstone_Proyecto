@@ -36,3 +36,4 @@ Thumbs.db
 /test-results/
 /playwright/.auth/
 
+/storage/framework/views-e2e/

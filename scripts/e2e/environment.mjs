@@ -1,8 +1,11 @@
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+// Compilar las vistas en un directorio exclusivo evita reutilizar cachés operativas.
+const compiledViews = path.join(root, 'storage/framework/views-e2e');
+mkdirSync(compiledViews, { recursive: true });
 const file = path.join(root, '.env.e2e');
 if (existsSync(file)) process.loadEnvFile(file);
 const database = process.env.E2E_DB_DATABASE || 'lunnys_e2e_test';
@@ -23,6 +26,7 @@ Object.assign(process.env, {
     APP_KEY: 'base64:' + Buffer.from('0123456789abcdef0123456789abcdef').toString('base64'),
     APP_CONFIG_CACHE: path.join(root, 'storage/framework/e2e-no-config.php'),
     APP_ROUTES_CACHE: path.join(root, 'storage/framework/e2e-no-routes.php'),
+    VIEW_COMPILED_PATH: compiledViews,
     DB_CONNECTION: 'mysql', DB_URL: '', DB_HOST: process.env.E2E_DB_HOST || '127.0.0.1',
     DB_PORT: process.env.E2E_DB_PORT || '3306', DB_DATABASE: database,
     DB_USERNAME: process.env.E2E_DB_USERNAME || 'root', DB_PASSWORD: process.env.E2E_DB_PASSWORD || '',

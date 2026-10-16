@@ -1,6 +1,6 @@
 # Ejecución del PPF con Playwright
 
-Esta suite automatiza doce casos: CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02 y CP-MAT-01/02. Los casos se contrastaron con el PPF facilitado por el usuario. Incluyen capturas, documentos y comprobaciones de persistencia. Los otros 16 casos del PPF no están automatizados. Usuarios y Control de acceso tampoco se certifican con esta suite.
+Esta suite incorpora dieciséis casos: CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02 y CP-ZON-01/02. Los casos se contrastaron con el PPF facilitado por el usuario. Incluyen capturas, documentos y comprobaciones de persistencia. Los otros 12 casos del PPF no están automatizados. Incorporar el script no significa que el caso esté aprobado: consulta el resultado de su ejecución. Usuarios y Control de acceso tampoco se certifican con esta suite.
 
 ## Preparación en Windows
 
@@ -98,6 +98,29 @@ Estos casos no requieren API de DNI ni Python. Necesitan las dependencias del pr
 El pedido y su visita coordinada se preparan por CLI para CP-EQU-02: ese prerrequisito no certifica RF-PED ni instalaciones. Las creaciones y cambios de inventario evaluados se realizan mediante la interfaz real. Los materiales del escenario utilizan metros, sin empaques; no se acredita la variante condicional de conversión de empaques. El título de CP-MAT-02 dice «Salida más ajuste», pero sus pasos y resultados describen únicamente salidas: esta prueba sigue esos pasos y no declara probado el ajuste manual.
 
 La comprobación de mensajes obligatorios conserva la expectativa del PPF. Si el JavaScript bloquea el registro pero deja vacíos los mensajes de los campos, el caso queda `No OK`; la prueba continúa para verificar el registro válido y las demás restricciones. También se envía una solicitud inválida al servidor con la sesión real, comprobando respuesta 422 y ausencia de registros nuevos. No se confunde el rechazo correcto del servidor con una advertencia visible en el formulario.
+
+## Kardex y zonas de cobertura
+
+```powershell
+npm run e2e:headed -- e2e/kardex.spec.ts e2e/zonas.spec.ts
+npm run e2e:cycles -- e2e/kardex.spec.ts e2e/zonas.spec.ts
+npm run e2e:report
+```
+
+No requieren Python, SMTP, API de DNI ni Drive; utilizan las dependencias normales del proyecto y la base exclusiva de `.env.e2e`.
+
+Las vistas se compilan en `storage/framework/views-e2e`, excluido de Git. Así la ejecución no depende de las vistas compiladas del entorno operativo ni necesita borrar su caché.
+
+| Caso | Comprobaciones |
+|---|---|
+| CP-KAR-01 | Historial con equipos y materiales de control, filtro Materiales, combinación Materiales/Entrada, limpieza de filtros y filtro Equipos. Recorre todas las páginas de cada resultado; los datos superan una página. |
+| CP-KAR-02 | Búsqueda por código y nombre, limpieza, fechas inclusivas, exclusión de movimientos anteriores/posteriores y búsqueda sin coincidencias. |
+| CP-ZON-01 | Obligatorios en navegador y servidor, registro activo con código automático y plan asociado, búsqueda en listado y verificación de cobertura. |
+| CP-ZON-02 | Inhabilitación sin eliminar la zona, sus asociaciones, contrato ni pedido previos; ficha del contrato conservada, ausencia de cobertura y exclusión del selector de contratos. Rechaza un identificador de zona inactiva manipulado sin insertar otro contrato. |
+
+Los movimientos del Kardex se preparan por CLI mediante los servicios de inventario reales. El filtro de búsqueda auxiliar de CP-KAR-01 delimita un conjunto ficticio que contiene ambos artículos y varios movimientos, evitando mezclar los datos de otras ejecuciones. En CP-KAR-02 se preparan fechas ficticias conocidas: antes del rango, inicio a las 00:00, interior, final a las 23:59:59 y después del rango. La prueba de fechas recorre todo el resultado, incluso otros datos que coincidan legítimamente con ese período. Estos prerrequisitos no certifican el registro de movimientos por la interfaz de otros módulos.
+
+El contrato y pedido históricos de CP-ZON-02 también son prerrequisitos preparados por CLI, no certificaciones adicionales de RF-CON/RF-PED. No se inyectan errores internos para los escenarios genéricos del PPF. Si una vista devuelve HTTP 500 al abrirse, se conserva la captura y el estado como `No OK`; las comprobaciones posteriores de ese caso no se declaran ejecutadas ni satisfactorias. No se modifica el Word.
 
 ## Consulta de DNI
 
