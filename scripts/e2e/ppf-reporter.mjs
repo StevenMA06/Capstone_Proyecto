@@ -24,7 +24,7 @@ export default class PpfReporter {
         const version = require('@playwright/test/package.json').version;
         writeFileSync(path.join(runDir, 'resumen-ppf.json'), JSON.stringify({
             runId, playwright: version, dniMode, suiteStatus: result.status, cases: this.results,
-            scope: 'Casos ejecutados de clientes, planes, contratos y pagos. No certifica otros módulos, segundo factor, Drive real ni hardware mínimo. Los prerrequisitos preparados por fixture no certifican sus módulos.',
+            scope: 'Casos ejecutados de clientes, planes, contratos, pagos, equipos y materiales. No certifica otros módulos, segundo factor, Drive real ni hardware mínimo. Los prerrequisitos preparados por fixture no certifican sus módulos.',
         }, null, 2));
         const lines = [
             '# Registro de ejecución para el PPF', '', `Ejecución: ${runId}. Playwright ${version}. DNI: ${dniMode}.`, '',
