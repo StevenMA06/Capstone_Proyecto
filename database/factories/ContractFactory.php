@@ -22,14 +22,14 @@ class ContractFactory extends Factory
             'codigo' => 'CON-TEST-' . fake()->unique()->numberBetween(1000, 9999),
             'cliente_id' => Client::factory(),
             'plan_id' => ServicePlan::factory(),
-            'responsable_id' => User::factory(),
+            'zona_id' => \App\Models\CoverageZone::factory(),
+            'responsable_id' => \App\Models\Employee::factory(), // Debe ser empleado, no usuario
             'fecha_inicio' => $startDate,
             'fecha_fin' => $endDate,
             'duracion_meses' => $durationMonths,
             'precio_contratado' => fake()->randomFloat(2, 50, 500),
+            'direccion_servicio' => fake()->address(),
             'estado' => 'ACTIVO',
-            'firma_digital' => null,
-            'firma_verificada' => false,
             'observaciones' => fake()->optional()->sentence(),
         ];
     }
@@ -38,7 +38,6 @@ class ContractFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'estado' => 'PENDIENTE',
-            'firma_verificada' => false,
         ]);
     }
 
@@ -46,7 +45,6 @@ class ContractFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'estado' => 'ACTIVO',
-            'firma_verificada' => true,
         ]);
     }
 

@@ -8,8 +8,15 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration {
     public function up(): void
     {
+        $allPermissions = AccessCatalog::permissions();
+        
         foreach (['orders.intake.create', 'orders.resources.request'] as $code) {
-            $permission = AccessCatalog::permissions()[$code];
+            // Verificar que el permiso existe en el catálogo
+            if (!isset($allPermissions[$code])) {
+                continue; // Saltar si el permiso no existe
+            }
+            
+            $permission = $allPermissions[$code];
             DB::table('permisos')->updateOrInsert(['codigo' => $code], $permission + ['estado' => 'ACTIVO']);
         }
 

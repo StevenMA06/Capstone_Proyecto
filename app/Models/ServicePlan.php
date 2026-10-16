@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ServicePlan extends Model
 {
+    use HasFactory;
     protected $table = 'planes_servicio';
 
     protected $primaryKey = 'plan_id';

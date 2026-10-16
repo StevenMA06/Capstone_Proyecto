@@ -12,12 +12,14 @@ class ServicePlanFactory extends Factory
     public function definition(): array
     {
         return [
+            'numero_plan' => 'PLAN-' . fake()->unique()->numerify('###'),
             'nombre' => 'Plan ' . fake()->words(2, true),
-            'descripcion' => fake()->sentence(),
+            'tipo_servicio' => fake()->randomElement(['RESIDENCIAL', 'EMPRESARIAL', 'CORPORATIVO']),
+            'velocidad_mbps' => fake()->randomElement([10, 20, 50, 100, 200, 500]),
             'precio_mensual' => fake()->randomFloat(2, 50, 500),
-            'velocidad_bajada' => fake()->numberBetween(10, 500),
-            'velocidad_subida' => fake()->numberBetween(5, 100),
+            'descripcion' => fake()->sentence(),
             'estado' => 'ACTIVO',
+            'creado_por' => \App\Models\User::factory(),
         ];
     }
 

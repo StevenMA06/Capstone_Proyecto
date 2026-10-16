@@ -24,8 +24,12 @@ class ClientFactory extends Factory
             'correo' => fake()->unique()->safeEmail(),
             'telefono' => fake()->numerify('9########'),
             'direccion' => fake()->address(),
-            'referencia' => fake()->optional()->sentence(),
+            'referencia_direccion' => fake()->optional()->sentence(),
+            'distrito' => fake()->city(),
+            'provincia' => 'Lima',
+            'departamento' => 'Lima',
             'estado' => 'ACTIVO',
+            'creado_por' => \App\Models\User::factory(), // Crear usuario si no existe
         ];
     }
 

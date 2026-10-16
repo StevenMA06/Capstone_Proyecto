@@ -178,11 +178,9 @@
             <h2 id="list-title">Listado de pagos</h2>
             <p class="muted">{{ $payments->total() }} {{ $payments->total() === 1 ? 'pago encontrado' : 'pagos encontrados' }}</p>
         </div>
-        {{-- TEMPORALMENTE DESHABILITADO: Registrar pago manualmente
         @routecan('payments.create')
         <a class="action-link" href="{{ route('payments.create') }}">Registrar pago</a>
         @endroutecan
-        --}}
     </div>
     <div class="table-scroll">
         <table class="users-table client-table">

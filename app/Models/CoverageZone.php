@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CoverageZone extends Model
 {
+    use HasFactory;
     protected $table = 'zonas_cobertura';
 
     protected $primaryKey = 'zona_id';
