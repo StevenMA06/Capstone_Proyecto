@@ -19,11 +19,13 @@ class ReportController extends Controller
         $type = is_string($type) && isset($available[$type]) ? $type : array_key_first($available);
         $validated = $request->validate([
             'page' => ['nullable', 'integer', 'min:1'],
-            'desde' => ['nullable', 'date_format:Y-m-d'],
-            'hasta' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:desde'],
+            'desde' => ['nullable', 'required_with:hasta', 'date_format:Y-m-d'],
+            'hasta' => ['nullable', 'required_with:desde', 'date_format:Y-m-d', 'after_or_equal:desde'],
         ]);
-        $from = $validated['desde'] ?? now('America/Lima')->startOfMonth()->toDateString();
-        $to = $validated['hasta'] ?? now('America/Lima')->toDateString();
+        $selectedFrom = $validated['desde'] ?? null;
+        $selectedTo = $validated['hasta'] ?? null;
+        $from = $selectedFrom ?? now('America/Lima')->startOfMonth()->toDateString();
+        $to = $selectedTo ?? now('America/Lima')->toDateString();
 
         if ($from > $to) throw \Illuminate\Validation\ValidationException::withMessages(['hasta'=>'La fecha final debe ser igual o posterior a la inicial.']);
 
@@ -34,8 +36,11 @@ class ReportController extends Controller
             'selectedType' => $type,
             'from' => $from,
             'to' => $to,
+            'selectedFrom' => $selectedFrom,
+            'selectedTo' => $selectedTo,
             'report' => $reports->report($type, $from, $to, (int) ($validated['page'] ?? 1)),
             'manager' => $manager,
         ]);
     }
 }
+

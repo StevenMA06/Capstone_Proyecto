@@ -45,20 +45,38 @@ class AnalyticsService
             }
             $items[$key] = compact('label','report','count','before','trend','states');
         }
-        $alerts = [];
-        if ($process==='all' || $process==='pagos') {
-            $overdue=DB::table('pagos')->whereIn('estado',['PENDIENTE','VENCIDO','IMPAGO'])->whereDate('fecha_vencimiento','<',now()->toDateString());
-            $alerts[]=['label'=>'Pagos con vencimiento superado','value'=>(clone $overdue)->count(),'detail'=>'Saldo por gestionar: S/ '.number_format((float)$overdue->sum('monto'),2),'module'=>'pagos','report'=>'pagos_vencidos'];
+        $quality = $this->processQuality($from, $to, $process);
+        $materials = ($process==='all' || $process==='inventario') ? DB::table('materiales')->where('estado','ACTIVO')->orderByRaw('(stock_actual <= stock_minimo) DESC')->orderBy('nombre')->limit(8)->get(['codigo','nombre','stock_actual','stock_minimo','unidad_medida']) : collect();
+        return compact('materials','items','quality','previousFrom','previousTo');
+    }
+
+    private function processQuality(string $from, string $to, string $process): array
+    {
+        $definitions = [
+            'clientes' => ['Clientes', 'clientes', 'creado_en', 'clientes_altas', fn ($query) => $query->whereIn('estado', ['ACTIVO', 'INACTIVO']), 'Estado válido del cliente.'],
+            'contratos' => ['Contratos', 'contratos', 'fecha_registro', 'contratos_registrados', fn ($query) => $query->where('estado', 'ACTIVO')->where('firma_revision', 'VERIFICADA'), 'Contrato activo con evidencia verificada.'],
+            'pagos' => ['Pagos', 'pagos', 'creado_en', 'pagos_recaudados', fn ($query) => $query->where('estado', 'REALIZADO'), 'Pago registrado como realizado.'],
+            'instalaciones' => ['Instalaciones', 'pedidos_instalacion', 'fecha_solicitud', 'instalaciones_estado', fn ($query) => $query->where('estado', 'COMPLETADO'), 'Instalación finalizada por el técnico.'],
+            'inventario' => ['Inventario', 'movimientos_inventario', 'fecha_movimiento', 'kardex_movimientos', fn ($query) => $query->whereNotNull('responsable_id')->where(fn ($items) => $items->whereNotNull('equipo_id')->orWhereNotNull('material_id')), 'Movimiento con responsable y artículo asociado.'],
+        ];
+
+        $quality = [];
+        foreach ($definitions as $key => [$label, $table, $date, $report, $completed, $criterion]) {
+            if ($process !== 'all' && $process !== $key) continue;
+            $records = DB::table($table)->whereBetween($date, [$from.' 00:00:00', $to.' 23:59:59']);
+            $total = (clone $records)->count();
+            $completedRecords = $completed(clone $records)->count();
+            $quality[$key] = [
+                'label' => $label,
+                'completed' => $completedRecords,
+                'total' => $total,
+                'percentage' => $total ? round($completedRecords / $total * 100, 1) : null,
+                'criterion' => $criterion,
+                'module' => $key,
+                'report' => $report,
+            ];
         }
-        if ($process==='all' || $process==='inventario') {
-            $alerts[]=['label'=>'Materiales que requieren reposición','value'=>DB::table('materiales')->where('estado','ACTIVO')->whereColumn('stock_actual','<=','stock_minimo')->count(),'detail'=>'Existencias iguales o inferiores al mínimo.','module'=>'inventario','report'=>'materiales_bajo_minimo'];
-        }
-        if ($process==='all' || $process==='instalaciones') {
-            $alerts[]=['label'=>'Instalaciones pendientes de programación','value'=>DB::table('pedidos_instalacion')->where('estado','PENDIENTE')->count(),'detail'=>'Revisar asignación y disponibilidad del técnico.','module'=>'instalaciones','report'=>'instalaciones_estado'];
-        }
-        $materials = ($process==='all' || $process==='inventario') ? DB::table('materiales')->where('estado','ACTIVO')->orderByRaw('(stock_actual <= stock_minimo) DESC')->orderBy('nombre')->limit(8)
-            ->select('codigo','nombre','stock_actual','stock_minimo')
-            ->selectRaw('CASE WHEN inventario_en_empaque = 1 THEN unidad_empaque ELSE unidad_base END as unidad_medida')->get() : collect();
-        return compact('materials','items','alerts','previousFrom','previousTo');
+        return $quality;
     }
 }
+

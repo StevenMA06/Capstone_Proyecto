@@ -15,8 +15,9 @@
 <div><label for="bi-indicator">Indicador</label><select id="bi-indicator" name="indicador">@foreach($chartIndicators as $key=>$definition)<option value="{{ $key }}" @selected($explorer['indicator']===$key)>{{ $definition[0] }}</option>@endforeach</select></div>
 <div><label for="bi-group">Agrupar por</label><select id="bi-group" name="agrupacion">@foreach(['dia'=>'Día','semana'=>'Semana (lunes)','mes'=>'Mes','estado'=>'Estado / movimiento','empleado'=>'Empleado responsable'] as $key=>$label)<option value="{{ $key }}" @selected($explorer['group']===$key)>{{ $label }}</option>@endforeach</select></div>
 <div><label for="bi-chart">Gráfico</label><select id="bi-chart" name="tipo_grafico">@foreach(['bar'=>'Barras','line'=>'Líneas','area'=>'Área','pie'=>'Circular','doughnut'=>'Anillo'] as $key=>$label)<option value="{{ $key }}" @selected($explorer['type']===$key)>{{ $label }}</option>@endforeach</select></div>
-<div><label for="bi-measure">Medida</label><select id="bi-measure" name="medida"><option value="cantidad" @selected($explorer['measure']==='cantidad')>Cantidad de registros</option><option value="monto" @selected($explorer['measure']==='monto')>Monto (ventas o pagos)</option></select></div><button class="an-primary">Actualizar gráfico</button>
+<div><label for="bi-measure">Medida</label><select id="bi-measure" name="medida"><option value="cantidad" @selected($explorer['measure']==='cantidad')>Cantidad de registros</option><option value="monto" @selected($explorer['measure']==='monto')>Monto registrado</option></select></div><button class="an-primary">Actualizar gráfico</button>
 </form>
 <h3>{{ $explorer['title'] }} · {{ $explorer['unit'] }}</h3><p class="an-kpi-formula">{{ $explorer['scope'] }} Las semanas y meses extremos pueden ser parciales.</p>
 @include('analytics.chart', ['chart'=>$explorer])
 </section>
+

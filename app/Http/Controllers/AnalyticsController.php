@@ -11,6 +11,7 @@ class AnalyticsController extends Controller
         $values=$request->validated();
         $from=$values['desde'] ?? now()->startOfMonth()->toDateString();
         $to=$values['hasta'] ?? now()->toDateString();
+        [$selectedFrom, $selectedTo] = $request->selectedPeriod();
         $process=$values['proceso'] ?? 'all';
         $bi=app(\App\Services\BusinessIntelligenceService::class);
         $available=$bi->available($process);
@@ -23,8 +24,8 @@ class AnalyticsController extends Controller
             'sales'=>($isBi && in_array($process,['all','contratos'],true)) ? $bi->sales($from,$to) : null,
             'staff'=>($isBi && in_array($process,['all','contratos'],true)) ? $bi->staff($from,$to,(int)($values['top'] ?? 10),isset($values['empleado_id'])?(int)$values['empleado_id']:null) : null,
             'screen'=>$request->routeIs('bi.index') ? 'bi' : 'indicators',
-            'pretest'=>app(\App\Services\PretestMeasurementService::class)->summary($from,$to,$process),
-            'from'=>$from,'to'=>$to,'process'=>$process,'processes'=>AnalyticsService::PROCESSES,
+            'efficiency'=>app(\App\Services\SystemEfficiencyService::class)->summary($from,$to,$process),
+            'from'=>$from,'to'=>$to,'selectedFrom'=>$selectedFrom,'selectedTo'=>$selectedTo,'process'=>$process,'processes'=>AnalyticsService::PROCESSES,
             ...$analytics->dashboard($from,$to,$process),
         ]);
     }
@@ -65,3 +66,4 @@ class AnalyticsController extends Controller
         return response()->json($service->inventoryByType($from,$to));
     }
 }
+
