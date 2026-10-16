@@ -1,6 +1,5 @@
-import { execFileSync } from 'node:child_process';
 import { test as base, expect, type Page, type TestInfo } from '@playwright/test';
-import { php, root } from '../scripts/e2e/environment.mjs';
+import { runFixture } from '../scripts/e2e/fixture-runner.mjs';
 
 export { expect };
 export const test = base.extend({
@@ -15,9 +14,7 @@ export const test = base.extend({
     },
 });
 export function fixture(command: string, arg?: string): any {
-    return JSON.parse(execFileSync(php, ['scripts/e2e/fixture.php', command, ...(arg ? [arg] : [])], {
-        cwd: root, encoding: 'utf8', env: process.env,
-    }));
+    return runFixture(command, arg ? [arg] : []);
 }
 export async function evidence(page: Page, info: TestInfo, name: string, observed?: unknown) {
     const screenshot = await page.screenshot({ path: info.outputPath(`${name}.png`), fullPage: true });
