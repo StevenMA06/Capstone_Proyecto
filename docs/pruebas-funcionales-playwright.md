@@ -93,6 +93,14 @@ Texto de estrategia para adaptar al ambiente real:
 
 La sección 4 también contempla un escenario de recursos mínimos. Esta suite NO limita CPU/RAM del servidor. Para acreditarlo, ejecuta la misma suite en una VM o equipo con recursos definidos, registra esos límites y usa `E2E_SCENARIO=minimo` como etiqueta. La etiqueta por sí sola no aplica límites. No declares hardware mínimo validado sin esa segunda ejecución y sus mediciones.
 
+## Solución de problemas
+
+### Error al preparar la base de pruebas
+
+Si aparece `Access denied ... (using password: NO)`, MySQL rechazó una conexión sin contraseña. `.env.e2e` tiene credenciales independientes de `.env`: completa `E2E_DB_USERNAME` y `E2E_DB_PASSWORD` con el usuario y contraseña de MySQL, manteniendo `E2E_DB_DATABASE=lunnys_e2e_test`. No copies el nombre de la base operativa. Si la clave tiene espacios o `#`, escríbela entre comillas. Vuelve a ejecutar `npm run e2e:cycles`; no requiere limpiar la caché de Laravel porque la suite utiliza su propia configuración.
+
+El script conserva los errores de PHP/MySQL y los muestra antes de ejecutar casos. Un fallo en la preparación no se considera una prueba funcional aprobada.
+
 ## Referencias
 
 - https://playwright.dev/docs/test-webserver

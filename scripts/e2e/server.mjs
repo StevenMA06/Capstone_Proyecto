@@ -2,6 +2,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, openSync, closeSync } from 'node:fs';
 import os from 'node:os';
 import { root, php, baseURL, runDir, dniMode } from './environment.mjs';
+import { runFixture } from './fixture-runner.mjs';
 
 export async function startServer() {
 try {
@@ -11,7 +12,7 @@ try {
     if (error.message.includes('está ocupado')) throw error;
 }
 mkdirSync(runDir, { recursive: true });
-const versions = JSON.parse(execFileSync(php, ['scripts/e2e/fixture.php', 'init'], { cwd: root, encoding: 'utf8', env: process.env }));
+const versions = runFixture('init');
 let sourceRevision = process.env.E2E_SOURCE_REVISION || 'Sin registro (indicar commit al documentar)';
 try { sourceRevision = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch {}
 writeFileSync(`${runDir}/ambiente.json`, JSON.stringify({
