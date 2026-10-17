@@ -45,7 +45,7 @@ class UpdatePaymentRequest extends FormRequest
             'metodo_pago_otro' => ['nullable', 'required_if:metodo_pago,OTRO', 'string', 'max:60'],
             
             // Referencia externa (ahora será el número de operación)
-            'referencia_externa' => ['nullable', 'string', 'max:120'],
+            'referencia_externa' => ['nullable', 'required_if:metodo_pago,TRANSFERENCIA', 'string', 'max:120'],
             
             // Estado (no se puede cambiar directamente, usar endpoints específicos)
             'estado' => ['sometimes', Rule::in(['PENDIENTE', 'REALIZADO', 'VENCIDO', 'ANULADO'])],
@@ -81,6 +81,7 @@ class UpdatePaymentRequest extends FormRequest
     {
         return [
             'required' => 'El campo :attribute es obligatorio.',
+            'referencia_externa.required_if' => 'El número de operación es obligatorio para una transferencia.',
             'integer' => 'El campo :attribute debe ser un número entero.',
             'numeric' => 'El campo :attribute debe ser numérico.',
             'string' => 'El campo :attribute debe ser texto.',

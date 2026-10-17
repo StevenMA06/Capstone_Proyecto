@@ -155,7 +155,7 @@ class PaymentController extends Controller
                     \Log::warning('No se pudo generar comprobante para pago '.$payment->codigo.': '.$e->getMessage());
                 }
                 
-                return redirect()->route('payments.show', $payment)
+                return redirect()->route('payments.index')
                     ->with('status', 'Pago registrado como realizado y comprobante generado correctamente.');
             }
             
@@ -186,9 +186,9 @@ class PaymentController extends Controller
         $data = $request->validate([
             'fecha_pago' => ['required', 'date', 'before_or_equal:today'],
             'metodo_pago' => ['required', 'string', 'max:60'],
-            'referencia_externa' => ['nullable', 'string', 'max:120'],
+            'referencia_externa' => ['nullable', 'required_if:metodo_pago,TRANSFERENCIA', 'string', 'max:120'],
             'observaciones' => ['nullable', 'string', 'max:500'],
-        ]);
+        ], ['referencia_externa.required_if' => 'El número de operación es obligatorio para una transferencia.']);
 
         try {
             $this->payments->markAsCompleted($payment, $data, $request->user());
@@ -204,7 +204,7 @@ class PaymentController extends Controller
             return back()->withErrors($exception->errors());
         }
 
-        return redirect()->route('payments.show', $payment)
+        return redirect()->route('payments.index')
             ->with('status', 'Pago marcado como realizado y comprobante generado correctamente.');
     }
 

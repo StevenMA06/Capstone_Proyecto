@@ -263,6 +263,35 @@ function toggleMetodoPagoOtro() {
 // Al cargar la página, verificar si ya hay método OTRO seleccionado
 document.addEventListener('DOMContentLoaded', function() {
     toggleMetodoPagoOtro();
+    const method = document.getElementById('metodo_pago');
+    const operation = document.getElementById('referencia_externa');
+    const form = operation.closest('form');
+    const syncOperation = () => {
+        operation.required = method.value === 'TRANSFERENCIA';
+        operation.setAttribute('aria-required', String(operation.required));
+    };
+    method.addEventListener('change', syncOperation);
+    operation.addEventListener('input', () => {
+        if (operation.value.trim()) {
+            operation.removeAttribute('aria-invalid');
+            operation.parentElement.querySelector('[data-operation-error]')?.remove();
+        }
+    });
+    form.addEventListener('submit', event => {
+        if (method.value !== 'TRANSFERENCIA' || operation.value.trim()) return;
+        event.preventDefault();
+        operation.setAttribute('aria-invalid', 'true');
+        let error = operation.parentElement.querySelector('[data-operation-error]');
+        if (!error) {
+            error = document.createElement('span');
+            error.className = 'error-msg';
+            error.dataset.operationError = 'true';
+            operation.parentElement.append(error);
+        }
+        error.textContent = 'El número de operación es obligatorio para una transferencia.';
+        operation.focus();
+    });
+    syncOperation();
 });
 </script>
 

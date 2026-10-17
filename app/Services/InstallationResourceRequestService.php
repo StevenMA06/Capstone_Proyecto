@@ -66,7 +66,7 @@ class InstallationResourceRequestService
             if (! in_array($type, ['EQUIPO', 'MATERIAL'], true)) $this->fail('recurso', 'Tipo de recurso inválido.');
             $column = $type === 'EQUIPO' ? 'equipo_id' : 'material_id';
             $table = $type === 'EQUIPO' ? 'equipos' : 'materiales';
-            $item = DB::table($table)->where($column, $resourceId)->first();
+            $item = DB::table($table)->where($column, $resourceId)->lockForUpdate()->first();
             if (! $item || ($type === 'EQUIPO' && ($item->estado !== 'DISPONIBLE' || in_array($item->condicion, ['MALO', 'MALOGRADO'], true)))
                 || ($type === 'MATERIAL' && $item->estado !== 'ACTIVO')) {
                 $this->fail($column, 'Selecciona un recurso disponible.');
@@ -77,6 +77,17 @@ class InstallationResourceRequestService
             }
             $millis = (int) round((float) $amount * 1000);
             if ($millis < 1 || ($type === 'EQUIPO' && $millis !== 1000)) $this->fail('cantidad_asignada', 'Indica una cantidad válida.');
+            if ($type === 'MATERIAL') {
+                $reserved = DB::table('pedido_materiales as pm')
+                    ->join('pedidos_instalacion as p', 'p.pedido_id', '=', 'pm.pedido_id')
+                    ->where('pm.material_id', $resourceId)
+                    ->whereIn('p.estado', ['PENDIENTE', 'PROGRAMADO', 'REPROGRAMADO', 'EN_PROCESO'])
+                    ->selectRaw('COALESCE(SUM(pm.cantidad_asignada - pm.cantidad_utilizada - pm.cantidad_devuelta), 0) as total')->lockForUpdate()->value('total');
+                $pending = DB::table('pedido_solicitudes_recurso')->where('material_id', $resourceId)
+                    ->whereIn('estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])->lockForUpdate()->sum('cantidad');
+                $free = (int) round(((float) $item->stock_actual - (float) $reserved - (float) $pending) * 1000);
+                if ($millis > $free) $this->fail('cantidad_asignada', 'Stock insuficiente. La cantidad solicitada supera el stock libre; espera el reabastecimiento.');
+            }
             if ($type === 'MATERIAL' && ($item->inventario_en_empaque ?? false) && $millis % 1000 !== 0) {
                 $unit = $item->unidad_empaque ?: 'empaques';
                 $this->fail('cantidad_asignada', 'Este material se controla por empaques completos. Indica un número entero de '.$unit.'.');

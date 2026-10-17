@@ -355,7 +355,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     span.className = 'error-message';
                     span.textContent = `El campo ${field.label} es obligatorio.`;
                     input.parentElement.appendChild(span);
+                } else {
+                    errorMsg.textContent = `El campo ${field.label} es obligatorio.`;
+                    errorMsg.hidden = false;
                 }
+                input.setAttribute('aria-invalid', 'true');
             } else {
                 input.style.borderColor = '';
                 const errorMsg = input.parentElement.querySelector('.error-message');

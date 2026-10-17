@@ -80,12 +80,22 @@ test('CP-PAG-02 — Vencimiento automático y validación de pagos vencidos', as
     test.setTimeout(120_000);
     const data = fixture('commercial-payment-data');
     await test.step('Ejecutar actualización real de vencimientos y comprobar regla temporal', async () => {
+        expect(fixture('commercial-overdue', 'dry-run').ok).toBe(true);
+        expect(fixture('commercial-payment-state', String(data.boundary.pago_id)).payment.estado).toBe('PENDIENTE');
         const result = fixture('commercial-overdue');
         expect.soft(result.ok, `El comando real de vencimientos debe ejecutarse: ${result.error || result.output || ''}`).toBe(true);
         info.annotations.push({ type: 'alcance', description: 'Pagos VENCIDO preparados como prerrequisito para probar su confirmación incluso si falla la actualización automática. No sustituyen ni acreditan el comando.' });
         const overdue = fixture('commercial-payment-state', String(data.overdue.pago_id));
         const recent = fixture('commercial-payment-state', String(data.recent.pago_id));
         const paid = fixture('commercial-payment-state', String(data.paid.pago_id));
+        const boundary = fixture('commercial-payment-state', String(data.boundary.pago_id));
+        const threeDays = fixture('commercial-payment-state', String(data.three_days.pago_id));
+        expect(boundary.payment.estado).toBe('VENCIDO');
+        expect(threeDays.payment.estado).toBe('PENDIENTE');
+        expect(fixture('commercial-payment-state', String(data.five_days.pago_id)).payment.estado).toBe('IMPAGO');
+        const beforeRepeat = fixture('commercial-payment-state', String(data.boundary.pago_id));
+        expect(fixture('commercial-overdue').ok).toBe(true);
+        expect(fixture('commercial-payment-state', String(data.boundary.pago_id))).toEqual(beforeRepeat);
         expect(overdue.payment.estado).toBe('VENCIDO');
         expect(paid.payment.estado).toBe('REALIZADO');
         expect.soft(recent.payment.estado, 'PPF paso 3: VENCIDO se asigna al transcurrir cuatro días, no al día siguiente').toBe('PENDIENTE');
@@ -105,7 +115,7 @@ test('CP-PAG-02 — Vencimiento automático y validación de pagos vencidos', as
         await page.locator('#metodo_pago').selectOption('OTRO');
         await page.locator('#metodo_pago_otro').fill('EFECTIVO');
         await page.getByRole('button', { name: /Confirmar pago$/ }).click();
-        await expect(page).toHaveURL(new RegExp(`/payments/${data.overdue.pago_id}$`));
+        await expect(page).toHaveURL(/\/payments$/);
         const state = fixture('commercial-payment-state', String(data.overdue.pago_id));
         expect(state.payment).toMatchObject({ estado: 'REALIZADO', metodo_pago: 'EFECTIVO' });
         expect.soft(state.receipt_exists, 'PPF: pago realizado debe conservar su comprobante').toBe(true);
@@ -122,5 +132,10 @@ test('CP-PAG-02 — Vencimiento automático y validación de pagos vencidos', as
         expect.soft(state.payment.estado, 'PPF: transferencia sin número de operación debe rechazarse').toBe('VENCIDO');
         expect.soft(await page.locator('#referencia_externa[aria-invalid="true"]').count(), 'PPF: debe identificar el número de operación obligatorio').toBe(1);
         await evidence(page, info, 'transferencia-sin-operacion-resultado-real', state);
+        const token = await page.locator('input[name="_token"]').first().inputValue();
+        const response = await page.request.patch(`/payments/${id}/complete`, { headers: { Accept: 'application/json', 'X-CSRF-TOKEN': token }, form: { fecha_pago: data.today, metodo_pago: 'TRANSFERENCIA', referencia_externa: '' } });
+        expect(response.status()).toBe(422);
+        expect((await response.json()).errors.referencia_externa).toBeTruthy();
+        expect(fixture('commercial-payment-state', id).payment.estado).toBe('VENCIDO');
     });
 });
