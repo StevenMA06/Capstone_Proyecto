@@ -60,4 +60,6 @@ La suite no fuerza la indisponibilidad global de todo el inventario ni produce e
 
 ## Incidencia observada en main c5f6cf0
 
+Esta incidencia histórica se corrige en `correcciones-casos-ppf.md`, validando stock libre y revirtiendo toda la solicitud si no alcanza. El resultado No OK siguiente corresponde a aquella ejecución, no a una nueva prueba de la corrección.
+
 En CP-PED-01, una solicitud de material por 101 unidades con stock 100 fue aceptada y almacenada, en vez de rechazarse al solicitar recursos. La coordinación y la solicitud de cantidades válidas sí funcionaron. El caso queda **No OK** para esa condición de disponibilidad; la prueba conserva la diferencia, sin corregir la lógica de producción. Esto no afirma que Almacén permita preparar más stock: ese es otro paso, distinto de registrar la solicitud. Confirma con el responsable del PPF si se exige bloquear la solicitud o solamente su preparación antes de cambiar el resultado esperado.

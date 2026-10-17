@@ -68,6 +68,8 @@ Los fixtures preparan datos únicos en la base E2E. En CP-CON-01 preparan el ped
 
 ### Diferencias del PPF con main observadas al preparar los casos
 
+Registro histórico de las primeras ejecuciones. Las diferencias de pagos se abordan en `correcciones-casos-ppf.md`: confirmación al listado, operación obligatoria y VENCIDO al cuarto día. El comando conserva IMPAGO a partir del quinto día y corrige su sintaxis. Repite las pruebas para obtener el resultado de tu revisión actual.
+
 Las pruebas mantienen las expectativas del documento mediante aserciones que permiten continuar y reunir evidencia antes de informar `No OK`:
 
 - CP-PAG-01 espera volver al listado tras confirmar. El controlador actual redirige a la ficha del pago.

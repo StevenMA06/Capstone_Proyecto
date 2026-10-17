@@ -110,6 +110,10 @@ class PaymentService
      */
     public function markAsCompleted(Payment $payment, array $data, User $confirmedBy = null): Payment
     {
+        $method = strtoupper(trim((string) ($data['metodo_pago'] ?? $payment->metodo_pago)));
+        if ($method === 'TRANSFERENCIA' && blank($data['referencia_externa'] ?? $payment->referencia_externa)) {
+            throw ValidationException::withMessages(['referencia_externa' => 'El número de operación es obligatorio para una transferencia.']);
+        }
         if ($payment->isCompleted()) {
             throw ValidationException::withMessages([
                 'estado' => 'El pago ya fue marcado como realizado.',

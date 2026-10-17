@@ -40,7 +40,7 @@ return function (string $command, string $arg, User $actor, array $clientData, a
     if ($command === 'commercial-payment-count') return ['count' => Payment::where('contrato_id', (int) $arg)->count()];
     if ($command === 'commercial-overdue') {
         try {
-            $code = Artisan::call(App\Console\Commands\UpdateOverduePayments::class);
+            $code = Artisan::call(App\Console\Commands\UpdateOverduePayments::class, ['--dry-run' => $arg === 'dry-run']);
             return ['ok' => $code === 0, 'command' => 'payments:update-overdue', 'output' => Artisan::output(), 'today' => now('America/Lima')->toDateString()];
         } catch (Throwable $error) {
             // Es resultado de la funcionalidad bajo prueba; conservarlo sin fingir actualización.
@@ -87,6 +87,8 @@ return function (string $command, string $arg, User $actor, array $clientData, a
         'contract' => $snapshot($id)['contract'], 'today' => now('America/Lima')->toDateString(),
         'period' => now('America/Lima')->format('Y-m'),
         'overdue' => $makePayment(4, 'VENCIDO'), 'recent' => $makePayment(1), 'paid' => $makePayment(4, 'REALIZADO'),
+        'boundary' => $makePayment(4), 'three_days' => $makePayment(3),
+        'five_days' => $makePayment(5),
         'missing_operation' => $makePayment(4, 'VENCIDO'),
     ];
 };

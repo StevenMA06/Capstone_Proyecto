@@ -151,8 +151,10 @@ class InstallationOrderController extends Controller
                         ->select('pm.material_id')->selectRaw('SUM(pm.cantidad_asignada - pm.cantidad_utilizada - pm.cantidad_devuelta) as reservado')
                         ->groupBy('pm.material_id'),
                     'r', 'r.material_id', '=', 'm.material_id'
-                )->where('m.estado', 'ACTIVO')->select('m.*')
-                    ->selectRaw('GREATEST(0, m.stock_actual - COALESCE(r.reservado, 0)) as stock_libre')
+                )->leftJoinSub(DB::table('pedido_solicitudes_recurso')->whereIn('estado', ['PENDIENTE_ALMACEN', 'PENDIENTE_GERENCIA', 'AUTORIZADA'])
+                    ->select('material_id')->selectRaw('SUM(cantidad) as solicitado')->groupBy('material_id'),
+                    's', 's.material_id', '=', 'm.material_id')->where('m.estado', 'ACTIVO')->select('m.*')
+                    ->selectRaw('GREATEST(0, m.stock_actual - COALESCE(r.reservado, 0) - COALESCE(s.solicitado, 0)) as stock_libre')
                     ->orderBy('m.nombre')->get() : collect(),
         ]);
     }
