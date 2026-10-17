@@ -3,6 +3,8 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use App\Services\BusinessIntelligenceService;
+use App\Services\AnalyticsService;
+use App\Services\ReportExportService;
 use App\Services\PretestMeasurementService;
 use App\Services\IndicatorQueryService;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +35,10 @@ class AnalyticsMethodsTest extends TestCase
         Schema::create('ventas',function(Blueprint $t){$t->id('venta_id');$t->unsignedBigInteger('contrato_id')->unique();$t->unsignedBigInteger('responsable_id');$t->dateTime('fecha_venta');$t->decimal('monto',12,2);$t->string('estado');});
         Schema::create('pagos',function(Blueprint $t){$t->id('pago_id');$t->unsignedBigInteger('registrado_por');$t->dateTime('creado_en');$t->dateTime('fecha_pago')->nullable();$t->decimal('monto',12,2);$t->string('estado');});
         Schema::create('clientes',function(Blueprint $t){$t->id('cliente_id');$t->dateTime('creado_en');$t->string('estado');});
+        Schema::create('equipos',function(Blueprint $t){$t->id('equipo_id');$t->string('estado');});
+        Schema::create('materiales',function(Blueprint $t){$t->id('material_id');$t->string('nombre');$t->decimal('stock_actual',12,3);$t->decimal('stock_minimo',12,3);$t->string('unidad_medida');});
+        Schema::create('movimientos_inventario',function(Blueprint $t){$t->id('movimiento_id');$t->unsignedBigInteger('responsable_id')->nullable();$t->unsignedBigInteger('equipo_id')->nullable();$t->unsignedBigInteger('material_id')->nullable();$t->dateTime('fecha_movimiento');});
+        Schema::create('pedidos_instalacion',function(Blueprint $t){$t->id('pedido_id');$t->dateTime('fecha_solicitud');$t->string('estado');});
         (require database_path('migrations/2026_10_13_000001_create_observaciones_pretest_table.php'))->up();
     }
     protected function tearDown(): void
@@ -119,6 +125,36 @@ class AnalyticsMethodsTest extends TestCase
         $this->assertArrayNotHasKey('ventas',$service->available('pagos'));
         $this->assertArrayHasKey('kardex',$service->available('inventario'));
     }
+    public function test_inventory_snapshot_does_not_require_an_optional_material_status_column(): void
+    {
+        DB::table('materiales')->insert([
+            ['nombre'=>'Cable de fibra','stock_actual'=>2,'stock_minimo'=>5,'unidad_medida'=>'m'],
+            ['nombre'=>'Conector','stock_actual'=>8,'stock_minimo'=>2,'unidad_medida'=>'unidad'],
+        ]);
+
+        $dashboard=app(AnalyticsService::class)->dashboard('2001-01-01','2001-01-31','inventario');
+
+        $this->assertCount(2,$dashboard['materials']);
+        $this->assertSame('Cable de fibra',$dashboard['materials']->first()->nombre);
+    }
+    public function test_material_chart_matches_the_active_materials_report(): void
+    {
+        Schema::table('materiales', function (Blueprint $table): void {
+            $table->string('codigo')->nullable();
+            $table->string('estado')->nullable();
+            $table->dateTime('creado_en')->nullable();
+        });
+        DB::table('materiales')->insert([
+            ['codigo'=>'MAT-01','nombre'=>'Cable activo','stock_actual'=>8,'stock_minimo'=>2,'unidad_medida'=>'m','estado'=>'ACTIVO','creado_en'=>'2001-01-15 09:00:00'],
+            ['codigo'=>'MAT-02','nombre'=>'Cable inactivo','stock_actual'=>8,'stock_minimo'=>2,'unidad_medida'=>'m','estado'=>'INACTIVO','creado_en'=>'2001-01-15 09:00:00'],
+        ]);
+
+        $chart=app(BusinessIntelligenceService::class)->chart('materiales','mes','bar','cantidad','2001-01-01','2001-01-31');
+        $report=app(ReportExportService::class)->report('materiales_existencias','2001-01-01','2001-01-31');
+
+        $this->assertSame(1.0,$chart['total']);
+        $this->assertSame(1,$report['total']);
+    }
     public function test_data_routes_require_authentication(): void
     {
         $this->getJson('/analytics/avg-client-registration-time')->assertUnauthorized();
@@ -133,3 +169,4 @@ class AnalyticsMethodsTest extends TestCase
         $this->assertSame(0,$result['total_registros_analizados']);
     }
 }
+

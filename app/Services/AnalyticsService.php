@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\CarbonImmutable;
 
 class AnalyticsService
@@ -46,10 +47,36 @@ class AnalyticsService
             $items[$key] = compact('label','report','count','before','trend','states');
         }
         $quality = $this->processQuality($from, $to, $process);
-        $materials = ($process==='all' || $process==='inventario') ? DB::table('materiales')->where('estado','ACTIVO')->orderByRaw('(stock_actual <= stock_minimo) DESC')->orderBy('nombre')->limit(8)
-            ->select(['codigo','nombre','stock_actual','stock_minimo'])
-            ->selectRaw('CASE WHEN inventario_en_empaque = 1 THEN unidad_empaque ELSE unidad_base END as unidad_medida')->get() : collect();
+        $materials = ($process === 'all' || $process === 'inventario')
+            ? $this->materialsSnapshot()
+            : collect();
         return compact('materials','items','quality','previousFrom','previousTo');
+    }
+
+    /**
+     * The inventory snapshot is requested by both the Indicators and BI views
+     * when they load. Older installations may not yet have every inventory
+     * column, so an unavailable snapshot must not prevent either page loading.
+     */
+    private function materialsSnapshot()
+    {
+        $required = ['nombre', 'stock_actual', 'stock_minimo', 'unidad_medida'];
+
+        if (! Schema::hasTable('materiales') || ! Schema::hasColumns('materiales', $required)) {
+            return collect();
+        }
+
+        $materials = DB::table('materiales');
+
+        if (Schema::hasColumn('materiales', 'estado')) {
+            $materials->where('estado', 'ACTIVO');
+        }
+
+        return $materials
+            ->orderByRaw('(stock_actual <= stock_minimo) DESC')
+            ->orderBy('nombre')
+            ->limit(8)
+            ->get($required);
     }
 
     private function processQuality(string $from, string $to, string $process): array
