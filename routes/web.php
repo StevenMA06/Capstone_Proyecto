@@ -20,7 +20,6 @@ use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\ReportExportController;
 use App\Http\Middleware\EnsureAccountActive;
 use Illuminate\Support\Facades\Route;
 
@@ -37,71 +36,40 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::get('/session/status', SessionStatusController::class)->withoutMiddleware(EnsureAccountActive::class)->name('session.status');
-    Route::get('/access-history', AccessHistoryController::class)->name('access.index');
+    Route::get('/access-history', AccessHistoryController::class)->middleware('can:view-access-history')->name('access.index');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
 });
 
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:manage-users'])->group(function (): void {
     Route::patch('/users/{user}/status', [UserController::class, 'status'])->name('users.status');
     Route::resource('users', UserController::class)->except('destroy');
 });
 
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:manage-employees'])->group(function (): void {
     Route::patch('/employees/{employee}/status', [EmployeeController::class, 'status'])->name('employees.status');
     Route::resource('employees', EmployeeController::class)->except('destroy');
 });
 
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
     Route::get('/installations', [OperationController::class, 'installations'])->name('installations.index');
     Route::get('/equipment', [OperationController::class, 'equipment'])->name('equipment.index');
+    Route::get('/materials', [OperationController::class, 'materials'])->name('materials.index');
     
-    // Chatbot: acceso y consultas según los permisos efectivos.
+    // Chatbot IA - Solo para Gerencia
     Route::get('/chatbot', [ChatbotController::class, 'index'])->name('chatbot.index');
-    Route::get('/chatbot/test-interface', [ChatbotController::class, 'testInterface'])->name('chatbot.test-interface');
     Route::post('/chatbot/query', [ChatbotController::class, 'query'])->middleware('throttle:60,1')->name('chatbot.query');
     Route::post('/chatbot/new', [ChatbotController::class, 'newConversation'])->name('chatbot.new');
-    
-    // RF-IA-03: Consultar información operativa
-    Route::post('/chatbot/operational-data', [ChatbotController::class, 'queryOperationalData'])->middleware('throttle:60,1')->name('chatbot.operational-data');
-    
-    // RF-IA-04: Consultar información de inventario
-    Route::post('/chatbot/inventory', [ChatbotController::class, 'queryInventory'])->middleware('throttle:60,1')->name('chatbot.inventory');
-    
-    // RF-IA-08: Verificar permisos de acceso
-    Route::post('/chatbot/check-permissions', [ChatbotController::class, 'checkPermissions'])->middleware('throttle:60,1')->name('chatbot.check-permissions');
-    
-    // RF-IA-05: Consultar indicadores
-    Route::post('/chatbot/indicators', [ChatbotController::class, 'queryIndicators'])->middleware('throttle:60,1')->name('chatbot.indicators');
-    
-    // RF-IA-06: Consultar paneles de BI
-    Route::post('/chatbot/bi', [ChatbotController::class, 'queryBI'])->middleware('throttle:60,1')->name('chatbot.bi');
-    
-    // RF-IA-07: Reportar ausencia de datos
-    Route::post('/chatbot/no-data', [ChatbotController::class, 'reportNoData'])->middleware('throttle:60,1')->name('chatbot.no-data');
-    
-    // RF-IA-09: Mostrar fuente de datos
-    Route::post('/chatbot/data-source', [ChatbotController::class, 'showDataSource'])->middleware('throttle:60,1')->name('chatbot.data-source');
-    
-    // RF-IA-10: Iniciar nueva conversación con tracking
-    Route::post('/chatbot/start-conversation', [ChatbotController::class, 'startNewConversation'])->middleware('throttle:60,1')->name('chatbot.start-conversation');
 });
 
-Route::middleware(['auth'])->group(function (): void {
-    // DESHABILITADO TEMPORALMENTE - Módulo de Ventas
-    // Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
-    
+Route::middleware(['auth', 'can:view-office'])->group(function (): void {
+    Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
     Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
-    Route::get('/contracts/cancellation-requests', [ContractController::class, 'cancellationRequests'])->name('contracts.cancellations');
     Route::get('/contracts/create', [ContractController::class, 'create'])->name('contracts.create');
     Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
     Route::get('/contracts/{contract}', [ContractController::class, 'show'])->whereNumber('contract')->name('contracts.show');
     Route::get('/contracts/{contract}/edit', [ContractController::class, 'edit'])->whereNumber('contract')->name('contracts.edit');
     Route::put('/contracts/{contract}', [ContractController::class, 'update'])->whereNumber('contract')->name('contracts.update');
-    Route::post('/contracts/{contract}/cancellation-requests', [ContractController::class, 'requestCancellation'])->whereNumber('contract')->name('contracts.cancellation.request');
-    Route::post('/contracts/{contract}/cancellation-requests/{cancellationRequest}/approve', [ContractController::class, 'approveCancellation'])->whereNumber(['contract', 'cancellationRequest'])->name('contracts.cancellation.approve');
-    Route::post('/contracts/{contract}/cancellation-requests/{cancellationRequest}/reject', [ContractController::class, 'rejectCancellation'])->whereNumber(['contract', 'cancellationRequest'])->name('contracts.cancellation.reject');
-    Route::get('/contracts/{contract}/cancellation-requests/{cancellationRequest}/evidence', [ContractController::class, 'cancellationEvidence'])->whereNumber(['contract', 'cancellationRequest'])->name('contracts.cancellation.evidence');
     Route::get('/contracts/{contract}/pdf', [ContractController::class, 'pdf'])->whereNumber('contract')->name('contracts.pdf');
     Route::get('/contracts/{contract}/field-evidence/{evidence}', [ContractController::class, 'evidence'])->whereNumber(['contract', 'evidence'])->name('contracts.evidence');
     Route::get('/contracts/{contract}/draft', [ContractController::class, 'draft'])->whereNumber('contract')->name('contracts.draft');
@@ -112,32 +80,30 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/contracts/{contract}/reactivate', [ContractController::class, 'reactivate'])->whereNumber('contract')->name('contracts.reactivate');
 });
 
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:manage-zones'])->group(function (): void {
     Route::patch('/zones/{zone}/status', [CoverageZoneController::class, 'status'])->name('zones.status');
     Route::resource('zones', CoverageZoneController::class)->only(['create', 'store', 'edit', 'update']);
 });
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:view-zones'])->group(function (): void {
     Route::resource('zones', CoverageZoneController::class)->only(['index', 'show']);
 });
 
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:manage-plans'])->group(function (): void {
     Route::patch('/plans/{plan}/status', [PlanController::class, 'status'])->name('plans.status');
     Route::resource('plans', PlanController::class)->only(['create', 'store', 'edit', 'update']);
 });
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:view-office'])->group(function (): void {
     Route::resource('plans', PlanController::class)->only(['index', 'show']);
 });
 
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:view-technician'])->group(function (): void {
     Route::get('/technician', [TechnicianController::class, 'index'])->name('technician.index');
     Route::post('/technician/installations/{pedido}/start', [TechnicianController::class, 'start'])->whereNumber('pedido')->name('technician.start');
-    Route::post('/technician/installations/{pedido}/confirm', [TechnicianController::class, 'confirm'])->whereNumber('pedido')->name('technician.confirm');
-    Route::post('/technician/installations/{pedido}/incident', [TechnicianController::class, 'incident'])->whereNumber('pedido')->name('technician.incident');
-    Route::get('/technician/installations/{pedido}/incident/{incident}', [TechnicianController::class, 'downloadIncident'])->whereNumber(['pedido', 'incident'])->name('technician.incident.download');
-    Route::post('/technician/installations/{pedido}/sync-evidence', [TechnicianController::class, 'syncEvidence'])->whereNumber('pedido')->name('technician.syncEvidence');
+    Route::post('/technician/installations/{pedido}/finish', [TechnicianController::class, 'finish'])->whereNumber('pedido')->name('technician.finish');
     Route::post('/technician/installations/{pedido}/equipment', [TechnicianController::class, 'equipment'])->whereNumber('pedido')->name('technician.equipment');
     Route::post('/technician/installations/{pedido}/material', [TechnicianController::class, 'material'])->whereNumber('pedido')->name('technician.material');
     Route::post('/technician/installations/{pedido}/observation', [TechnicianController::class, 'observation'])->whereNumber('pedido')->name('technician.observation');
+    Route::post('/technician/installations/{pedido}/contract-evidence', [TechnicianController::class, 'contractEvidence'])->whereNumber('pedido')->name('technician.contractEvidence');
     Route::get('/technician/installations/{pedido}/contract-evidence/{evidence}/preview', [TechnicianController::class, 'previewContract'])->whereNumber(['pedido', 'evidence'])->name('technician.contract.preview');
     Route::get('/technician/installations/{pedido}/contract-evidence/{evidence}', [TechnicianController::class, 'downloadContract'])->whereNumber(['pedido', 'evidence'])->name('technician.contract.download');
     Route::get('/technician/installations/{pedido}', [TechnicianController::class, 'show'])->whereNumber('pedido')->name('technician.show');
@@ -146,12 +112,12 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/technician/installations/{pedido}/evidence/{evidence}', [TechnicianController::class, 'download'])->whereNumber(['pedido', 'evidence'])->name('technician.evidence.download');
 });
 
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:register-clients'])->group(function (): void {
     Route::patch('/clients/{client}/deactivate', [ClientController::class, 'deactivate'])->name('clients.deactivate');
     Route::resource('clients', ClientController::class)->except('destroy');
 });
 
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:manage-payments'])->group(function (): void {
     Route::patch('/payments/{payment}/cancel', [PaymentController::class, 'cancel'])->name('payments.cancel');
     Route::patch('/payments/{payment}/complete', [PaymentController::class, 'complete'])->name('payments.complete');
     Route::get('/payments/{payment}/receipt', [PaymentController::class, 'receipt'])->whereNumber('payment')->name('payments.receipt');
@@ -165,7 +131,7 @@ Route::middleware(['auth'])->group(function (): void {
 // INVENTARIO: EQUIPOS, MATERIALES Y KARDEX
 // ============================================
 
-Route::middleware(['auth'])->group(function (): void {
+Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
     // Gestión de Equipos
     Route::get('/equipments', [EquipmentController::class, 'index'])->name('equipments.index');
     Route::get('/equipments/create', [EquipmentController::class, 'create'])->name('equipments.create');
@@ -201,86 +167,30 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/materials/{material}/adjustment', [MaterialController::class, 'adjustmentForm'])->whereNumber('material')->name('materials.adjustment');
     Route::post('/materials/{material}/adjustment', [MaterialController::class, 'storeAdjustment'])->whereNumber('material')->name('materials.adjustment.store');
 
-    // Importación masiva de Materiales
-    Route::get('/materials/import/form', [MaterialController::class, 'importForm'])->name('materials.import');
-    Route::get('/materials/import/template', [MaterialController::class, 'downloadTemplate'])->name('materials.template');
-    Route::post('/materials/import/process', [MaterialController::class, 'processImport'])->name('materials.import.process');
-    Route::post('/materials/import/confirm', [MaterialController::class, 'confirmImport'])->name('materials.import.confirm');
-    Route::post('/materials/import/cancel', [MaterialController::class, 'cancelImport'])->name('materials.import.cancel');
-
     // Kardex de Inventario (consulta únicamente)
     Route::get('/kardex', [KardexController::class, 'index'])->name('kardex.index');
 });
 
-Route::middleware(['auth', 'can:reports.view'])->group(function (): void {
+Route::middleware(['auth', 'can:view-office'])->group(function (): void {
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::post('/reports/export', [ReportExportController::class, 'store'])->middleware('throttle:20,1')->name('reports.export');
+    Route::post('/reports/export', [\App\Http\Controllers\ReportExportController::class, 'store'])->middleware('throttle:20,1')->name('reports.export');
 });
 
-Route::middleware(['auth'])->group(function (): void {
-    Route::get('/indicators', [\App\Http\Controllers\AnalyticsController::class, 'index'])->middleware('can:indicators.view')->name('indicators.index');
-    Route::get('/bi', [\App\Http\Controllers\AnalyticsController::class, 'index'])->middleware('can:bi.view')->name('bi.index');
-    Route::get('/analytics/avg-client-registration-time', [\App\Http\Controllers\AnalyticsController::class, 'avgClientRegistrationTime'])->middleware('can:indicators.view')->name('indicators.data.avgClientRegistrationTime');
-    Route::get('/analytics/avg-contract-registration-time', [\App\Http\Controllers\AnalyticsController::class, 'avgContractRegistrationTime'])->middleware('can:indicators.view')->name('indicators.data.avgContractRegistrationTime');
-    Route::get('/analytics/avg-reactivation-time', [\App\Http\Controllers\AnalyticsController::class, 'avgReactivationTime'])->middleware('can:indicators.view')->name('indicators.data.avgReactivationTime');
-    Route::get('/analytics/avg-order-processing-time', [\App\Http\Controllers\AnalyticsController::class, 'avgOrderProcessingTime'])->middleware('can:indicators.view')->name('indicators.data.avgOrderProcessingTime');
-    Route::get('/analytics/avg-information-access-time', [\App\Http\Controllers\AnalyticsController::class, 'avgInformationAccessTime'])->middleware('can:indicators.view')->name('indicators.data.avgInformationAccessTime');
-    Route::get('/analytics/avg-inventory-registration-time', [\App\Http\Controllers\AnalyticsController::class, 'avgInventoryRegistrationTime'])->middleware('can:indicators.view')->name('indicators.data.avgInventoryRegistrationTime');
-    Route::get('/analytics/inventory-time-by-type', [\App\Http\Controllers\AnalyticsController::class, 'inventoryTimeByType'])->middleware('can:indicators.view')->name('indicators.data.inventoryTimeByType');
-    Route::get('/bi/filter-by-process', [\App\Http\Controllers\BusinessIntelligenceController::class, 'filterByProcess'])->middleware('can:bi.view')->name('bi.data.filterByProcess');
-    Route::get('/bi/staff-participation', [\App\Http\Controllers\BusinessIntelligenceController::class, 'staffParticipation'])->middleware('can:bi.view')->name('bi.data.staffParticipation');
-    Route::get('/bi/generate-chart', [\App\Http\Controllers\BusinessIntelligenceController::class, 'generateChart'])->middleware('can:bi.view')->name('bi.data.generateChart');
-    Route::get('/bi/avg-inventory-time', [\App\Http\Controllers\BusinessIntelligenceController::class, 'avgInventoryTime'])->middleware('can:bi.view')->name('bi.data.avgInventoryTime');
-    Route::get('/bi/time-by-module', [\App\Http\Controllers\BusinessIntelligenceController::class, 'timeByModule'])->middleware('can:bi.view')->name('bi.data.timeByModule');
-    Route::get('/bi/registration-evolution', [\App\Http\Controllers\BusinessIntelligenceController::class, 'registrationEvolution'])->middleware('can:bi.view')->name('bi.data.registrationEvolution');
+Route::middleware(['auth', 'can:view-operations'])->group(function (): void {
+    Route::get('/indicators', [\App\Http\Controllers\AnalyticsController::class, 'index'])->name('indicators.index');
+    Route::get('/bi', [\App\Http\Controllers\AnalyticsController::class, 'index'])->name('bi.index');
+    Route::get('/analytics/avg-client-registration-time', [\App\Http\Controllers\AnalyticsController::class, 'avgClientRegistrationTime'])->name('indicators.data.avgClientRegistrationTime');
+    Route::get('/analytics/avg-contract-registration-time', [\App\Http\Controllers\AnalyticsController::class, 'avgContractRegistrationTime'])->name('indicators.data.avgContractRegistrationTime');
+    Route::get('/analytics/avg-reactivation-time', [\App\Http\Controllers\AnalyticsController::class, 'avgReactivationTime'])->name('indicators.data.avgReactivationTime');
+    Route::get('/analytics/avg-order-processing-time', [\App\Http\Controllers\AnalyticsController::class, 'avgOrderProcessingTime'])->name('indicators.data.avgOrderProcessingTime');
+    Route::get('/analytics/avg-information-access-time', [\App\Http\Controllers\AnalyticsController::class, 'avgInformationAccessTime'])->name('indicators.data.avgInformationAccessTime');
+    Route::get('/analytics/avg-inventory-registration-time', [\App\Http\Controllers\AnalyticsController::class, 'avgInventoryRegistrationTime'])->name('indicators.data.avgInventoryRegistrationTime');
+    Route::get('/analytics/inventory-time-by-type', [\App\Http\Controllers\AnalyticsController::class, 'inventoryTimeByType'])->name('indicators.data.inventoryTimeByType');
+    Route::get('/bi/filter-by-process', [\App\Http\Controllers\BusinessIntelligenceController::class, 'filterByProcess'])->name('bi.data.filterByProcess');
+    Route::get('/bi/staff-participation', [\App\Http\Controllers\BusinessIntelligenceController::class, 'staffParticipation'])->name('bi.data.staffParticipation');
+    Route::get('/bi/generate-chart', [\App\Http\Controllers\BusinessIntelligenceController::class, 'generateChart'])->name('bi.data.generateChart');
+    Route::get('/bi/avg-inventory-time', [\App\Http\Controllers\BusinessIntelligenceController::class, 'avgInventoryTime'])->name('bi.data.avgInventoryTime');
+    Route::get('/bi/time-by-module', [\App\Http\Controllers\BusinessIntelligenceController::class, 'timeByModule'])->name('bi.data.timeByModule');
+    Route::get('/bi/registration-evolution', [\App\Http\Controllers\BusinessIntelligenceController::class, 'registrationEvolution'])->name('bi.data.registrationEvolution');
 });
 
-Route::middleware(['auth'])->group(function (): void {
-    Route::get('/roles', [\App\Http\Controllers\RoleAccessController::class, 'index'])->name('roles.index');
-    Route::post('/roles', [\App\Http\Controllers\RoleAccessController::class, 'store'])->name('roles.store');
-    Route::put('/roles/{role}', [\App\Http\Controllers\RoleAccessController::class, 'update'])->name('roles.update');
-    Route::get('/user-roles', [\App\Http\Controllers\RoleAccessController::class, 'assignments'])->name('user-roles.index');
-    Route::put('/user-roles/{user}', [\App\Http\Controllers\RoleAccessController::class, 'assign'])->name('user-roles.update');
-});
-
-Route::middleware('auth')->group(function (): void {
-    Route::get('/dashboard/gerencia', [DashboardController::class, 'management'])->name('dashboard.management');
-    Route::get('/dashboard/call-center', [DashboardController::class, 'office'])->name('dashboard.office');
-    Route::get('/dashboard/call-center/visitas', [\App\Http\Controllers\OfficeInstallationCoordinationController::class, 'index'])->name('office.coordination.index');
-    Route::patch('/dashboard/call-center/visitas/{pedido}/cobertura', [\App\Http\Controllers\OfficeInstallationCoordinationController::class, 'saveCoverage'])->whereNumber('pedido')->name('office.coordination.coverage');
-    Route::patch('/dashboard/call-center/visitas/{pedido}', [\App\Http\Controllers\OfficeInstallationCoordinationController::class, 'save'])->whereNumber('pedido')->name('office.coordination.save');
-    Route::get('/executions', [TechnicianController::class, 'index'])->name('executions.index');
-    Route::get('/assigned/contracts', [\App\Http\Controllers\ScopedAccessController::class, 'contracts'])->name('contracts.assigned');
-    Route::get('/assigned/equipment', [\App\Http\Controllers\ScopedAccessController::class, 'equipment'])->name('equipments.assigned');
-    Route::get('/assigned/kardex', [\App\Http\Controllers\ScopedAccessController::class, 'movements'])->name('kardex.related');
-    Route::get('/availability/equipment', [\App\Http\Controllers\ScopedAccessController::class, 'equipmentAvailability'])->name('equipments.availability');
-    Route::get('/availability/materials', [\App\Http\Controllers\ScopedAccessController::class, 'materialAvailability'])->name('materials.availability');
-    Route::get('/orders', [\App\Http\Controllers\InstallationOrderController::class, 'index'])->name('orders.index');
-    Route::get('/assigned/orders', [\App\Http\Controllers\InstallationOrderController::class, 'index'])->name('orders.assigned');
-    Route::patch('/orders/{pedido}/reprogramming/{reprogramacion}/approve', [\App\Http\Controllers\InstallationOrderController::class, 'approveReprogramming'])->whereNumber('pedido')->whereNumber('reprogramacion')->name('orders.reprogram.approve');
-    Route::patch('/orders/{pedido}/reprogramming/{reprogramacion}/reject', [\App\Http\Controllers\InstallationOrderController::class, 'rejectReprogramming'])->whereNumber('pedido')->whereNumber('reprogramacion')->name('orders.reprogram.reject');
-    Route::get('/orders/{pedido}/reprogramming/{reprogramacion}/evidence', [\App\Http\Controllers\InstallationOrderController::class, 'downloadReprogrammingEvidence'])->whereNumber('pedido')->whereNumber('reprogramacion')->name('orders.reprogram.evidence');
-    Route::patch('/orders/{pedido}/schedule', [\App\Http\Controllers\InstallationOrderController::class, 'schedule'])->whereNumber('pedido')->name('orders.schedule');
-    Route::get('/orders/{pedido}/available-technicians', [\App\Http\Controllers\InstallationOrderController::class, 'availableTechnicians'])->whereNumber('pedido')->name('orders.available-technicians');
-    Route::post('/orders/{pedido}/resources', [\App\Http\Controllers\InstallationOrderController::class, 'requestResources'])->whereNumber('pedido')->name('orders.resources.request');
-    Route::post('/orders/{pedido}/equipment', [\App\Http\Controllers\InstallationOrderController::class, 'equipment'])->whereNumber('pedido')->name('orders.equipment');
-    Route::post('/orders/{pedido}/material', [\App\Http\Controllers\InstallationOrderController::class, 'material'])->whereNumber('pedido')->name('orders.material');
-    Route::patch('/orders/{pedido}/resources/{solicitud}/approve', [\App\Http\Controllers\InstallationOrderController::class, 'approveResource'])->whereNumber('pedido')->whereNumber('solicitud')->name('orders.resources.approve');
-    Route::patch('/orders/{pedido}/resources/{solicitud}/reject', [\App\Http\Controllers\InstallationOrderController::class, 'rejectResource'])->whereNumber('pedido')->whereNumber('solicitud')->name('orders.resources.reject');
-    Route::get('/warehouse/requests', [\App\Http\Controllers\WarehouseRequestController::class, 'index'])->name('warehouse.requests.index');
-    Route::patch('/warehouse/requests/{solicitud}/fulfill', [\App\Http\Controllers\WarehouseRequestController::class, 'fulfill'])->whereNumber('solicitud')->name('warehouse.requests.fulfill');
-    Route::patch('/warehouse/requests/{solicitud}/escalate', [\App\Http\Controllers\WarehouseRequestController::class, 'escalate'])->whereNumber('solicitud')->name('warehouse.requests.escalate');
-    Route::patch('/warehouse/requests/{solicitud}/reject', [\App\Http\Controllers\WarehouseRequestController::class, 'reject'])->whereNumber('solicitud')->name('warehouse.requests.reject');
-    Route::patch('/orders/{pedido}/cancel', [\App\Http\Controllers\InstallationOrderController::class, 'cancel'])->whereNumber('pedido')->name('orders.cancel');
-    Route::patch('/orders/{pedido}/reopen', [\App\Http\Controllers\InstallationOrderController::class, 'reopen'])->whereNumber('pedido')->name('orders.reopen');
-});
-
-// DESHABILITADO TEMPORALMENTE - Confirmación de ventas
-// Route::post('/sales/contracts/{contract}/confirm', [SaleController::class, 'confirm'])->middleware('auth')->whereNumber('contract')->name('sales.confirm');
-
-Route::middleware(['auth', 'throttle:10,1'])->group(function (): void {
-    Route::post('/clients/dni-lookup', \App\Http\Controllers\DniLookupController::class)
-        ->defaults('context', 'clients')->name('clients.lookup');
-    Route::post('/employees/dni-lookup', \App\Http\Controllers\DniLookupController::class)
-        ->defaults('context', 'employees')->name('employees.lookup');
-});

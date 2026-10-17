@@ -3,6 +3,7 @@ namespace App\Services;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class BusinessIntelligenceService
@@ -30,6 +31,11 @@ class BusinessIntelligenceService
         if ($indicator==='ventas') {
             // Each confirmed sale is uniquely linked to a contract; never treat all active contracts as new sales.
             $query->join('contratos as c','c.contrato_id','=','t.contrato_id')->where('t.estado','CONFIRMADA');
+        }
+        if ($indicator === 'materiales' && Schema::hasColumn('materiales', 'estado')) {
+            // Keep the BI chart aligned with the inventory reports and the
+            // material snapshot shown in Indicators: only active materials.
+            $query->where('t.estado', 'ACTIVO');
         }
         return $query;
     }
@@ -107,3 +113,4 @@ class BusinessIntelligenceService
         return ['rows'=>$rows,'total'=>$total,'top'=>$top,'scope'=>'Contratos por fecha de registro y ventas confirmadas por fecha de venta. Se cuenta participación registrada; no se califica productividad ni éxito.'];
     }
 }
+
