@@ -46,7 +46,9 @@ class AnalyticsService
             $items[$key] = compact('label','report','count','before','trend','states');
         }
         $quality = $this->processQuality($from, $to, $process);
-        $materials = ($process==='all' || $process==='inventario') ? DB::table('materiales')->where('estado','ACTIVO')->orderByRaw('(stock_actual <= stock_minimo) DESC')->orderBy('nombre')->limit(8)->get(['codigo','nombre','stock_actual','stock_minimo','unidad_medida']) : collect();
+        $materials = ($process==='all' || $process==='inventario') ? DB::table('materiales')->where('estado','ACTIVO')->orderByRaw('(stock_actual <= stock_minimo) DESC')->orderBy('nombre')->limit(8)
+            ->select(['codigo','nombre','stock_actual','stock_minimo'])
+            ->selectRaw('CASE WHEN inventario_en_empaque = 1 THEN unidad_empaque ELSE unidad_base END as unidad_medida')->get() : collect();
         return compact('materials','items','quality','previousFrom','previousTo');
     }
 

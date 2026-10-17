@@ -89,7 +89,7 @@ class AccessCatalog
             'user-roles.view' => ['Consultar', 'Buscar cuentas y consultar sus roles asignados.'],
             'user-roles.manage' => ['Asignar y retirar roles', 'Modificar los roles activos asignados a una cuenta. Solo Administrador puede asignar su propio rol o modificar cuentas propietarias.'],
             'access.view' => ['Consultar', 'Ver y filtrar accesos por usuario, fecha y resultado. Exclusivo del Administrador.'],
-            'reports.view' => ['Abrir demostración', 'Abrir la pantalla de reportes de demostración; aún no genera ni exporta reportes reales.'],
+            'reports.view' => ['Consultar y exportar', 'Consultar reportes y descargar PDF o Excel dentro del alcance autorizado del rol. Los reportes reservados requieren Gerencia o Administrador.'],
             'indicators.view' => ['Abrir demostración', 'Abrir la pantalla de indicadores de demostración, sin indicadores operativos integrados.'],
             'bi.view' => ['Abrir demostración', 'Abrir el panel BI de demostración. No concede acceso a los módulos de origen.'],
             'chatbot.view' => ['Abrir interfaz', 'Abrir el chatbot actualmente en configuración.'],
@@ -182,6 +182,7 @@ class AccessCatalog
             'payments.receipt'=>'payments.receipt','payments.reminders.create'=>'payments.reminders','payments.reminders.attend'=>'payments.reminders',
             'user-roles.update'=>'user-roles.manage','roles.store'=>'roles.manage','roles.update'=>'roles.manage',
             'chatbot.query'=>'chatbot.query','chatbot.new'=>'chatbot.query',
+            'reports.export'=>'reports.view',
             'equipments.kardex'=>'kardex.view','materials.kardex'=>'kardex.view',
         ];
         if (isset($special[$name])) return $special[$name];
