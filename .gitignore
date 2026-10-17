@@ -37,3 +37,8 @@ Thumbs.db
 /playwright/.auth/
 
 /storage/framework/views-e2e/
+
+# Resultados de pruebas de hardware/stress testing
+/stress-test-results/
+hardware-metrics-*.csv
+.hardware-profile

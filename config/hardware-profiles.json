@@ -1,0 +1,199 @@
+{
+  "description": "Perfiles de hardware para testing y optimizacion automatica",
+  "profiles": {
+    "minimal": {
+      "name": "Minimo Operable",
+      "description": "Configuracion para hardware basico (desarrollo local ligero)",
+      "specs": {
+        "cpu_cores": 2,
+        "ram_mb": 4096,
+        "disk_type": "HDD"
+      },
+      "thresholds": {
+        "cpu_max_percent": 95,
+        "ram_min_available_mb": 512,
+        "disk_max_percent": 85,
+        "http_min_requests_per_second": 20,
+        "http_max_response_time_ms": 500
+      },
+      "test_config": {
+        "apache_bench": {
+          "requests": 100,
+          "concurrency": 5
+        },
+        "playwright": {
+          "workers": 1,
+          "video": "retain-on-failure",
+          "timeout_ms": 60000
+        },
+        "monitoring": {
+          "interval_seconds": 10,
+          "duration_seconds": 120
+        }
+      }
+    },
+    "recommended": {
+      "name": "Recomendado",
+      "description": "Configuracion optima para desarrollo y testing estandar",
+      "specs": {
+        "cpu_cores": 4,
+        "ram_mb": 8192,
+        "disk_type": "SSD"
+      },
+      "thresholds": {
+        "cpu_max_percent": 85,
+        "ram_min_available_mb": 1024,
+        "disk_max_percent": 70,
+        "http_min_requests_per_second": 50,
+        "http_max_response_time_ms": 300
+      },
+      "test_config": {
+        "apache_bench": {
+          "requests": 500,
+          "concurrency": 20
+        },
+        "playwright": {
+          "workers": 2,
+          "video": "on",
+          "timeout_ms": 45000
+        },
+        "monitoring": {
+          "interval_seconds": 5,
+          "duration_seconds": 180
+        }
+      }
+    },
+    "optimal": {
+      "name": "Optimo (i7+)",
+      "description": "Configuracion para hardware potente (CI/CD, testing intensivo)",
+      "specs": {
+        "cpu_cores": 8,
+        "ram_mb": 16384,
+        "disk_type": "NVMe"
+      },
+      "thresholds": {
+        "cpu_max_percent": 80,
+        "ram_min_available_mb": 2048,
+        "disk_max_percent": 60,
+        "http_min_requests_per_second": 100,
+        "http_max_response_time_ms": 200
+      },
+      "test_config": {
+        "apache_bench": {
+          "requests": 2000,
+          "concurrency": 50
+        },
+        "playwright": {
+          "workers": 4,
+          "video": "on",
+          "timeout_ms": 30000
+        },
+        "monitoring": {
+          "interval_seconds": 3,
+          "duration_seconds": 300
+        }
+      }
+    },
+    "enterprise": {
+      "name": "Enterprise (Servidor)",
+      "description": "Configuracion para servidores dedicados o CI/CD profesional",
+      "specs": {
+        "cpu_cores": 16,
+        "ram_mb": 32768,
+        "disk_type": "NVMe RAID"
+      },
+      "thresholds": {
+        "cpu_max_percent": 70,
+        "ram_min_available_mb": 4096,
+        "disk_max_percent": 50,
+        "http_min_requests_per_second": 200,
+        "http_max_response_time_ms": 100
+      },
+      "test_config": {
+        "apache_bench": {
+          "requests": 5000,
+          "concurrency": 100
+        },
+        "playwright": {
+          "workers": 8,
+          "video": "retain-on-failure",
+          "timeout_ms": 20000
+        },
+        "monitoring": {
+          "interval_seconds": 2,
+          "duration_seconds": 600
+        }
+      }
+    }
+  },
+  "detection_rules": {
+    "description": "Reglas para detectar automaticamente el perfil segun el hardware disponible",
+    "rules": [
+      {
+        "profile": "enterprise",
+        "conditions": {
+          "cpu_cores_min": 12,
+          "ram_mb_min": 24576
+        }
+      },
+      {
+        "profile": "optimal",
+        "conditions": {
+          "cpu_cores_min": 6,
+          "ram_mb_min": 12288
+        }
+      },
+      {
+        "profile": "recommended",
+        "conditions": {
+          "cpu_cores_min": 4,
+          "ram_mb_min": 6144
+        }
+      },
+      {
+        "profile": "minimal",
+        "conditions": {
+          "cpu_cores_min": 0,
+          "ram_mb_min": 0
+        }
+      }
+    ]
+  },
+  "processor_families": {
+    "description": "Deteccion de familias de procesadores comunes",
+    "families": {
+      "intel_high_end": {
+        "patterns": ["i9", "Xeon", "Core i9"],
+        "default_profile": "enterprise"
+      },
+      "intel_mid_high": {
+        "patterns": ["i7", "Core i7"],
+        "default_profile": "optimal"
+      },
+      "intel_mid": {
+        "patterns": ["i5", "Core i5"],
+        "default_profile": "recommended"
+      },
+      "intel_low": {
+        "patterns": ["i3", "Core i3", "Pentium", "Celeron"],
+        "default_profile": "minimal"
+      },
+      "amd_high_end": {
+        "patterns": ["Ryzen 9", "Threadripper", "EPYC"],
+        "default_profile": "enterprise"
+      },
+      "amd_mid_high": {
+        "patterns": ["Ryzen 7"],
+        "default_profile": "optimal"
+      },
+      "amd_mid": {
+        "patterns": ["Ryzen 5"],
+        "default_profile": "recommended"
+      },
+      "amd_low": {
+        "patterns": ["Ryzen 3", "Athlon"],
+        "default_profile": "minimal"
+      }
+    }
+  }
+}
