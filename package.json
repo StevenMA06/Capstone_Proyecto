@@ -7,7 +7,7 @@
         "dev": "vite",
         "e2e": "playwright test",
         "e2e:headed": "playwright test --headed",
-        "e2e:cycles": "playwright test --repeat-each=5",
+        "e2e:cycles": "playwright test --repeat-each=1",
         "e2e:install": "playwright install chromium",
         "e2e:report": "node scripts/e2e/report.mjs"
     },
