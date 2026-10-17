@@ -99,6 +99,7 @@
     padding: 12px 16px;
     border-radius: 12px;
     word-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 .chatbot-message.user .message-content {
@@ -458,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="message-avatar ${avatarClass}">${avatar}</div>
             <div>
                 <div class="message-content">
-                    ${content.replace(/\n/g, '<br>')}
+                    ${content}
                 </div>
                 ${source ? `<div class="message-source">Fuente interna: ${source}</div>` : ''}
             </div>

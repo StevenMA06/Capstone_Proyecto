@@ -90,6 +90,7 @@ class GeminiService
             }
             $equipo = Equipment::where('codigo', $codigo)->first();
             if ($equipo) {
+                $fa = $equipo->fecha_adquisicion;
                 $context['equipo_especifico'] = [
                     'codigo' => $equipo->codigo,
                     'nombre' => $equipo->nombre,
@@ -100,7 +101,7 @@ class GeminiService
                     'estado' => $equipo->estado,
                     'condicion' => $equipo->condicion,
                     'ubicacion' => $equipo->ubicacion,
-                    'fecha_adquisicion' => $equipo->fecha_adquisicion?->format('Y-m-d'),
+                    'fecha_adquisicion' => $fa ? (is_string($fa) ? substr($fa, 0, 10) : $fa->format('Y-m-d')) : null,
                 ];
             }
         }
@@ -118,7 +119,7 @@ class GeminiService
                     'nombre' => $material->nombre,
                     'stock_actual' => $material->stock_actual,
                     'stock_minimo' => $material->stock_minimo,
-                    'unidad_medida' => $material->unidad_medida,
+                    'unidad_medida' => $material->unidad_base,
                     'estado' => $material->estado,
                     'alertas' => $material->stock_actual <= $material->stock_minimo ? 'Stock bajo o crítico' : 'Stock normal',
                 ];
@@ -130,13 +131,15 @@ class GeminiService
             $contratoId = $matches[1];
             $contrato = Contract::with('plan')->find($contratoId);
             if ($contrato) {
+                $fi = $contrato->fecha_inicio;
+                $ff = $contrato->fecha_fin;
                 $context['contrato_especifico'] = [
                     'contrato_id' => $contrato->contrato_id,
                     'plan' => $contrato->plan->nombre ?? 'N/A',
                     'estado' => $contrato->estado,
-                    'fecha_inicio' => $contrato->fecha_inicio?->format('Y-m-d'),
-                    'fecha_fin' => $contrato->fecha_fin?->format('Y-m-d'),
-                    'monto_mensual' => $contrato->monto_mensual,
+                    'fecha_inicio' => $fi ? (is_string($fi) ? substr($fi, 0, 10) : $fi->format('Y-m-d')) : null,
+                    'fecha_fin'    => $ff ? (is_string($ff) ? substr($ff, 0, 10) : $ff->format('Y-m-d')) : null,
+                    'precio_contratado' => $contrato->precio_contratado,
                     'nota' => 'Por privacidad, no se muestra información del cliente asociado'
                 ];
             }
@@ -160,14 +163,16 @@ class GeminiService
             $context['contratos_activos'] = Contract::with('plan')
                 ->where('estado', 'ACTIVO')
                 ->take(5)
-                ->get(['contrato_id', 'plan_id', 'fecha_inicio', 'fecha_fin', 'monto_mensual', 'estado'])
+                ->get(['contrato_id', 'plan_id', 'fecha_inicio', 'fecha_fin', 'precio_contratado', 'estado'])
                 ->map(function($c) {
+                    $fi = $c->fecha_inicio;
+                    $ff = $c->fecha_fin;
                     return [
                         'contrato_id' => $c->contrato_id,
                         'plan' => $c->plan->nombre ?? 'N/A',
-                        'fecha_inicio' => $c->fecha_inicio?->format('Y-m-d'),
-                        'fecha_fin' => $c->fecha_fin?->format('Y-m-d'),
-                        'monto_mensual' => $c->monto_mensual,
+                        'fecha_inicio' => $fi ? (is_string($fi) ? substr($fi, 0, 10) : $fi->format('Y-m-d')) : null,
+                        'fecha_fin'    => $ff ? (is_string($ff) ? substr($ff, 0, 10) : $ff->format('Y-m-d')) : null,
+                        'precio_contratado' => $c->precio_contratado,
                         'estado' => $c->estado,
                     ];
                 })
@@ -176,13 +181,13 @@ class GeminiService
 
         if (preg_match('/pago|pagos|deuda|mora|pendiente/i', $query)) {
             $context['pagos_pendientes'] = Payment::where('estado', 'PENDIENTE')
-                ->orWhere('estado', 'IMPAGO')
+                ->orWhere('estado', 'VENCIDO')
                 ->count();
             
-            $context['monto_pendiente'] = Payment::whereIn('estado', ['PENDIENTE', 'IMPAGO'])
-                ->sum('monto_pago');
+            $context['monto_pendiente'] = Payment::whereIn('estado', ['PENDIENTE', 'VENCIDO'])
+                ->sum('monto');
             
-            $context['pagos_vencidos'] = Payment::where('estado', 'IMPAGO')->count();
+            $context['pagos_vencidos'] = Payment::where('estado', 'VENCIDO')->count();
         }
 
         if (preg_match('/equipo|equipos|inventario/i', $query) && !isset($context['equipo_especifico'])) {
@@ -199,7 +204,7 @@ class GeminiService
         if (preg_match('/material|materiales|stock/i', $query) && !isset($context['material_especifico'])) {
             $context['materiales_stock_bajo'] = Material::whereRaw('stock_actual <= stock_minimo')
                 ->where('estado', 'ACTIVO')
-                ->get(['codigo', 'nombre', 'stock_actual', 'stock_minimo', 'unidad_base as unidad_medida'])
+                ->get(['codigo', 'nombre', 'stock_actual', 'stock_minimo', 'unidad_base'])
                 ->toArray();
         }
 
@@ -250,13 +255,15 @@ class GeminiService
         
         $prompt .= "INSTRUCCIONES DE FORMATO:\n";
         $prompt .= "1. Usa los datos del contexto JSON para dar respuestas precisas y actualizadas\n";
-        $prompt .= "2. Para montos monetarios, usa el formato: S/ X,XXX.XX (soles peruanos)\n";
-        $prompt .= "3. Para fechas, usa formato legible: '15 de octubre de 2026'\n";
-        $prompt .= "4. Formatea números grandes con separadores de miles: 1,234 en lugar de 1234\n";
-        $prompt .= "5. Si encuentras información específica (equipo, material, contrato), proporciona todos los detalles disponibles\n";
-        $prompt .= "6. Si el dato no existe en el contexto, indica claramente que no está disponible\n";
-        $prompt .= "7. Puedes hacer pequeños cálculos o análisis con los datos proporcionados\n";
-        $prompt .= "8. Si detectas algo preocupante (stock crítico, muchos pagos vencidos), menciónalo proactivamente\n\n";
+        $prompt .= "2. IMPORTANTE: Para conteos totales (clientes, contratos, pagos, etc.), usa SIEMPRE las cifras de 'stats' en el JSON, NO cuentes manualmente los elementos listados\n";
+        $prompt .= "3. Las listas detalladas (contratos_activos, materiales_stock_bajo, etc.) pueden estar limitadas a los primeros N elementos, pero 'stats' siempre tiene el conteo completo\n";
+        $prompt .= "4. Para montos monetarios, usa el formato: S/ X,XXX.XX (soles peruanos)\n";
+        $prompt .= "5. Para fechas, usa formato legible: '15 de octubre de 2026'\n";
+        $prompt .= "6. Formatea números grandes con separadores de miles: 1,234 en lugar de 1234\n";
+        $prompt .= "7. Si encuentras información específica (equipo, material, contrato), proporciona todos los detalles disponibles\n";
+        $prompt .= "8. Si el dato no existe en el contexto, indica claramente que no está disponible\n";
+        $prompt .= "9. Puedes hacer pequeños cálculos o análisis con los datos proporcionados\n";
+        $prompt .= "10. Si detectas algo preocupante (stock crítico, muchos pagos vencidos), menciónalo proactivamente\n\n";
         
         $prompt .= "SEGURIDAD Y PRIVACIDAD:\n";
         $prompt .= "- NUNCA reveles contraseñas, tokens, API keys o información sensible del sistema\n";

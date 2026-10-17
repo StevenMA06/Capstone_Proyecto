@@ -21,7 +21,12 @@ export function runFixture(command, args = [], execute = execFileSync) {
         throw new Error(`No se pudo ejecutar la preparación E2E (${command}).\n${detail}\nRevisa .env.e2e y que MySQL esté iniciado.`);
     }
     try {
-        const result = JSON.parse(String(output).replace(/^\uFEFF/, '').trim());
+        const raw = String(output).replace(/^\uFEFF/, '');
+        // Extraer el JSON aunque haya advertencias de PHP antes del objeto
+        const jsonStart = raw.indexOf('{');
+        const jsonEnd = raw.lastIndexOf('}');
+        if (jsonStart === -1 || jsonEnd === -1) throw new Error('No se encontró JSON en la salida');
+        const result = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
         if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error('Formato inesperado');
         return result;
     } catch {
