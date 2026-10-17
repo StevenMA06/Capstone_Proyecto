@@ -17,7 +17,6 @@ test('CP-IND-01 — Consultar indicadores por proceso y rechazar fechas invertid
 
 test('CP-IND-02 — Eficiencia temporal de instalaciones y procesos sin medición', async ({ page }, info) => {
     test.setTimeout(180_000);
-    info.annotations.push({ type: 'ppf-inconsistency', description: 'Se ejecutan los pasos de eficiencia temporal. La descripción/resultado esperado del PPF todavía menciona registrar observaciones, contrario al paso que exige no mostrar ese formulario.' });
     const data = fixture('ri-data');
     await filterAnalytics(page, '/indicators', data, 'instalaciones');
     const source = oracle(data);
@@ -33,8 +32,8 @@ test('CP-IND-02 — Eficiencia temporal de instalaciones y procesos sin medició
     expect.soft(await details.count(), 'Debe permitir consultar inicio, fin y cálculo').toBe(1);
     if (await details.count()) {
         await details.click();
-        await expect(section).toContainText('Iniciar ejecución');
-        await expect(section).toContainText('Finalizar instalación');
+        await expect(section).toContainText('Iniciar instalación');
+        await expect(section).toContainText('fotografía y el contrato firmado verificado');
     }
     await page.locator('#proceso').selectOption('clientes');
     await page.getByRole('button', { name: 'Aplicar filtros', exact: true }).click();

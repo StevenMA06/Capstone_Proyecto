@@ -32,6 +32,8 @@ Los períodos históricos ficticios se eligen sin registros previos de clientes 
 
 ## Inconsistencia de CP-IND-02 en el PPF
 
+Registro histórico: esta contradicción se armoniza en `CP-IND-02-eficiencia-temporal.md` y en la copia corregida del Word entregada con las correcciones de Reportes e Indicadores. El caso vuelve a evaluarse como OK/No OK conforme a esa definición, sin la marca parcial documental.
+
 El título detallado y los pasos describen «Eficiencia temporal del sistema» y exigen que no aparezca «Registrar observación del pretest». Sin embargo, la descripción y el resultado esperado todavía hablan de registrar una observación y rechazar observaciones incompletas. Son recorridos distintos.
 
 La prueba ejecuta los pasos de eficiencia temporal. Si pasan, el resultado del CP completo queda **PARCIAL (PPF inconsistente)** hasta que el responsable del documento armonice descripción, pasos y resultado esperado. No se agrega un formulario de observaciones para forzar el cumplimiento ni se modifica el Word.
@@ -61,6 +63,8 @@ La rama real no queda acreditada hasta ejecutarla con esas credenciales. Los err
 El reporte conserva OK, No OK, Parcial o Bloqueado según lo observado. La suite no acredita el escenario de hardware mínimo ni otros casos que no se hayan ejecutado.
 
 ## Diferencias detectadas en main fe98407
+
+Estas diferencias históricas se corrigen en `correcciones-reportes-indicadores.md`; conserva los resultados anteriores como evidencia histórica y utiliza una nueva ejecución para acreditar la corrección.
 
 - La ruta `reports.export` no tiene permiso asociado en `AccessCatalog::forRoute`. El middleware deniega la descarga incluso a Gerencia. Cuando esto sucede, CP-REP-02 conserva **No OK** y no afirma haber validado el PDF/XLSX que no pudo descargar.
 - El cálculo temporal busca `inicio_en` y `fin_en` en `pedidos_instalacion`. El módulo técnico guarda esas marcas en `ejecuciones_instalacion`. Los datos de prueba se guardan en esa fuente real; no se agregan columnas artificiales para hacer pasar la prueba.

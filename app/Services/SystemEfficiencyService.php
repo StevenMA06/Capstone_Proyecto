@@ -33,11 +33,12 @@ class SystemEfficiencyService
 
     private function installations(string $from, string $to, string $title): array
     {
-        if (!Schema::hasTable('pedidos_instalacion') || !Schema::hasColumns('pedidos_instalacion', ['inicio_en', 'fin_en'])) {
+        if (!Schema::hasTable('ejecuciones_instalacion') || !Schema::hasColumns('ejecuciones_instalacion', ['inicio_en', 'fin_en'])) {
             return $this->unavailable($title, 'La base de datos aún no cuenta con las marcas de inicio y fin de la instalación.');
         }
 
-        $row = DB::table('pedidos_instalacion')
+        $row = DB::table('ejecuciones_instalacion')
+            ->where('estado', 'COMPLETADA')
             ->whereNotNull('inicio_en')
             ->whereNotNull('fin_en')
             ->whereBetween('fin_en', [$from.' 00:00:00', $to.' 23:59:59'])
@@ -52,9 +53,9 @@ class SystemEfficiencyService
             'average' => $row?->promedio !== null ? (float) $row->promedio / 60 : null,
             'minimum' => $row?->minimo !== null ? (float) $row->minimo / 60 : null,
             'maximum' => $row?->maximo !== null ? (float) $row->maximo / 60 : null,
-            'start' => 'El técnico pulsa «Iniciar ejecución» en su panel.',
-            'end' => 'El técnico pulsa «Finalizar instalación».',
-            'evidence' => 'Las marcas inicio_en y fin_en registradas en el pedido de instalación.',
+            'start' => 'El técnico pulsa «Iniciar instalación» en su panel.',
+            'end' => 'El sistema registra la finalización cuando confirma en Drive la fotografía y el contrato firmado verificado.',
+            'evidence' => 'Las marcas inicio_en y fin_en de ejecuciones_instalacion, vinculadas al pedido.',
             'scope' => 'Mide el tiempo transcurrido entre ambas acciones registradas por el sistema. No descuenta pausas porque el sistema todavía no registra su inicio y fin.',
             'calculation' => 'Promedio de (fin_en − inicio_en) para las instalaciones finalizadas dentro del período seleccionado. Conversión de segundos a minutos.',
         ];
