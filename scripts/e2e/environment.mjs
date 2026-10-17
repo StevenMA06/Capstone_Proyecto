@@ -17,6 +17,9 @@ if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('E2E
 export const baseURL = `http://127.0.0.1:${port}`;
 export const php = process.env.E2E_PHP_BIN || 'php';
 export const dniMode = process.env.E2E_DNI_MODE || 'simulado';
+export const aiMode = process.env.E2E_AI_MODE || 'deshabilitado';
+if (!['deshabilitado', 'real'].includes(aiMode)) throw new Error('E2E_AI_MODE debe ser deshabilitado o real.');
+if (aiMode === 'real' && (!process.env.E2E_GEMINI_API_KEY || !process.env.E2E_GEMINI_MODEL)) throw new Error('IA real requiere E2E_GEMINI_API_KEY y E2E_GEMINI_MODEL explícitos.');
 export const driveMode = process.env.E2E_DRIVE_MODE || 'deshabilitado';
 if (!['deshabilitado', 'real'].includes(driveMode)) throw new Error('E2E_DRIVE_MODE debe ser deshabilitado o real.');
 const driveValue = key => driveMode === 'real' ? process.env[`E2E_INSTALLATION_DRIVE_${key}`] || '' : '';
@@ -39,6 +42,8 @@ Object.assign(process.env, {
     SESSION_DRIVER: 'file', SESSION_COOKIE: 'lunnys_e2e', SESSION_DOMAIN: 'null',
     SESSION_SECURE_COOKIE: 'false', CACHE_STORE: 'array', QUEUE_CONNECTION: 'sync',
     MAIL_MAILER: 'array', ACCESS_TWO_FACTOR_ENABLED: 'false',
+    GEMINI_API_KEY: aiMode === 'real' ? process.env.E2E_GEMINI_API_KEY : '',
+    GEMINI_MODEL: process.env.E2E_GEMINI_MODEL || 'gemini-2.0-flash-exp',
     SIGNATURE_PYTHON: process.env.E2E_SIGNATURE_PYTHON || 'python',
     INSTALLATION_DRIVE_CLIENT_ID: driveValue('CLIENT_ID'), INSTALLATION_DRIVE_CLIENT_SECRET: driveValue('CLIENT_SECRET'),
     INSTALLATION_DRIVE_REFRESH_TOKEN: driveValue('REFRESH_TOKEN'), INSTALLATION_DRIVE_CREDENTIALS_PATH: driveValue('CREDENTIALS_PATH'), INSTALLATION_DRIVE_FOLDER_ID: driveValue('FOLDER_ID'),

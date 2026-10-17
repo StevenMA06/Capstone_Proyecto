@@ -1,7 +1,7 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, openSync, closeSync } from 'node:fs';
 import os from 'node:os';
-import { root, php, baseURL, runDir, dniMode } from './environment.mjs';
+import { root, php, baseURL, runDir, dniMode, driveMode, aiMode } from './environment.mjs';
 import { runFixture } from './fixture-runner.mjs';
 
 export async function startServer() {
@@ -19,7 +19,7 @@ writeFileSync(`${runDir}/ambiente.json`, JSON.stringify({
     date: new Date().toISOString(), timezone: 'America/Lima', node: process.version,
     platform: os.platform(), release: os.release(), cpu: os.cpus()[0]?.model,
     logicalCpus: os.cpus().length, ramBytes: os.totalmem(), viewport: '1366x768',
-    baseURL, dniMode, sourceRevision, twoFactor: false, scenario: process.env.E2E_SCENARIO || 'referencia', ...versions,
+    baseURL, dniMode, driveMode, aiMode, sourceRevision, twoFactor: false, scenario: process.env.E2E_SCENARIO || 'referencia', ...versions,
     note: 'Recursos del equipo anfitrión; no acreditan límites de una VM o escenario mínimo.',
 }, null, 2));
 // PHP directo evita procesos nietos de artisan serve y permite cierre fiable en Windows.

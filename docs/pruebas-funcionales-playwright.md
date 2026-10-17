@@ -1,6 +1,6 @@
 # Ejecución del PPF con Playwright
 
-Esta suite incorpora veinte casos: CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02 y CP-INS-01/02. Los casos se contrastaron con el PPF facilitado por el usuario. Incluyen capturas, documentos y comprobaciones de persistencia. Los otros 8 casos del PPF no están automatizados. Incorporar el script no significa que el caso esté aprobado: consulta el resultado de su ejecución. Usuarios y Control de acceso tampoco se certifican con esta suite. Consulta `pruebas-pedidos-instalaciones.md` para el alcance de pedidos, instalaciones y la opción Drive real.
+Esta suite incorpora los 28 códigos del PPF: CP-CLI, CP-PLA, CP-CON, CP-PAG, CP-EQU, CP-MAT, CP-KAR, CP-ZON, CP-PED, CP-INS, CP-REP, CP-IND, CP-BI y CP-IA, cada uno con casos 01 y 02. Los casos se contrastaron con el PPF facilitado por el usuario. Incorporar el script no significa que el caso esté aprobado: consulta el resultado de su ejecución. Usuarios y Control de acceso tampoco se certifican con esta suite. Consulta `pruebas-pedidos-instalaciones.md` para Drive real y `pruebas-reportes-indicadores-bi-ia.md` para las exportaciones, Gemini y la inconsistencia de CP-IND-02.
 
 ## Preparación en Windows
 
