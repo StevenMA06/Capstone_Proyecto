@@ -5,7 +5,7 @@ test('CP-CON-01 — Registrar y activar únicamente con firma e instalación com
     test.setTimeout(120_000);
     let state: any;
     await test.step('Registrar contrato pendiente con código único', async () => {
-        state = await registerContract(page);
+        state = await registerContract(page, info);
         expect(state.contract.estado).toBe('PENDIENTE');
         expect(state.contract.codigo).toMatch(/^CON-/);
         expect(state.code_count).toBe(1);

@@ -35,8 +35,9 @@ export function pdfText(bytes: Buffer, info: TestInfo): string {
     });
 }
 
-export async function registerContract(page: Page) {
-    const data = fixture('commercial-data');
+export async function registerContract(page: Page, info?: TestInfo) {
+    const data = fixture('commercial-data', info ? String(info.repeatEachIndex + 1) : undefined);
+    if (info) await info.attach('datos-del-ciclo', { body: JSON.stringify(data, null, 2), contentType: 'application/json' });
     await page.goto('/contracts');
     await page.getByRole('link', { name: /Registrar contrato/ }).click();
     for (const key of ['cliente_id', 'plan_id', 'zona_id', 'responsable_id']) {
@@ -47,7 +48,10 @@ export async function registerContract(page: Page) {
     await page.getByRole('button', { name: 'Guardar contrato' }).click();
     await expect(page).toHaveURL(/\/contracts\/\d+$/);
     const id = Number(new URL(page.url()).pathname.split('/').pop());
-    return fixture('commercial-contract-state', String(id));
+    const state = fixture('commercial-contract-state', String(id));
+    expect(state.contract).toMatchObject({ cliente_id: data.cliente_id, plan_id: data.plan_id, duracion_meses: data.duracion_meses });
+    expect(String(state.contract.fecha_inicio).slice(0, 10)).toBe(data.fecha_inicio);
+    return state;
 }
 
 export async function findPayment(page: Page, contractCode: string, paymentCode: string, status: string) {

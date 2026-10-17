@@ -59,6 +59,27 @@ return function (string $command, string $arg, User $actor, array $clientData, a
     if (! in_array($command, ['commercial-data', 'commercial-contract', 'commercial-payment-data'], true)) {
         throw new RuntimeException('Operación comercial E2E desconocida.');
     }
+    $cycle = null;
+    $profile = null;
+    if ($command === 'commercial-data' && $arg !== '') {
+        if (! preg_match('/^[1-9][0-9]{0,3}$/D', $arg)) throw new RuntimeException('Ciclo E2E inválido (1 a 9999).');
+        $cycle = (int) $arg;
+        $profiles = [
+            ['Ana Lucía', 'Torres Vega', 30, '49.90', 1],
+            ['Luis Alberto', 'Rojas Díaz', 60, '59.90', 3],
+            ['María José', 'Quispe Flores', 100, '79.90', 6],
+            ['Carlos Andrés', 'Medina Ruiz', 200, '99.90', 12],
+            ['Rosa Elena', 'Vargas Soto', 300, '129.90', 24],
+        ];
+        $profile = $profiles[($cycle - 1) % count($profiles)];
+        $clientData['nombres_razon_social'] = $profile[0];
+        $clientData['apellidos'] = $profile[1];
+        $clientData['telefono'] = (string) (900110000 + $cycle);
+        $clientData['direccion'] = 'Av. Pruebas '.(100 + $cycle);
+        $planData['nombre'] = "QA Ciclo {$cycle} {$planData['nombre']}";
+        $planData['velocidad_mbps'] = $profile[2];
+        $planData['precio_mensual'] = $profile[3];
+    }
     $client = Client::create($clientData + ['creado_por' => $actor->getKey(), 'estado' => 'PENDIENTE']);
     $plan = app(App\Services\PlanService::class)->create($planData, $actor);
     $zoneId = DB::table('zonas_cobertura')->where('codigo', 'QA-E2E')->value('zona_id');
@@ -68,6 +89,12 @@ return function (string $command, string $arg, User $actor, array $clientData, a
         'responsable_id' => Employee::where('numero_documento', 'QA-E2E-VENTAS')->value('empleado_id'),
         'fecha_inicio' => now('America/Lima')->toDateString(), 'duracion_meses' => 12,
     ];
+    if ($cycle !== null) {
+        $data['fecha_inicio'] = now('America/Lima')->addDays($cycle - 1)->toDateString();
+        $data['duracion_meses'] = $profile[4];
+        $data['ciclo'] = $cycle;
+        $data['datos_ficticios'] = ['cliente' => $profile[0].' '.$profile[1], 'dni' => $clientData['numero_documento'], 'correo' => $clientData['correo'], 'telefono' => $clientData['telefono'], 'direccion' => $clientData['direccion'], 'plan' => $planData['nombre'], 'velocidad_mbps' => $profile[2], 'precio_mensual' => $profile[3]];
+    }
     if ($command === 'commercial-data') return $data;
     $id = app(App\Services\ContractService::class)->create($data, $actor->getKey());
     if ($command === 'commercial-contract') return $snapshot($id);
