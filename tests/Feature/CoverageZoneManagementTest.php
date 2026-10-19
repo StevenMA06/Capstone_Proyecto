@@ -77,7 +77,7 @@ class CoverageZoneManagementTest extends TestCase
         $this->assertSame('ZON-EL-MILAGRO-HUANCHACO', $first->fresh()->codigo);
     }
 
-    public function test_location_search_coverage_check_and_status_preserve_history(): void
+    public function test_location_search_and_status_preserve_history(): void
     {
         $manager = $this->actor();
         $plan = $this->plan($manager);
@@ -87,12 +87,11 @@ class CoverageZoneManagementTest extends TestCase
         $this->signIn($manager)->get('/zones?search=Huanchaco')->assertOk()->assertSee('Zona Norte');
         $this->get('/zones?search=ZON_')->assertOk()->assertSee('ZON_01');
         $this->get('/zones?search=ZONX')->assertOk()->assertDontSee('ZON_01');
-        $this->get('/zones?coverage=Huanchaco')->assertOk()->assertSee('Cobertura disponible')->assertSee('Fibra Hogar');
 
         $this->patch('/zones/'.$zone->getKey().'/status', ['is_active' => false])->assertSessionHasNoErrors();
         $this->assertSame('INACTIVA', $zone->fresh()->estado);
         $this->assertDatabaseHas('plan_zona_cobertura', ['zona_id' => $zone->getKey(), 'plan_id' => $plan->getKey()]);
-        $this->get('/zones?coverage=Huanchaco')->assertOk()->assertSee('Sin cobertura disponible');
+        $this->get('/zones')->assertOk()->assertDontSee('Verificar cobertura');
         $this->get('/contracts/create')->assertOk()->assertDontSee('Zona Norte');
     }
 

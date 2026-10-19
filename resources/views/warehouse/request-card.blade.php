@@ -3,7 +3,7 @@
         <div><p class="order-card-kicker">SOLICITUD CONJUNTA #{{ $group->solicitud_grupo_id }} · Pedido {{ $group->pedido_codigo }}</p><h3>{{ $items->count() === 1 ? 'Recurso solicitado' : 'Equipo y material solicitados' }}</h3></div>
         <span class="installation-state warehouse-state {{ $groupLabel === 'Preparada' ? 'is-ready' : ($groupLabel === 'Rechazada' ? 'is-rejected' : 'is-waiting') }}">{{ $groupLabel }}</span>
     </header>
-    <div class="warehouse-group-lines">
+    <div class="warehouse-group-lines" aria-label="Recursos solicitados y disponibilidad">
         @foreach($items as $resourceItem)
             @php
                 $matchingEquipment = $resourceItem->tipo === 'EQUIPO' && $resourceItem->equipo_tipo_solicitado
@@ -13,13 +13,22 @@
                 $availableQuantity = $resourceItem->tipo === 'EQUIPO'
                     ? ($resourceItem->equipo_tipo_solicitado ? $matchingEquipment->count() : (int) $equipmentAvailable) : (float) $resourceItem->material_stock_libre;
                 $shortage = $resourceItem->tipo === 'EQUIPO' ? !$equipmentAvailable : $availableQuantity < (float) $resourceItem->cantidad;
-                $resource = $resourceItem->tipo === 'EQUIPO' ? 'equipo' : 'material';
                 $materialUnit = $resourceItem->material_inventario_en_empaque ? $resourceItem->material_unidad_empaque : $resourceItem->material_unidad_base;
+                $resourceName = $resourceItem->tipo === 'EQUIPO'
+                    ? ($resourceItem->equipo_tipo_solicitado ? 'Tipo '.$resourceItem->equipo_tipo_solicitado : $resourceItem->equipo_codigo.' · '.$resourceItem->equipo_nombre)
+                    : $resourceItem->material_codigo.' · '.$resourceItem->material_nombre;
+                $requestedUnit = $resourceItem->tipo === 'EQUIPO' ? 'unidad'.((float) $resourceItem->cantidad === 1.0 ? '' : 'es') : $materialUnit;
             @endphp
-            <section class="warehouse-group-line">
-                <div class="warehouse-group-line-heading"><div><small>{{ $resourceItem->tipo === 'EQUIPO' ? 'EQUIPO' : 'MATERIAL' }}</small><strong>{{ $resourceItem->tipo === 'EQUIPO' ? ($resourceItem->equipo_tipo_solicitado ? 'Tipo '.$resourceItem->equipo_tipo_solicitado : $resourceItem->equipo_codigo.' · '.$resourceItem->equipo_nombre) : $resourceItem->material_codigo.' · '.$resourceItem->material_nombre }}</strong>@if($resourceItem->tipo === 'EQUIPO' && !$resourceItem->equipo_tipo_solicitado)<span>{{ $resourceItem->equipo_tipo }} · Modelo {{ $resourceItem->equipo_modelo ?: 'No registrado' }} · Serie {{ $resourceItem->equipo_serie ?: 'No registrada' }}</span>@endif</div><span>{{ \App\Support\InventoryQuantity::format($resourceItem->cantidad) }}{{ $resourceItem->tipo === 'EQUIPO' ? ' unidad' : ' '.$materialUnit }}</span></div>
-                @if($resourceItem->tipo === 'MATERIAL' && $resourceItem->material_inventario_en_empaque && $resourceItem->material_factor_conversion)<p class="warehouse-result-detail">Equivale a {{ \App\Support\InventoryQuantity::format($resourceItem->cantidad * $resourceItem->material_factor_conversion) }} {{ $resourceItem->material_unidad_base }}.</p>@endif
-                @if($pending)<div class="warehouse-group-availability {{ $shortage ? 'is-shortage' : 'is-available' }}"><span>Disponible ahora</span><strong>{{ \App\Support\InventoryQuantity::format($availableQuantity) }} {{ $resourceItem->tipo === 'EQUIPO' ? 'unidad(es)' : $materialUnit }}</strong>@if($resourceItem->tipo === 'MATERIAL' && $resourceItem->material_inventario_en_empaque && $resourceItem->material_factor_conversion)<small>Equivale a {{ \App\Support\InventoryQuantity::format($availableQuantity * $resourceItem->material_factor_conversion) }} {{ $resourceItem->material_unidad_base }}</small>@endif<small>{{ $shortage ? 'No alcanza para completar este recurso' : 'Se reserva junto con el resto de la solicitud' }}</small></div>@endif
+            <section class="warehouse-group-line {{ $resourceItem->tipo === 'EQUIPO' ? 'is-equipment' : 'is-material' }}">
+                <header class="warehouse-resource-heading">
+                    <span class="warehouse-resource-kind">{{ $resourceItem->tipo === 'EQUIPO' ? 'Equipo solicitado' : 'Material solicitado' }}</span>
+                    <strong>{{ $resourceName }}</strong>
+                    @if($resourceItem->tipo === 'EQUIPO' && !$resourceItem->equipo_tipo_solicitado)<small>{{ $resourceItem->equipo_tipo }} · Modelo {{ $resourceItem->equipo_modelo ?: 'No registrado' }} · Serie {{ $resourceItem->equipo_serie ?: 'No registrada' }}</small>@endif
+                </header>
+                <div class="warehouse-resource-metrics">
+                    <div class="warehouse-resource-requested"><span>Cantidad solicitada</span><strong>{{ \App\Support\InventoryQuantity::format($resourceItem->cantidad) }} {{ $requestedUnit }}</strong>@if($resourceItem->tipo === 'MATERIAL' && $resourceItem->material_inventario_en_empaque && $resourceItem->material_factor_conversion)<small>Equivale a {{ \App\Support\InventoryQuantity::format($resourceItem->cantidad * $resourceItem->material_factor_conversion) }} {{ $resourceItem->material_unidad_base }}</small>@endif</div>
+                    @if($pending)<div class="warehouse-group-availability {{ $shortage ? 'is-shortage' : 'is-available' }}"><span>Disponible en almacén</span><strong>{{ \App\Support\InventoryQuantity::format($availableQuantity) }} {{ $resourceItem->tipo === 'EQUIPO' ? 'unidad(es)' : $materialUnit }}</strong>@if($resourceItem->tipo === 'MATERIAL' && $resourceItem->material_inventario_en_empaque && $resourceItem->material_factor_conversion)<small>Equivale a {{ \App\Support\InventoryQuantity::format($availableQuantity * $resourceItem->material_factor_conversion) }} {{ $resourceItem->material_unidad_base }}</small>@endif<small>{{ $shortage ? 'Disponibilidad insuficiente' : 'Disponible para reservar' }}</small></div>@endif
+                </div>
                 @if($resourceItem->tipo === 'EQUIPO' && !$resourceItem->equipo_tipo_solicitado && $resourceItem->equipo_id)<p class="warehouse-result-detail"><strong>Unidad identificada:</strong> {{ $resourceItem->equipo_codigo }} · {{ $resourceItem->equipo_nombre }} · {{ $resourceItem->equipo_tipo }} · Modelo {{ $resourceItem->equipo_modelo ?: 'No registrado' }} · Serie {{ $resourceItem->equipo_serie ?: 'No registrada' }}</p>@endif
                 @if($resourceItem->decision_motivo_codigo || $resourceItem->decision_observacion)<p class="warehouse-result-detail"><strong>Motivo:</strong> {{ \App\Support\ResourceRejectionReasons::label($resourceItem->decision_motivo_codigo) ?: $resourceItem->decision_observacion }}@if($resourceItem->decision_motivo_codigo && $resourceItem->decision_observacion) · {{ $resourceItem->decision_observacion }}@endif</p>@endif
             </section>

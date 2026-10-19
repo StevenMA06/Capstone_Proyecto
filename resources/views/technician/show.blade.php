@@ -86,19 +86,7 @@
 <div class="installation-grid" id="instalacion-recursos" data-installation-section="recursos" tabindex="-1">
 <section class="installation-panel">
     <h2>Equipos utilizados</h2>
-    <p class="installation-section-help">Registra el equipo que efectivamente usaste en esta instalación. La reserva previa se muestra en la lista.</p>
-    @if($running && $canWork)
-    @can('technician.manage')
-@routecan('technician.equipment')<details class="installation-inline-action" @if($errors->has('equipo_id')) open @endif><summary>Registrar equipo</summary><form method="POST" action="{{ route('technician.equipment', $installation->pedido_id) }}" class="installation-form">
-        @csrf
-        <label for="equipo_id">Equipo disponible o asignado a esta instalación</label>
-        <select id="equipo_id" name="equipo_id" required><option value="">Selecciona un equipo</option>
-            @foreach($equipment as $item)<option value="{{ $item->equipo_id }}" @selected(old('equipo_id') == $item->equipo_id)>{{ $item->codigo }} · {{ $item->nombre }}{{ $item->numero_serie ? ' · '.$item->numero_serie : '' }}</option>@endforeach
-        </select>
-        <button type="submit" class="action-link">Registrar equipo utilizado</button>
-    </form></details>@endroutecan
-@endcan
-    @endif
+    <p class="installation-section-help">Consulta los equipos asignados a esta instalación y su estado actual.</p>
     <div class="table-scroll"><table class="users-table installation-table"><thead><tr><th>Equipo</th><th>Serie / marca / modelo</th><th>Estado</th></tr></thead><tbody>
     @forelse($usedEquipment as $item)<tr><td data-label="Equipo"><div>{{ $item->nombre }}<small>{{ $item->codigo }}</small></div></td><td data-label="Serie / marca / modelo"><div>{{ $item->numero_serie ?? 'Sin serie' }}<small>{{ $item->marca ?? 'Sin marca' }} · {{ $item->modelo ?? 'Sin modelo' }}</small></div></td><td data-label="Estado">{{ ucfirst(mb_strtolower($item->estado_asignacion)) }}</td></tr>
     @empty<tr><td colspan="3">Sin equipos registrados.</td></tr>@endforelse
@@ -106,24 +94,10 @@
 </section>
 <section class="installation-panel">
     <h2>Materiales utilizados</h2>
-    <p class="installation-section-help">Actualiza el total acumulado utilizado. Se descontará únicamente la diferencia respecto del último registro.</p>
-    @if($running && $canWork)
-    @can('technician.manage')
-@routecan('technician.material')<details class="installation-inline-action" @if($errors->has('material_id') || $errors->has('cantidad_utilizada')) open @endif><summary>Registrar material</summary><form method="POST" action="{{ route('technician.material', $installation->pedido_id) }}" class="installation-form" data-consumption-form>
-        @csrf
-        <label for="material_id">Material</label><select id="material_id" name="material_id" required><option value="">Selecciona un material</option>
-        @foreach($materials as $item)<option value="{{ $item->material_id }}" data-packaging="{{ $item->inventario_en_empaque ? '1' : '0' }}" data-unit="{{ $item->unidad_medida }}" @selected(old('material_id') == $item->material_id)>{{ $item->nombre }} · Stock: {{ \App\Support\InventoryQuantity::format($item->stock_actual) }} {{ $item->unidad_medida }}@if($item->inventario_en_empaque && $item->factor_conversion) · {{ \App\Support\InventoryQuantity::format($item->stock_actual * $item->factor_conversion) }} {{ $item->unidad_base }}@endif</option>@endforeach</select>
-        <label for="cantidad_utilizada">Total acumulado utilizado</label>
-        <input id="cantidad_utilizada" name="cantidad_utilizada" type="number" min="0.001" max="999999999.999" step="0.001" value="{{ old('cantidad_utilizada') }}" required aria-describedby="consumption-help">
-        <small id="consumption-unit">Selecciona un material para ver su unidad de inventario.</small>
-        <small id="consumption-help">Indica el total acumulado en la unidad configurada en Inventario. Si el stock se maneja por cajas, registra cajas enteras. Solo se descontará lo adicional desde el último registro.</small>
-        <button type="submit" class="action-link">Guardar consumo</button>
-    </form></details>@endroutecan
-@endcan
-    @endif
-    <div class="table-scroll"><table class="users-table installation-table"><thead><tr><th>Material / unidad</th><th>Asignada</th><th>Utilizada</th><th>Devuelta</th></tr></thead><tbody>
-    @forelse($usedMaterials as $item)<tr><td data-label="Material / unidad"><div>{{ $item->nombre }}<small>{{ $item->codigo }} · {{ $item->unidad_medida }}</small></div></td><td data-label="Asignada">{{ \App\Support\InventoryQuantity::format($item->cantidad_asignada) }} {{ $item->unidad_medida }}</td><td data-label="Utilizada">{{ \App\Support\InventoryQuantity::format($item->cantidad_utilizada) }} {{ $item->unidad_medida }}</td><td data-label="Devuelta">{{ \App\Support\InventoryQuantity::format($item->cantidad_devuelta) }} {{ $item->unidad_medida }}</td></tr>
-    @empty<tr><td colspan="4">Sin materiales registrados.</td></tr>@endforelse
+    <p class="installation-section-help">Consulta los materiales asignados a esta instalación.</p>
+    <div class="table-scroll"><table class="users-table installation-table"><thead><tr><th>Material / unidad</th><th>Asignada</th></tr></thead><tbody>
+    @forelse($usedMaterials as $item)<tr><td data-label="Material / unidad"><div>{{ $item->nombre }}<small>{{ $item->codigo }} · {{ $item->unidad_medida }}</small></div></td><td data-label="Asignada">{{ \App\Support\InventoryQuantity::format($item->cantidad_asignada) }} {{ $item->unidad_medida }}</td></tr>
+    @empty<tr><td colspan="2">Sin materiales registrados.</td></tr>@endforelse
     </tbody></table></div>
 </section>
 </div>

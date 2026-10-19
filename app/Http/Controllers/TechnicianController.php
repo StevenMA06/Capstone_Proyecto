@@ -100,16 +100,6 @@ class TechnicianController extends Controller
             'assigner' => $installation->asignado_por ? User::with('employee')->find($installation->asignado_por) : null,
             'execution' => DB::table('ejecuciones_instalacion')->where('pedido_id', $pedido)->first(),
             'evidences' => DB::table('evidencias_instalacion')->where('pedido_id', $pedido)->orderByDesc('evidencia_id')->paginate(10)->withQueryString(),
-            'equipment' => DB::table('equipos')->whereNotIn('condicion', ['MALO', 'MALOGRADO'])->where(function ($q) use ($pedido) {
-                $q->where('estado', 'DISPONIBLE')->orWhereIn('equipo_id', DB::table('pedido_equipos')->select('equipo_id')
-                    ->where('pedido_id', $pedido)->where('estado_asignacion', 'ASIGNADO')->whereNull('fecha_devolucion'));
-            })->when($installation->fase_flujo, fn ($q) => $q->whereIn('equipo_id', DB::table('pedido_equipos')->select('equipo_id')
-                ->where('pedido_id', $pedido)->whereIn('estado_asignacion', ['ASIGNADO', 'UTILIZADO'])))
-                ->orderBy('nombre')->get(),
-            'materials' => DB::table('materiales')->where('estado', 'ACTIVO')->select('materiales.*')
-                ->selectRaw('CASE WHEN inventario_en_empaque = 1 THEN unidad_empaque ELSE unidad_base END as unidad_medida')
-                ->when($installation->fase_flujo, fn ($q) => $q->whereIn('material_id', DB::table('pedido_materiales')->select('material_id')->where('pedido_id', $pedido)))
-                ->orderBy('nombre')->get(),
             'usedEquipment' => DB::table('pedido_equipos as pe')->join('equipos as e', 'e.equipo_id', '=', 'pe.equipo_id')
                 ->where('pe.pedido_id', $pedido)->select('pe.*', 'e.codigo', 'e.nombre', 'e.numero_serie', 'e.marca', 'e.modelo')->get(),
             'usedMaterials' => DB::table('pedido_materiales as pm')->join('materiales as m', 'm.material_id', '=', 'pm.material_id')
