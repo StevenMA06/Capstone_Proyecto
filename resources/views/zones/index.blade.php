@@ -1,28 +1,5 @@
 @extends('zones.layout')
 @section('zones-content')
-<section class="coverage-check" aria-labelledby="coverage-title">
-    <div><span class="coverage-icon" aria-hidden="true"><i class="bi bi-geo-alt"></i></span><div><h2 id="coverage-title">Verificar cobertura</h2><p>Escribe un distrito, provincia, departamento o nombre de zona.</p></div></div>
-    
-@routecan('zones.index')<form method="GET" action="{{ route('zones.index') }}">
-        <label class="sr-only" for="coverage">Ubicación que deseas verificar</label>
-        <input id="coverage" name="coverage" value="{{ $coverageQuery }}" maxlength="120" placeholder="Ej. Huanchaco o Trujillo">
-        <button class="action-link" type="submit">Verificar</button>
-    </form>@endroutecan
-
-    @if($coverageQuery !== '')
-        <div class="coverage-result {{ $coverageMatches->isEmpty() ? 'unavailable' : 'available' }}" role="status">
-            @if($coverageMatches->isEmpty())
-                <strong>Sin cobertura disponible</strong><span>No se encontraron zonas activas para “{{ $coverageQuery }}”.</span>
-            @else
-                <strong>Cobertura disponible</strong><span>{{ $coverageMatches->count() }} {{ $coverageMatches->count() === 1 ? 'zona activa encontrada' : 'zonas activas encontradas' }} para “{{ $coverageQuery }}”.</span>
-                <ul>@foreach($coverageMatches as $match)<li>
-@routecan('zones.show')<a href="{{ route('zones.show', $match) }}">{{ $match->nombre }}</a>@endroutecan
- · {{ $match->distrito }}@if($match->provincia), {{ $match->provincia }}@endif <span>{{ $match->plans->isEmpty() ? 'Sin planes activos asociados' : $match->plans->pluck('nombre')->join(', ') }}</span></li>@endforeach</ul>
-            @endif
-        </div>
-    @endif
-</section>
-
 <div class="zones-workspace">
     <aside class="zones-filter-panel" aria-labelledby="zones-filter-title">
         <h2 id="zones-filter-title">Filtros y buscador</h2><p>Encuentra zonas por cualquier dato de ubicación.</p>

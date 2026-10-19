@@ -119,6 +119,11 @@ class ContractRepository
         return DB::table('plan_zona_cobertura')->where('plan_id', $planId)->where('zona_id', $zoneId)->where('estado', 'ACTIVO')->exists();
     }
 
+    public function defaultSalesAssistantId(): ?int
+    {
+        return $this->salesAssistants()->orderBy('empleado_id')->value('empleado_id');
+    }
+
     public function formOptions(): array
     {
         return [

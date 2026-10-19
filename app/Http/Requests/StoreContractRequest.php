@@ -28,7 +28,7 @@ class StoreContractRequest extends FormRequest
             'plan_id' => ['required', 'integer', Rule::exists('planes_servicio', 'plan_id')],
             'cliente_id' => ['required', 'integer', Rule::exists('clientes', 'cliente_id')],
             'zona_id' => ['required', 'integer', Rule::exists('zonas_cobertura', 'zona_id')],
-            'responsable_id' => $this->user()?->isManager()
+            'responsable_id' => $this->user()?->hasRole(\App\Models\Role::MANAGER) && ! $this->user()?->isAdministrator()
                 ? ['required', 'integer', Rule::exists('empleados', 'empleado_id')]
                 : ['prohibited'],
             'fecha_inicio' => ['required', 'date_format:Y-m-d', 'after_or_equal:0001-01-01'],
@@ -66,7 +66,7 @@ class StoreContractRequest extends FormRequest
             'date_format' => 'Ingresa una fecha válida (año-mes-día).', 'between' => 'La duración debe estar entre 1 y 65535 meses.',
             'string' => 'El campo :attribute debe ser texto.', 'max' => 'El campo :attribute supera el máximo permitido (:max).',
             'prohibited' => 'El contrato firmado se adjunta después de registrar el contrato.',
-            'responsable_id.prohibited' => 'El responsable se asigna automáticamente desde tu cuenta. Solo Gerencia o Administración puede cambiarlo.',
+            'responsable_id.prohibited' => 'El responsable se asigna automáticamente desde tu cuenta. Solo Gerencia puede cambiarlo.',
             'mimes' => 'El archivo seleccionado debe ser un PDF válido.',
             'estado.prohibited' => 'El estado no se cambia desde el formulario de edición.',
             'motivo_cancelacion.prohibited' => 'La cancelación debe tramitarse mediante una solicitud documentada.',

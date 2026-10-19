@@ -18,16 +18,11 @@ class CoverageZoneController extends Controller
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:120'],
             'estado' => ['nullable', Rule::in(['ACTIVA', 'INACTIVA'])],
-            'coverage' => ['nullable', 'string', 'max:120'],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
         $search = trim((string) ($filters['search'] ?? ''));
-        $coverage = trim((string) ($filters['coverage'] ?? ''));
-
         return view('zones.index', [
             'records' => $this->zones->search($search, $filters['estado'] ?? null),
-            'coverageQuery' => $coverage,
-            'coverageMatches' => $this->zones->coverageMatches($coverage),
         ]);
     }
 

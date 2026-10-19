@@ -9,8 +9,8 @@
     @if ($plans->isEmpty())
         <p class="notice">No hay planes activos. Solicita a Gerencia que registre o active un plan.</p>
     @endif
-    @if ($clients->isEmpty() || $zones->isEmpty() || ($canChooseResponsible && $employees->isEmpty()))
-        <p class="notice">Se necesita al menos un cliente, una zona y, para Gerencia o Administración, un Asistente de Ventas activo.</p>
+    @if ($clients->isEmpty() || $zones->isEmpty() || ($canChooseResponsible ? $employees->isEmpty() : !$assignedResponsible))
+        <p class="notice">Se necesita al menos un cliente, una zona y una cuenta responsable activa vinculada.</p>
     @endif
     @php($selectedClient = $clients->firstWhere('cliente_id', (int) old('cliente_id', $contract->cliente_id ?? ($selectedClientId ?? 0))))
     @can('contracts.manage')<form method="POST" @if ($contract) enctype="multipart/form-data" @endif
@@ -86,7 +86,7 @@
                         <p id="responsable_id-error" class="field-error">{{ $message }}</p>
                     @enderror
                 </div>
-                @else
+                @elseif(!auth()->user()->isAdministrator())
                 <div class="contract-field contract-responsible-summary">
                     <span class="contract-field-label">Responsable del contrato</span>
                     <strong>{{ $assignedResponsible ? trim($assignedResponsible->nombres.' '.$assignedResponsible->apellidos) : 'Tu cuenta no tiene un Asistente de Ventas activo asociado' }}</strong>
@@ -156,7 +156,4 @@
                 @disabled(!$contract && ($plans->isEmpty() || $clients->isEmpty() || $zones->isEmpty() || ($canChooseResponsible ? $employees->isEmpty() : !$assignedResponsible)))>{{ $contract ? 'Guardar cambios' : 'Guardar contrato' }}</button>
         </div>
     </form>@endcan
-    @if($contract && $cancellationWorkflowReady && auth()->user()->hasPermission('contracts.cancel.request') && in_array($contract->estado, ['PENDIENTE', 'ACTIVO'], true))
-        <div class="cancellation-request-placement">@include('contracts._cancellation-request-form')</div>
-    @endif
 @endsection

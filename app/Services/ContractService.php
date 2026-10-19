@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Role;
 use App\Repositories\ContractPeriodRepository;
 use App\Repositories\ContractRepository;
 use App\Repositories\PaymentRepository;
@@ -104,11 +105,18 @@ class ContractService
         $data = $this->contracts->formOptions();
         $data['plans'] = $this->plans->active();
         $data['contract'] = $id ? $this->contracts->find($id) : null;
-        $data['canChooseResponsible'] = $actor?->isManager() ?? true;
-        $responsibleId = $data['contract']?->responsable_id ?? $actor?->empleado_id;
+        $data['canChooseResponsible'] = $actor
+            ? ($actor->hasRole(Role::MANAGER) && ! $actor->isAdministrator())
+            : true;
+        $responsibleId = $data['contract']?->responsable_id
+            ?? ($actor ? $this->automaticResponsibleFor($actor) : null);
         $data['assignedResponsible'] = $responsibleId
             ? $this->contracts->option('employees', (int) $responsibleId)
             : null;
+        if (! $data['assignedResponsible'] && $actor?->isAdministrator() && (int) $actor->empleado_id === (int) $responsibleId) {
+            $data['assignedResponsible'] = DB::table('empleados')->where('empleado_id', $responsibleId)
+                ->where('estado', 'ACTIVO')->first();
+        }
         if (! $data['canChooseResponsible']) {
             $data['employees'] = collect();
         }
@@ -133,6 +141,15 @@ class ContractService
         return $data;
     }
 
+    public function automaticResponsibleFor(\App\Models\User $actor): ?int
+    {
+        if ($actor->empleado_id) {
+            return (int) $actor->empleado_id;
+        }
+
+        return $actor->isAdministrator() ? $this->contracts->defaultSalesAssistantId() : null;
+    }
+
     public function create(array $data, int $actorId): int
     {
         for ($attempt = 0; $attempt < 3; $attempt++) {
@@ -142,7 +159,7 @@ class ContractService
                     if ($plan->estado !== 'ACTIVO') {
                         throw ValidationException::withMessages(['plan_id' => 'Este plan fue inhabilitado. Selecciona otro plan activo.']);
                     }
-                    $client = $this->validateSelections($data);
+                    $client = $this->validateSelections($data, null, $actorId);
                     $end = $this->endDate($data);
 
                     $contractId = $this->contracts->create(Arr::only($data, [
@@ -186,7 +203,7 @@ class ContractService
                 if ($plan->estado !== 'ACTIVO' && (int) $current->plan_id !== (int) $data['plan_id']) {
                     throw ValidationException::withMessages(['plan_id' => 'Selecciona un plan activo.']);
                 }
-                $client = $this->validateSelections($data, $current);
+                $client = $this->validateSelections($data, $current, $userId);
                 $attributes = Arr::only($data, [
                     'cliente_id', 'plan_id', 'zona_id', 'responsable_id', 'fecha_inicio',
                     'duracion_meses', 'observaciones',
@@ -456,11 +473,14 @@ class ContractService
         return hash('sha256', json_encode($values, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
     }
 
-    private function validateSelections(array $data, ?object $current = null): object
+    private function validateSelections(array $data, ?object $current = null, ?int $actorId = null): object
     {
         $client = $this->contracts->activeClient((int) $data['cliente_id']);
         $zone = $this->contracts->activeZone((int) $data['zona_id']);
         $employee = $this->contracts->activeEmployee((int) $data['responsable_id']);
+        if (! $employee && $actorId && $this->isOwnAdministratorEmployee($actorId, (int) $data['responsable_id'])) {
+            $employee = DB::table('empleados')->where('empleado_id', $data['responsable_id'])->where('estado', 'ACTIVO')->first();
+        }
         foreach ([['zona_id', $zone, 'ACTIVA']] as [$field, $record, $active]) {
             if (! $record || ($record->estado !== $active && (! $current || (int) $current->$field !== (int) $data[$field]))) {
                 throw ValidationException::withMessages([$field => 'Selecciona un registro activo.']);
@@ -485,6 +505,19 @@ class ContractService
         }
 
         return $client;
+    }
+
+    private function isOwnAdministratorEmployee(int $userId, int $employeeId): bool
+    {
+        return DB::table('usuarios as usuario')
+            ->join('usuario_rol as usuarioRol', 'usuarioRol.usuario_id', '=', 'usuario.usuario_id')
+            ->join('roles as rol', 'rol.rol_id', '=', 'usuarioRol.rol_id')
+            ->where('usuario.usuario_id', $userId)
+            ->where('usuario.empleado_id', $employeeId)
+            ->where('usuario.estado', 'ACTIVO')
+            ->where('rol.estado', 'ACTIVO')
+            ->where('rol.nombre', Role::ADMIN)
+            ->exists();
     }
 
     private function endDate(array $data): string

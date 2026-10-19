@@ -75,7 +75,9 @@ class ContractController extends Controller
     public function store(StoreContractRequest $request)
     {
         $data = $request->validated();
-        if (! $request->user()->isManager()) {
+        if ($request->user()->isAdministrator()) {
+            $data['responsable_id'] = (int) ($this->contracts->automaticResponsibleFor($request->user()) ?? 0);
+        } elseif (! $request->user()->isManager()) {
             $data['responsable_id'] = (int) $request->user()->empleado_id;
         }
         $id = $this->contracts->create($data, (int) $request->user()->getKey());
@@ -133,7 +135,7 @@ class ContractController extends Controller
     public function update(StoreContractRequest $request, int $contract)
     {
         $data = $request->validated();
-        if (! $request->user()->isManager()) {
+        if ($request->user()->isAdministrator() || ! $request->user()->isManager()) {
             $data['responsable_id'] = (int) $this->contracts->detail($contract)->responsable_id;
         }
         $feedback = $this->contracts->update($contract, $data, $request->user()->getKey());

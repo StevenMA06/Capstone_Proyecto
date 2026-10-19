@@ -219,6 +219,53 @@ class ContractManagementTest extends TestCase
         ]);
     }
 
+    public function test_administrator_is_assigned_as_responsible_without_showing_the_selector(): void
+    {
+        [, $client, $existing] = $this->records();
+        $administratorEmployee = Employee::create([
+            'tipo_documento' => 'OTRO', 'numero_documento' => 'ADMIN-CON',
+            'nombres' => 'Ana', 'apellidos' => 'Administradora', 'cargo' => 'Jefe de Almacén',
+        ]);
+        $adminRole = Role::where('nombre', Role::ADMIN)->value('rol_id');
+        $administrator = User::factory()->create([
+            'rol_id' => $adminRole, 'empleado_id' => $administratorEmployee->getKey(),
+        ]);
+
+        $this->signIn($administrator)->get('/contracts/create')->assertOk()
+            ->assertDontSee('Responsable del contrato')
+            ->assertDontSee('name="responsable_id"', false);
+
+        $this->post('/contracts', [
+            'cliente_id' => $client->getKey(), 'plan_id' => $existing->plan_id,
+            'zona_id' => $existing->zona_id, 'fecha_inicio' => '2026-10-12',
+            'duracion_meses' => 12,
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $this->assertDatabaseHas('contratos', [
+            'cliente_id' => $client->getKey(), 'responsable_id' => $administratorEmployee->getKey(),
+        ]);
+    }
+
+    public function test_administrator_without_employee_uses_the_configured_responsible_person(): void
+    {
+        [, $client, $existing] = $this->records();
+        $adminRole = Role::where('nombre', Role::ADMIN)->value('rol_id');
+        $administrator = User::factory()->create(['rol_id' => $adminRole]);
+
+        $this->signIn($administrator)->get('/contracts/create')->assertOk()
+            ->assertDontSee('Responsable del contrato')
+            ->assertDontSee('name="responsable_id"', false);
+
+        $this->post('/contracts', [
+            'cliente_id' => $client->getKey(), 'plan_id' => $existing->plan_id,
+            'zona_id' => $existing->zona_id, 'fecha_inicio' => '2026-10-12',
+            'duracion_meses' => 12,
+        ])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertDatabaseHas('contratos', [
+            'cliente_id' => $client->getKey(), 'responsable_id' => $existing->responsable_id,
+        ]);
+    }
+
     public function test_code_is_generated_and_unsigned_contract_cannot_leave_pending(): void
     {
         [$actor, $client, $existing] = $this->records();
