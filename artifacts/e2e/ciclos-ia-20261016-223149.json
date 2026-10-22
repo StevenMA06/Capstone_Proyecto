@@ -1,0 +1,81 @@
+﻿{
+    "ciclos_fallidos":  8,
+    "ciclos_exitosos":  2,
+    "ejecutado_en":  "2026-10-16 22:24:30",
+    "duracion_total_min":  7.3,
+    "duracion_promedio_seg":  41.96,
+    "resultados":  [
+                       {
+                           "Ciclo":  1,
+                           "Status":  "PASS",
+                           "Duracion":  62.13,
+                           "RunId":  "2026-10-17T03-24-31-847Z",
+                           "ExitCode":  0
+                       },
+                       {
+                           "Ciclo":  2,
+                           "Status":  "PASS",
+                           "Duracion":  45.13,
+                           "RunId":  "2026-10-17T03-25-36-155Z",
+                           "ExitCode":  0
+                       },
+                       {
+                           "Ciclo":  3,
+                           "Status":  "FAIL",
+                           "Duracion":  25.93,
+                           "RunId":  "2026-10-17T03-26-23-127Z",
+                           "ExitCode":  1
+                       },
+                       {
+                           "Ciclo":  4,
+                           "Status":  "FAIL",
+                           "Duracion":  48.38,
+                           "RunId":  "2026-10-17T03-26-51-467Z",
+                           "ExitCode":  1
+                       },
+                       {
+                           "Ciclo":  5,
+                           "Status":  "FAIL",
+                           "Duracion":  43.39,
+                           "RunId":  "2026-10-17T03-27-41-553Z",
+                           "ExitCode":  1
+                       },
+                       {
+                           "Ciclo":  6,
+                           "Status":  "FAIL",
+                           "Duracion":  47.55,
+                           "RunId":  "2026-10-17T03-28-27-613Z",
+                           "ExitCode":  1
+                       },
+                       {
+                           "Ciclo":  7,
+                           "Status":  "FAIL",
+                           "Duracion":  40.17,
+                           "RunId":  "2026-10-17T03-29-16-975Z",
+                           "ExitCode":  1
+                       },
+                       {
+                           "Ciclo":  8,
+                           "Status":  "FAIL",
+                           "Duracion":  34.42,
+                           "RunId":  "2026-10-17T03-29-58-943Z",
+                           "ExitCode":  1
+                       },
+                       {
+                           "Ciclo":  9,
+                           "Status":  "FAIL",
+                           "Duracion":  35.28,
+                           "RunId":  "2026-10-17T03-30-35-580Z",
+                           "ExitCode":  1
+                       },
+                       {
+                           "Ciclo":  10,
+                           "Status":  "FAIL",
+                           "Duracion":  37.17,
+                           "RunId":  "2026-10-17T03-31-12-711Z",
+                           "ExitCode":  1
+                       }
+                   ],
+    "tasa_exito_pct":  20,
+    "ciclos_totales":  10
+}

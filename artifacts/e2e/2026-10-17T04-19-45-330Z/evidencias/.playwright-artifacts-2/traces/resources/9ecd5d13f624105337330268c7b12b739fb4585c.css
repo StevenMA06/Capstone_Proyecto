@@ -1,0 +1,25 @@
+.login-page { background: #f7f7f7; }
+.login-page .page-decoration { background: #f7f7f7; }
+.login-page .page-decoration::after { display: none; }
+.login-page main { padding: 32px 24px 12px; }
+.login-page .login-centered { width: min(860px, 100%); margin: auto; text-align: center; }
+.login-page .company-logo { width: 250px; height: 190px; margin: 0 auto 20px; }
+.login-page .company-logo img { width: 310px; height: 310px; left: calc(50% - 159px); top: -45px; }
+.login-page h1 { font-size: clamp(24px, 3vw, 34px); line-height: 1.3; letter-spacing: -.7px; margin: 0 auto 10px; max-width: 800px; }
+.login-page .login-subtitle { color: #64776c; font-size: 18px; margin: 0 0 30px; line-height: 1.5; }
+.login-page .login-form { width: min(460px, 100%); margin: auto; text-align: left; }
+.login-page .field { margin-bottom: 20px; }
+.login-page .field>label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 9px; }
+.login-page .input-row { height: 56px; background: #fff; border-radius: 10px; }
+.login-page .input-row input { font-size: 15px; min-width: 0; }
+.login-page .input-icon { width: 50px; }
+.login-page .primary { min-height: 56px; margin-top: 6px; font-size: 17px; border-radius: 10px; }
+.login-page .login-warning { display: flex; align-items: flex-start; gap: 12px; margin-top: 20px; padding: 16px; border: 1px solid #ebc6bc; border-radius: 10px; background: #fff2ed; color: #8c392b; font-size: 14px; line-height: 1.5; }
+.login-page .login-warning svg { width: 24px; height: 24px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.login-page .login-warning p { margin: 0; }
+.login-page footer { margin-top: 24px; }
+@media (max-width: 540px) {
+    .login-page main { padding: 24px 20px 8px; }
+    .login-page .company-logo { margin-bottom: 12px; }
+    .login-page .login-subtitle { font-size: 16px; margin-bottom: 24px; }
+}

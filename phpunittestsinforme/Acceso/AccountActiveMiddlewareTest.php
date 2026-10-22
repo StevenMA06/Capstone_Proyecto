@@ -43,27 +43,78 @@ class AccountActiveMiddlewareTest extends TestCase
         $this->user->roles()->attach($this->role->getKey());
     }
 
-    /** @test */
-    public function usuario_activo_puede_acceder()
+    /**
+     * Data Provider: Múltiples casos de usuario activo
+     */
+    public function usuarioActivoProvider(): array
+    {
+        return [
+            'Administrador estándar' => [
+                'cargo' => 'Administrador',
+                'estado' => 'ACTIVO',
+                'fecha_cese' => null,
+                'ruta' => 'dashboard'
+            ],
+            'Gerente de ventas' => [
+                'cargo' => 'Gerente de Ventas',
+                'estado' => 'ACTIVO',
+                'fecha_cese' => null,
+                'ruta' => 'dashboard'
+            ],
+            'Técnico activo' => [
+                'cargo' => 'Técnico',
+                'estado' => 'ACTIVO',
+                'fecha_cese' => null,
+                'ruta' => 'dashboard'
+            ],
+            'Vendedor activo' => [
+                'cargo' => 'Vendedor',
+                'estado' => 'ACTIVO',
+                'fecha_cese' => null,
+                'ruta' => 'dashboard'
+            ],
+            'Almacenero activo' => [
+                'cargo' => 'Almacenero',
+                'estado' => 'ACTIVO',
+                'fecha_cese' => null,
+                'ruta' => 'dashboard'
+            ],
+        ];
+    }
+
+    /** 
+     * @test 
+     * @dataProvider usuarioActivoProvider
+     */
+    public function usuario_activo_puede_acceder($cargo, $estado, $fecha_cese, $ruta)
     {
         echo "\n" . str_repeat("═", 80) . "\n";
         echo "✅ TEST: Usuario ACTIVO puede acceder\n";
         echo str_repeat("═", 80) . "\n";
 
-        echo "\n📥 DATOS DE ENTRADA:\n";
+        // Actualizar empleado con datos del ciclo
+        $this->employee->update([
+            'cargo' => $cargo,
+            'estado' => $estado,
+            'fecha_cese' => $fecha_cese
+        ]);
+        $this->user->refresh();
+
+        echo "\n📥 DATOS DE ENTRADA (Ciclo actual):\n";
         echo "   • Usuario ID: {$this->user->getKey()}\n";
         echo "   • Empleado ID: {$this->employee->getKey()}\n";
-        echo "   • Estado empleado: ACTIVO\n";
-        echo "   • fecha_cese: NULL\n";
+        echo "   • Cargo: {$cargo}\n";
+        echo "   • Estado empleado: {$estado}\n";
+        echo "   • fecha_cese: " . ($fecha_cese ?? 'NULL') . "\n";
 
         echo "\n🔧 MIDDLEWARE EJECUTADO:\n";
         echo "   → EnsureAccountActive\n";
-        echo "   → Ruta: GET /dashboard\n";
+        echo "   → Ruta: GET /{$ruta}\n";
 
         // Autenticar usuario ACTIVO
         $this->actingAs($this->user);
 
-        $response = $this->get(route('dashboard'));
+        $response = $this->get(route($ruta));
 
         echo "\n⚙️ VALIDACIÓN:\n";
         echo "   → Usuario autenticado: SÍ\n";
@@ -72,7 +123,7 @@ class AccountActiveMiddlewareTest extends TestCase
 
         echo "\n✅ RESULTADO:\n";
         echo "   ✓ HTTP Status: {$response->status()}\n";
-        echo "   ✓ Middleware permitió el paso\n";
+        echo "   ✓ Middleware permitió el paso ({$cargo})\n";
         echo "   ✓ No hay redirección a login (status 302 es esperado)\n";
 
         $response->assertStatus(302);
@@ -80,21 +131,58 @@ class AccountActiveMiddlewareTest extends TestCase
         echo str_repeat("═", 80) . "\n";
     }
 
-    /** @test */
-    public function usuario_inactivo_es_redirigido_a_login()
+    /**
+     * Data Provider: Múltiples casos de usuario inactivo
+     */
+    public function usuarioInactivoProvider(): array
+    {
+        return [
+            'Empleado despedido' => [
+                'cargo' => 'Vendedor',
+                'estado' => 'INACTIVO',
+                'motivo' => 'Despido'
+            ],
+            'Empleado renunciado' => [
+                'cargo' => 'Técnico',
+                'estado' => 'INACTIVO',
+                'motivo' => 'Renuncia voluntaria'
+            ],
+            'Empleado suspendido' => [
+                'cargo' => 'Administrador',
+                'estado' => 'INACTIVO',
+                'motivo' => 'Suspensión temporal'
+            ],
+            'Empleado en proceso legal' => [
+                'cargo' => 'Gerente',
+                'estado' => 'INACTIVO',
+                'motivo' => 'Proceso legal'
+            ],
+        ];
+    }
+
+    /** 
+     * @test 
+     * @dataProvider usuarioInactivoProvider
+     */
+    public function usuario_inactivo_es_redirigido_a_login($cargo, $estado, $motivo)
     {
         echo "\n" . str_repeat("═", 80) . "\n";
         echo "🔒 TEST: Usuario INACTIVO es redirigido a login\n";
         echo str_repeat("═", 80) . "\n";
 
         // Desactivar empleado
-        $this->employee->update(['estado' => 'INACTIVO']);
+        $this->employee->update([
+            'cargo' => $cargo,
+            'estado' => $estado
+        ]);
         $this->user->refresh();
 
-        echo "\n📥 DATOS DE ENTRADA:\n";
+        echo "\n📥 DATOS DE ENTRADA (Ciclo actual):\n";
         echo "   • Usuario ID: {$this->user->getKey()}\n";
         echo "   • Empleado ID: {$this->employee->getKey()}\n";
-        echo "   • Estado empleado: INACTIVO\n";
+        echo "   • Cargo: {$cargo}\n";
+        echo "   • Estado empleado: {$estado}\n";
+        echo "   • Motivo: {$motivo}\n";
 
         echo "\n🔧 MIDDLEWARE EJECUTADO:\n";
         echo "   → EnsureAccountActive\n";
@@ -113,7 +201,7 @@ class AccountActiveMiddlewareTest extends TestCase
         echo "   5. Redirección a login con error\n";
 
         echo "\n❌ RESULTADO:\n";
-        echo "   ✗ Acceso bloqueado\n";
+        echo "   ✗ Acceso bloqueado ({$motivo})\n";
         echo "   ✓ Redirigido a: " . route('login') . "\n";
         echo "   ✓ HTTP Status: {$response->status()}\n";
         echo "   ✓ Usuario deslogueado: " . (Auth::check() ? 'NO' : 'SÍ') . "\n";
@@ -126,23 +214,65 @@ class AccountActiveMiddlewareTest extends TestCase
         echo str_repeat("═", 80) . "\n";
     }
 
-    /** @test */
-    public function usuario_con_fecha_cese_es_bloqueado()
+    /**
+     * Data Provider: Múltiples casos de fecha de cese
+     */
+    public function fechaCeseProvider(): array
+    {
+        return [
+            'Cese hace 10 días' => [
+                'dias_atras' => 10,
+                'cargo' => 'Administrador',
+                'motivo' => 'Fin de contrato'
+            ],
+            'Cese hace 1 mes' => [
+                'dias_atras' => 30,
+                'cargo' => 'Técnico',
+                'motivo' => 'Renuncia'
+            ],
+            'Cese hace 6 meses' => [
+                'dias_atras' => 180,
+                'cargo' => 'Vendedor',
+                'motivo' => 'Jubilación'
+            ],
+            'Cese ayer' => [
+                'dias_atras' => 1,
+                'cargo' => 'Gerente',
+                'motivo' => 'Despido'
+            ],
+            'Cese hace 1 año' => [
+                'dias_atras' => 365,
+                'cargo' => 'Almacenero',
+                'motivo' => 'Contrato vencido'
+            ],
+        ];
+    }
+
+    /** 
+     * @test 
+     * @dataProvider fechaCeseProvider
+     */
+    public function usuario_con_fecha_cese_es_bloqueado($dias_atras, $cargo, $motivo)
     {
         echo "\n" . str_repeat("═", 80) . "\n";
         echo "🔒 TEST: Usuario con fecha_cese es bloqueado\n";
         echo str_repeat("═", 80) . "\n";
 
         // Asignar fecha de cese
-        $fechaCese = now()->subDays(10);
-        $this->employee->update(['fecha_cese' => $fechaCese]);
+        $fechaCese = now()->subDays($dias_atras);
+        $this->employee->update([
+            'fecha_cese' => $fechaCese,
+            'cargo' => $cargo
+        ]);
         $this->user->refresh();
 
-        echo "\n📥 DATOS DE ENTRADA:\n";
+        echo "\n📥 DATOS DE ENTRADA (Ciclo actual):\n";
         echo "   • Usuario ID: {$this->user->getKey()}\n";
         echo "   • Empleado ID: {$this->employee->getKey()}\n";
+        echo "   • Cargo: {$cargo}\n";
         echo "   • Estado empleado: {$this->employee->estado}\n";
-        echo "   • fecha_cese: {$fechaCese->format('Y-m-d')} (hace 10 días)\n";
+        echo "   • fecha_cese: {$fechaCese->format('Y-m-d')} (hace {$dias_atras} días)\n";
+        echo "   • Motivo: {$motivo}\n";
 
         echo "\n🔧 MIDDLEWARE EJECUTADO:\n";
         echo "   → EnsureAccountActive\n";
@@ -159,7 +289,7 @@ class AccountActiveMiddlewareTest extends TestCase
         echo "   → Middleware bloquea acceso\n";
 
         echo "\n❌ RESULTADO:\n";
-        echo "   ✗ Acceso bloqueado\n";
+        echo "   ✗ Acceso bloqueado ({$motivo})\n";
         echo "   ✓ Redirigido a login\n";
         echo "   ✓ Sesión cerrada automáticamente\n";
 

@@ -1,0 +1,368 @@
+/* Workspace shell used by the clients module. */
+.workspace-shell { --workspace-inset: 12px; background: #f4f7f6; color: #243b33; }
+.workspace-topbar { height: 84px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 0 32px 0 var(--workspace-inset); background: #fff; border-bottom: 1px solid #e2eae5; }
+.workspace-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #173d30; font-size: 23px; letter-spacing: -.6px; }
+.workspace-brand strong { color: #148053; }
+.workspace-brand small { display: block; font-size: 9px; letter-spacing: 1.8px; color: #6b8275; margin-top: 5px; }
+.brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: #087846; color: #fff; font-size: 29px; font-weight: bold; }
+.workspace-account { display: flex; align-items: center; justify-content: flex-end; gap: 18px; margin-left: auto; }
+.workspace-account-summary { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.workspace-account-avatar { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; background: #e8f2ec; color: #087846; font-size: 13px; font-weight: 700; text-transform: uppercase; }
+.workspace-account-identity { display: grid; gap: 2px; min-width: 0; line-height: 1.2; }
+.workspace-account-identity strong { max-width: 180px; overflow: hidden; color: #243b33; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-account-identity small { max-width: 220px; overflow: hidden; color: #65786e; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-account form { margin: 0; }
+.workspace-account .secondary { font-size: 12px; padding: 10px 13px; }
+.workspace-body { display: flex; flex: 1; min-width: 0; }
+.workspace-sidebar { width: 248px; flex-shrink: 0; padding: 20px var(--workspace-inset) 28px; background: linear-gradient(180deg,#fbfcfb 0%,#f5f8f5 100%); border-right: 1px solid #dce7dd; position: sticky; top: 0; align-self: flex-start; height: 100dvh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #c4cbc3 transparent; }
+.sidebar-disclosure-toggle { display: none; }
+.module-menu nav { display: grid; gap: 9px; }
+.nav-group { min-width: 0; border: 1px solid transparent; border-radius: 12px; transition: background .2s ease,border-color .2s ease; }
+.nav-group[open] { border-color: #dde9df; background: #fff; box-shadow: 0 3px 12px rgb(26 76 46 / 4%); }
+.nav-group-links { display: grid; gap: 3px; padding: 2px 7px 9px; }
+.nav-group-links>a, .module-menu .nav-pending { min-height: 42px; padding: 9px 10px; border-radius: 8px; display: flex; align-items: center; gap: 11px; color: #33463a; text-decoration: none; font-size: 13px; font-weight: 500; line-height: 1.35; transition: background .18s ease,color .18s ease,transform .18s ease; }
+.module-icon { display: block; flex-shrink: 0; stroke-width: 2; }
+.module-menu .module-icon { width: 18px; height: 18px; flex: 0 0 18px; stroke-width: 1.8; color: #668074; }
+.nav-group-links>a:hover { background: #eff6f0; color: #11643e; transform: translateX(2px); }
+.nav-group-links>a:focus-visible, .nav-section:focus-visible, .sidebar-disclosure-toggle:focus-visible { outline: 2px solid #22613d; outline-offset: 2px; }
+.nav-group-links>a.nav-active { background: #e7f4eb; color: #075b36; font-weight: 700; box-shadow: inset 3px 0 #087846; }
+.nav-group-links>a.nav-active .module-icon { color: inherit; }
+.nav-section { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; margin: 0; padding: 8px 11px; border-radius: 11px; color: #3b5846; font-size: 12px; font-weight: 700; cursor: pointer; list-style: none; transition: background .18s ease,color .18s ease; }
+.nav-group-label { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.nav-group-icon { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; background: #edf4ee; }
+.nav-group-icon .module-icon { width: 16px; height: 16px; flex-basis: 16px; color: #397455; }
+.nav-group[open]>.nav-section { color: #075b36; }
+.nav-group[open]>.nav-section .nav-group-icon { background: #e2f2e7; }
+.nav-section::-webkit-details-marker, .sidebar-disclosure-toggle::-webkit-details-marker { display: none; }
+.nav-section:hover { background: #eef5ef; color: #075b36; }
+.nav-chevron { display: inline-block; width: 8px; height: 8px; flex: 0 0 8px; border-right: 1.7px solid currentColor; border-bottom: 1.7px solid currentColor; transform: rotate(45deg); opacity: .75; transition: transform .2s ease; }
+.nav-group[open]>.nav-section .nav-chevron, .sidebar-disclosure[open]>.sidebar-disclosure-toggle .nav-chevron { transform: rotate(225deg); }
+.nav-section-future { border-top: 1px solid #dce1db; padding-top: 18px; }
+.module-menu .nav-pending { color: #768075; cursor: default; }
+.module-menu .nav-pending .module-icon { color: #859082; }
+.workspace-main { display: block; padding: 30px; min-width: 0; flex: 1; width: auto; }
+.workspace-shell .workspace-main > .management { width: 100%; max-width: 1600px; margin: 0 auto; padding: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.workspace-breadcrumb { display: flex; gap: 10px; font-size: 11px; color: #7d9083; margin-bottom: 22px; }
+.workspace-breadcrumb a { color: #60796a; text-decoration: none; }
+.module-heading { margin-bottom: 28px; }
+.module-heading .eyebrow { font-size: 9px; letter-spacing: 1.5px; }
+.workspace-shell .module-heading h1 { font-size: 29px; margin: 10px 0 9px; letter-spacing: -.7px; }
+.module-heading p { margin: 0; font-size: 13px; color: #73867a; line-height: 1.6; }
+.clients-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 22px; align-items: start; }
+.client-filter-panel, .client-list-panel { background: #fff; border: 1px solid #e1eae4; border-radius: 12px; overflow: hidden; }
+.client-filter-panel { padding: 22px 18px; }
+.workspace-shell .client-filter-panel h2, .workspace-shell .client-list-panel h2 { font-size: 17px; letter-spacing: -.3px; }
+.client-filter-panel>.muted { font-size: 11px; margin: 9px 0 25px; }
+.workspace-shell .client-filters { display: flex; flex-direction: column; align-items: stretch; background: transparent; border-radius: 0; padding: 0; margin: 0; gap: 24px; }
+.workspace-shell .client-filters>div:first-child { min-width: 0; flex: initial; }
+.client-filters small { display: block; color: #89978e; font-size: 10px; line-height: 1.6; margin-top: 9px; }
+.client-filters fieldset { border: 0; border-top: 1px solid #eef2ef; padding: 20px 0 0; margin: 0; min-width: 0; }
+.client-filters legend { font-size: 12px; font-weight: bold; padding: 0 8px 0 0; }
+.client-filters legend::after { content: none; }
+.workspace-shell .client-filters .state-option { display: flex; align-items: center; gap: 9px; font-weight: normal; font-size: 12px; margin: 0 0 14px; cursor: pointer; list-style: none; }
+.workspace-shell .client-filters .state-option::before { display: none; content: none; }
+.workspace-shell .client-filters .state-option::marker { display: none; content: none; }
+.workspace-shell .client-filters input[type=radio] { width: 15px; height: 15px; margin: 0; accent-color: #087846; }
+.workspace-shell .client-filters input[type=checkbox] { width: 15px; height: 15px; margin: 0; accent-color: #087846; }
+.filter-buttons { display: flex; flex-direction: column; text-align: center; border-top: 1px solid #eef2ef; padding-top: 20px; }
+.filter-buttons .clear-link { font-size: 11px; padding: 15px 0 0; }
+.workspace-shell .client-list-panel .management-toolbar { margin: 0; padding: 22px; }
+.client-list-panel .management-toolbar .muted { font-size: 11px; margin: 8px 0 0; }
+.client-list-panel .action-link { gap: 7px; font-size: 12px; padding: 11px 14px; }
+.workspace-shell .client-table { font-size: 12px; }
+.workspace-shell .client-table th { font-size: 10px; background: #f7f9f8; color: #718679; padding: 14px; }
+.workspace-shell .client-table td { padding: 19px 14px; max-width: 200px; }
+.client-table tbody tr:hover { background: #fafcfb; }
+.client-table .client-name { text-decoration: none; font-weight: 600; }
+.table-subtitle { display: block; margin-top: 5px; font-size: 10px; color: #8b9c90; }
+.client-table .row-actions { gap: 10px; flex-wrap: nowrap; font-size: 11px; white-space: nowrap; }
+.workspace-shell .client-table .state { font-size: 10px; }
+.client-list-panel .pagination { margin: 0; padding: 20px 22px; font-size: 11px; }
+.workspace-shell .account-form { background: #fff; padding: 28px; border: 1px solid #e1eae4; border-radius: 12px; }
+.workspace-shell .account-detail { background: #fff; border: 1px solid #e1eae4; }
+.workspace-shell .client-deactivate { background: #fff; }
+.skip-content { position: absolute; left: 12px; top: -80px; z-index: 5; padding: 12px; background: #fff; color: #087846; }
+.skip-content:focus { top: 12px; }
+@media (max-width: 1250px) {
+    .workspace-main { padding: 24px; }
+    .workspace-sidebar { width: 224px; }
+    .clients-grid { grid-template-columns: 200px minmax(0, 1fr); gap: 16px; }
+    .client-list-panel .management-toolbar { align-items: flex-start; flex-direction: column; gap: 16px; }
+    .client-table { min-width: 660px; }
+}
+@media (max-width: 1000px) {
+    .clients-grid { grid-template-columns: minmax(0, 1fr); }
+    .workspace-shell .client-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .client-filters fieldset { border: 0; padding: 0; }
+    .filter-buttons { grid-column: 1/-1; flex-direction: row; gap: 18px; align-items: center; padding-top: 16px; }
+    .filter-buttons .clear-link { padding: 0; }
+    .workspace-shell .client-list-panel .management-toolbar { flex-direction: row; align-items: center; }
+}
+@media (max-width: 680px) {
+    .workspace-topbar { height: auto; min-height: 76px; padding: 15px var(--workspace-inset); flex-wrap: wrap; gap: 16px; }
+    .workspace-brand { font-size: 20px; }
+    .workspace-account { width: 100%; gap: 12px; }
+    .workspace-account-summary { margin-right: auto; }
+    .workspace-body { flex-direction: column; }
+    .workspace-sidebar { width: 100%; height: auto; max-height: none; position: static; overflow: visible; border-right: 0; border-bottom: 1px solid #dce1db; padding: 10px var(--workspace-inset); }
+    .sidebar-disclosure-toggle { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 10px 15px; border: 1px solid #cfe0d2; border-radius: 11px; background: #fff; color: #194932; font-size: 14px; font-weight: 700; cursor: pointer; list-style: none; box-shadow: 0 2px 8px rgb(20 68 41 / 5%); }
+    .sidebar-disclosure-label { display: inline-flex; align-items: center; gap: 10px; }
+    .sidebar-disclosure-label .bi { font-size: 19px; line-height: 1; }
+    .sidebar-disclosure[open]>.sidebar-disclosure-toggle { border-color: #9ec8a9; background: #edf7ef; }
+    .sidebar-disclosure[open]>.module-menu { max-height: min(65dvh, 520px); overflow-y: auto; margin-top: 8px; padding: 8px; border: 1px solid #dce9df; border-radius: 12px; background: #f9fbf9; box-shadow: 0 8px 20px rgb(20 68 41 / 8%); }
+    .module-menu nav { grid-template-columns: 1fr; }
+    .nav-group-links>a, .module-menu .nav-pending { min-height: 44px; font-size: 13px; padding: 10px 12px; }
+    .nav-section { min-height: 48px; }
+    .workspace-main { padding: 24px 16px; }
+    .workspace-shell .module-heading h1 { font-size: 25px; }
+    .workspace-shell .client-filters { grid-template-columns: minmax(0, 1fr); }
+    .filter-buttons { grid-column: auto; }
+    .workspace-shell .client-list-panel .management-toolbar { flex-direction: column; align-items: stretch; }
+    .workspace-shell .account-form { padding: 20px; }
+    .client-list-panel .pagination { padding: 16px; }
+}
+.workspace-brand .brand-logo{width:58px;height:58px;object-fit:contain;flex-shrink:0;border-radius:100%}@media(max-width:640px){.workspace-brand .brand-logo{width:44px;height:44px}}
+
+/* Estilos para textarea en formularios de pagos */
+.workspace-shell .account-form textarea { 
+    display: block; 
+    box-sizing: border-box; 
+    width: 100%; 
+    max-width: 100%; 
+    min-height: 110px; 
+    resize: vertical; 
+    border: 1px solid #c8d6cc; 
+    border-radius: 7px; 
+    padding: 12px; 
+    font: inherit; 
+    font-size: 14px; 
+    color: #233d2b; 
+    line-height: 1.5;
+}
+.workspace-shell .account-form textarea:focus { 
+    outline: 2px solid #55ad7b; 
+    outline-offset: 2px; 
+}
+.workspace-shell .account-form textarea[aria-invalid="true"] {
+    border-color: #b6473d;
+}
+/* Hacer que el div del textarea ocupe las 2 columnas */
+.workspace-shell .account-form > div:has(textarea) {
+    grid-column: 1 / -1;
+}
+
+/* ========================================
+   Payment Method Statistics Cards (RF-PAG-16, RF-PAG-17)
+   ======================================== */
+.payment-method-stats {
+    background: #fff;
+    border: 1px solid #e1eae4;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 22px;
+}
+
+.payment-method-stats .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+}
+
+.payment-method-stats .stat-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #6b7280;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.payment-method-stats .stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.payment-method-stats .stat-card.most-used {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+    border: 2px solid #087846;
+    border-left-width: 4px;
+}
+
+.payment-method-stats .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.payment-method-stats .stat-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.payment-method-stats .stat-content h3 {
+    font-size: 11px;
+    font-weight: 600;
+    color: #4b5563;
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.payment-method-stats .stat-number {
+    font-size: 22px;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0;
+    line-height: 1;
+}
+
+.payment-method-stats .stat-label {
+    font-size: 9px;
+    color: #6b7280;
+    margin: 3px 0 0 0;
+}
+
+.payment-method-stats .badge-most-used {
+    display: inline-block;
+    background: #087846;
+    color: #fff;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-top: 6px;
+    letter-spacing: 0.3px;
+}
+
+.payment-method-stats .stats-empty {
+    text-align: center;
+    color: #6b7280;
+    font-size: 13px;
+    padding: 20px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+/* Responsive adjustments for payment stats */
+@media (max-width: 1400px) {
+    .payment-method-stats .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+}
+
+@media (max-width: 1000px) {
+    .payment-method-stats .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .payment-method-stats .stat-card {
+        padding: 14px;
+        gap: 10px;
+    }
+    
+    .payment-method-stats .stat-icon {
+        width: 42px;
+        height: 42px;
+    }
+}
+
+@media (max-width: 680px) {
+    .payment-method-stats {
+        padding: 16px;
+    }
+    
+    .payment-method-stats .stats-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+    
+    .payment-method-stats .stat-card {
+        padding: 12px;
+    }
+}
+
+/* ============================================================================
+   PAYMENT STATUS STATS - Cards compactas por estado de pago
+   ============================================================================ */
+.payment-status-stats { background: #fff; border: 1px solid #e1eae4; border-radius: 12px; padding: 18px; margin-bottom: 22px; }
+
+.payment-status-stats .stats-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #eef2ef; }
+
+.payment-status-stats .stats-header h2 { font-size: 15px; letter-spacing: -.3px; margin: 0; }
+
+.month-filter-form { display: flex; align-items: center; gap: 8px; }
+
+.month-filter-form label { font-size: 11px; font-weight: 600; color: #606b61; }
+
+.month-filter-form input[type="month"] { padding: 6px 10px; border: 1px solid #d1dfd5; border-radius: 5px; font-size: 12px; color: #243b33; background: #fff; cursor: pointer; }
+
+.month-filter-form input[type="month"]:hover { border-color: #087846; }
+
+.month-filter-form input[type="month"]:focus { outline: 2px solid #087846; outline-offset: 1px; }
+
+.clear-month-filter { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #f3f5f4; color: #606b61; text-decoration: none; font-size: 11px; transition: all 0.2s; }
+
+.clear-month-filter:hover { background: #e5e7eb; color: #243b33; }
+
+.payment-status-stats .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+
+.payment-status-stats .stat-card { position: relative; display: flex; align-items: center; gap: 10px; padding: 12px; background: #fafcfb; border: 1px solid #eef2ef; border-left: 3px solid; border-radius: 8px; text-decoration: none; color: inherit; transition: all 0.3s ease; }
+
+.payment-status-stats .stat-card.clickable { cursor: pointer; }
+
+.payment-status-stats .stat-card.clickable:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); background: #fff; }
+
+.payment-status-stats .stat-card.urgent { animation: pulse-urgent 2s ease-in-out infinite; }
+
+@keyframes pulse-urgent {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    50% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1); }
+}
+
+.payment-status-stats .stat-card.filtered { background: #f0f9ff; border-width: 2px; box-shadow: 0 0 0 2px rgba(8, 120, 70, 0.1); }
+
+.payment-status-stats .stat-icon { flex-shrink: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.3rem; }
+
+.payment-status-stats .stat-content { flex: 1; min-width: 0; }
+
+.payment-status-stats .stat-content h3 { font-size: 10px; font-weight: 600; color: #606b61; margin: 0 0 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.payment-status-stats .stat-number { font-size: 22px; font-weight: bold; color: #243b33; margin: 0 0 2px; line-height: 1; }
+
+.payment-status-stats .stat-label { font-size: 9px; color: #89978e; margin: 0 0 6px; }
+
+.payment-status-stats .stat-progress { height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
+
+.payment-status-stats .stat-progress-bar { height: 100%; transition: width 0.6s ease; }
+
+.payment-status-stats .stat-percentage { font-size: 9px; color: #89978e; margin: 0; }
+
+.badge-filtered { position: absolute; top: 6px; right: 6px; background: #087846; color: #fff; font-size: 8px; font-weight: 600; padding: 3px 6px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.payment-status-stats .stats-empty { text-align: center; padding: 20px; color: #89978e; font-size: 12px; margin: 12px 0 0; background: #fafcfb; border-radius: 6px; border: 1px dashed #d1dfd5; }
+
+.payment-status-stats .stats-summary { text-align: center; margin: 12px 0 0; padding: 10px; background: #f7f9f8; border-radius: 6px; font-size: 11px; color: #606b61; }
+
+.payment-status-stats .stats-summary strong { color: #087846; font-weight: 700; }
+
+/* Responsivo */
+@media (max-width: 1000px) {
+    .payment-status-stats .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .payment-status-stats .stats-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+}
+
+@media (max-width: 680px) {
+    .payment-status-stats .stats-grid { grid-template-columns: 1fr; }
+    .payment-status-stats .stat-card { padding: 10px; }
+    .payment-status-stats .stat-icon { width: 36px; height: 36px; font-size: 1.1rem; }
+    .payment-status-stats .stat-number { font-size: 20px; }
+}

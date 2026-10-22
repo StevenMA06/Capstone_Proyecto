@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard · Lunnys Perú</title>
+    <link rel="stylesheet" href="http://127.0.0.1:8011/css/app.css?v=4">
+    <link rel="stylesheet" href="http://127.0.0.1:8011/css/management.css?v=15">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="http://127.0.0.1:8011/js/session.js" data-check="http://127.0.0.1:8011/session/status" data-login="http://127.0.0.1:8011/login" data-timeout="7200" defer></script>
+    <link rel="stylesheet" href="http://127.0.0.1:8011/css/dashboard.css?v=7"><script src="http://127.0.0.1:8011/js/dashboard.js?v=1" defer></script>    <link rel="stylesheet" href="http://127.0.0.1:8011/css/record-tables.css?v=1">
+    <script src="http://127.0.0.1:8011/js/validation-es.js?v=1" defer></script>
+    <script src="http://127.0.0.1:8011/js/sidebar.js?v=1" defer></script>
+</head>
+<body class="workspace-shell">
+<a class="skip-content" href="#module-content">Ir al contenido</a>
+<header class="workspace-topbar">
+    <a class="workspace-brand" href="http://127.0.0.1:8011/dashboard"><img class="brand-logo" src="http://127.0.0.1:8011/images/lunnys-peru.png" alt="Logo de Lunnys Perú"><span>Lunnys <strong>Perú</strong><small>PLATAFORMA DE GESTIÓN</small></span></a>
+    <div class="workspace-account">
+                                <div class="workspace-account-summary" aria-label="Cuenta qa_e2e_gerencia · Gerencia">
+                <span class="workspace-account-avatar" aria-hidden="true">Q</span>
+                <span class="workspace-account-identity"><strong>qa_e2e_gerencia</strong><small>Gerencia</small></span>
+            </div>
+                <form method="POST" action="http://127.0.0.1:8011/logout"><input type="hidden" name="_token" value="AAWV1tC7fQrq9AEcynP6cbm7wuaFyakPczex68ui" autocomplete="off"><button class="secondary" type="submit">Cerrar sesión</button></form>
+    </div>
+</header>
+<div class="workspace-body">
+    <aside class="workspace-sidebar" aria-label="Menú de módulos">
+        <details class="sidebar-disclosure" open>
+            <summary class="sidebar-disclosure-toggle"><span class="sidebar-disclosure-label"><i class="bi bi-list" aria-hidden="true"></i> Menú de módulos</span><span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="module-menu">
+                <nav aria-label="Navegación principal">
+                    <details class="nav-group"  open >
+            <summary class="nav-section"><span class="nav-group-label"><span class="nav-group-icon"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+  <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+</svg>
+</span><span>Paneles</span></span><span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="nav-group-links">
+                                                        <a class="nav-active"  aria-current="page"  href="http://127.0.0.1:8011/dashboard/gerencia"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+  <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+</svg>
+<span>Panel de Gerencia</span></a>
+                            </div>
+        </details>
+                                                                                                                                                                                                                                                                                                                                                                  <details class="nav-group" >
+            <summary class="nav-section"><span class="nav-group-label"><span class="nav-group-icon"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="m2.05 2.05 1.099-.028a1 1 0 0 1 1.008.815l2.69 14.347A1 1 0 0 0 7.83 18H18" />
+  <path d="M4.563 5h16.435a1 1 0 0 1 .981 1.204l-1.026 6.226A2 2 0 0 1 18.962 14H6.25" />
+  <circle cx="18" cy="20" r="2" />
+  <circle cx="8" cy="20" r="2" />
+</svg>
+</span><span>Comercial</span></span><span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="nav-group-links">
+                                                        <a class=""  href="http://127.0.0.1:8011/clients"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+  <path d="M16 3.128a4 4 0 0 1 0 7.744" />
+  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+  <circle cx="9" cy="7" r="4" />
+</svg>
+<span>Clientes</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/plans"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+  <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+  <path d="M10 9H8" />
+  <path d="M16 13H8" />
+  <path d="M16 17H8" />
+</svg>
+<span>Planes de servicio</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/contracts"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+  <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+  <path d="M10 9H8" />
+  <path d="M16 13H8" />
+  <path d="M16 17H8" />
+</svg>
+<span>Contratos</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/contracts/cancellation-requests"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+  <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+  <path d="M10 9H8" />
+  <path d="M16 13H8" />
+  <path d="M16 17H8" />
+</svg>
+<span>Solicitudes de cancelación</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/payments"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<circle cx="12" cy="12" r="10" />
+  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+  <path d="M12 18V6" />
+</svg>
+<span>Pagos</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/zones"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+  <circle cx="12" cy="10" r="3" />
+</svg>
+<span>Zonas de cobertura</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/dashboard/call-center/visitas"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" />
+</svg>
+<span>Coordinación de visitas</span></a>
+                            </div>
+        </details>
+                                                                                                                            <details class="nav-group" >
+            <summary class="nav-section"><span class="nav-group-label"><span class="nav-group-icon"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" />
+</svg>
+</span><span>Operaciones</span></span><span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="nav-group-links">
+                                                        <a class=""  href="http://127.0.0.1:8011/orders"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" />
+</svg>
+<span>Pedidos de instalación</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/executions"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" />
+</svg>
+<span>Ejecución de instalaciones</span></a>
+                            </div>
+        </details>
+                                                                                                                                                                                                                        <details class="nav-group" >
+            <summary class="nav-section"><span class="nav-group-label"><span class="nav-group-icon"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+  <path d="M12 22V12" />
+  <polyline points="3.29 7 12 12 20.71 7" />
+  <path d="m7.5 4.27 9 5.15" />
+</svg>
+</span><span>Inventario</span></span><span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="nav-group-links">
+                                                        <a class=""  href="http://127.0.0.1:8011/warehouse/requests"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+  <path d="M12 22V12" />
+  <polyline points="3.29 7 12 12 20.71 7" />
+  <path d="m7.5 4.27 9 5.15" />
+</svg>
+<span>Solicitudes de instalación</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/equipments"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<rect width="20" height="8" x="2" y="14" rx="2" />
+  <path d="M6.01 18H6" />
+  <path d="M10.01 18H10" />
+  <path d="M15 10v4" />
+  <path d="M17.84 7.17a4 4 0 0 0-5.66 0" />
+  <path d="M20.66 4.34a8 8 0 0 0-11.31 0" />
+</svg>
+<span>Equipos</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/materials"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+  <path d="M12 22V12" />
+  <polyline points="3.29 7 12 12 20.71 7" />
+  <path d="m7.5 4.27 9 5.15" />
+</svg>
+<span>Materiales</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/kardex"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+  <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+  <path d="M10 9H8" />
+  <path d="M16 13H8" />
+  <path d="M16 17H8" />
+</svg>
+<span>Kardex</span></a>
+                            </div>
+        </details>
+                                                                                                                                                                                                                                                                  <details class="nav-group" >
+            <summary class="nav-section"><span class="nav-group-label"><span class="nav-group-icon"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+  <path d="M16 3.128a4 4 0 0 1 0 7.744" />
+  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+  <circle cx="9" cy="7" r="4" />
+</svg>
+</span><span>Administración</span></span><span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="nav-group-links">
+                                                        <a class=""  href="http://127.0.0.1:8011/users"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+  <path d="M16 3.128a4 4 0 0 1 0 7.744" />
+  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+  <circle cx="9" cy="7" r="4" />
+</svg>
+<span>Usuarios</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/roles"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+  <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+  <path d="M10 9H8" />
+  <path d="M16 13H8" />
+  <path d="M16 17H8" />
+</svg>
+<span>Roles y permisos</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/user-roles"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+  <path d="M16 3.128a4 4 0 0 1 0 7.744" />
+  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+  <circle cx="9" cy="7" r="4" />
+</svg>
+<span>Asignación de roles</span></a>
+                            </div>
+        </details>
+                                                                                                                                                                                                                        <details class="nav-group" >
+            <summary class="nav-section"><span class="nav-group-label"><span class="nav-group-icon"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M13 17V9" />
+  <path d="M18 17V5" />
+  <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+  <path d="M8 17v-3" />
+</svg>
+</span><span>Información</span></span><span class="nav-chevron" aria-hidden="true"></span></summary>
+            <div class="nav-group-links">
+                                                        <a class=""  href="http://127.0.0.1:8011/reports"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M13 17V9" />
+  <path d="M18 17V5" />
+  <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+  <path d="M8 17v-3" />
+</svg>
+<span>Reportes</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/indicators"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M13 17V9" />
+  <path d="M18 17V5" />
+  <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+  <path d="M8 17v-3" />
+</svg>
+<span>Indicadores</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/bi"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M13 17V9" />
+  <path d="M18 17V5" />
+  <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+  <path d="M8 17v-3" />
+</svg>
+<span>Business Intelligence</span></a>
+                                                        <a class=""  href="http://127.0.0.1:8011/chatbot"><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />
+</svg>
+<span>Chatbot</span></a>
+                            </div>
+        </details>
+                    </nav>
+            </div>
+        </details>
+
+    </aside>
+    <main class="workspace-main" id="module-content" tabindex="-1"><section class="overview">
+    <header class="overview-heading">
+        <div><span class="eyebrow">RESUMEN DE TU OPERACIÓN</span><h1>Panel de Gerencia</h1>
+        <nav class="workspace-breadcrumb" aria-label="Ruta de navegación"><span>Inicio</span><span aria-hidden="true">/</span><span aria-current="page">Dashboard</span></nav></div>
+        <p class="overview-greeting">Hola, <strong>qa_e2e_gerencia</strong><br><span>Bienvenido a Lunnys Perú</span></p>
+    </header>
+    <div class="overview-metrics">
+                <a class="metric-card summary-metric"  href="http://127.0.0.1:8011/clients" ><h2>Clientes registrados</h2><p class="metric-value">392</p><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+  <path d="M16 3.128a4 4 0 0 1 0 7.744" />
+  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+  <circle cx="9" cy="7" r="4" />
+</svg>
+</a>
+                                <a class="metric-card summary-metric"  href="http://127.0.0.1:8011/contracts" ><h2>Contratos activos</h2><p class="metric-value">49</p><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+  <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+  <path d="M10 9H8" />
+  <path d="M16 13H8" />
+  <path d="M16 17H8" />
+</svg>
+</a>
+                <a class="metric-card summary-metric"  href="http://127.0.0.1:8011/payments?status=VENCIDO" ><h2>Pagos vencidos</h2><p class="metric-value">98</p><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<circle cx="12" cy="12" r="10" />
+  <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+  <path d="M12 18V6" />
+</svg>
+</a>
+                <a class="metric-card summary-metric"  href="http://127.0.0.1:8011/installations" ><h2>Instalaciones en proceso</h2><p class="metric-value">0</p><svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" />
+</svg>
+</a>
+                        <button type="button" class="metric-card inventory-trigger " data-inventory-open="equipment-dialog" aria-haspopup="dialog" aria-controls="equipment-dialog">
+            <span class="inventory-title">Equipos</span>
+            <svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<rect width="20" height="8" x="2" y="14" rx="2" />
+  <path d="M6.01 18H6" />
+  <path d="M10.01 18H10" />
+  <path d="M15 10v4" />
+  <path d="M17.84 7.17a4 4 0 0 0-5.66 0" />
+  <path d="M20.66 4.34a8 8 0 0 0-11.31 0" />
+</svg>
+            <span class="metric-note">Haz clic para ver stock</span>
+                                                </button>
+                <button type="button" class="metric-card inventory-trigger metric-alert" data-inventory-open="materials-dialog" aria-haspopup="dialog" aria-controls="materials-dialog">
+            <span class="inventory-title">Materiales</span>
+            <svg class="module-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+  <path d="M12 22V12" />
+  <polyline points="3.29 7 12 12 20.71 7" />
+  <path d="m7.5 4.27 9 5.15" />
+</svg>
+            <span class="metric-note">Haz clic para ver stock</span>
+                            <span class="stock-warning">⚠ Stock mínimo</span>                    </button>
+                    </div>
+        <section class="overview-chart" aria-labelledby="sales-heading">
+        <header class="chart-heading"><div><h2 id="sales-heading">Resumen de ventas</h2><p>Últimos 6 meses · Ventas confirmadas · Mes actual en curso</p></div><div class="sales-total"><span>Total del período</span><strong>S/ 0.00</strong></div></header>
+        <p class="chart-empty">Aún no hay ventas confirmadas en este período.</p>        <ol class="sales-bars" aria-label="Ventas confirmadas por mes, en soles">
+                        <li><span class="bar-amount">S/ 0.00</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" style="height: 0%"></div></div><span class="bar-month">may. 2026</span></li>
+                        <li><span class="bar-amount">S/ 0.00</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" style="height: 0%"></div></div><span class="bar-month">jun. 2026</span></li>
+                        <li><span class="bar-amount">S/ 0.00</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" style="height: 0%"></div></div><span class="bar-month">jul. 2026</span></li>
+                        <li><span class="bar-amount">S/ 0.00</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" style="height: 0%"></div></div><span class="bar-month">ago. 2026</span></li>
+                        <li><span class="bar-amount">S/ 0.00</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" style="height: 0%"></div></div><span class="bar-month">sep. 2026</span></li>
+                        <li><span class="bar-amount">S/ 0.00</span><div class="bar-track" aria-hidden="true"><div class="bar-fill" style="height: 0%"></div></div><span class="bar-month">oct. 2026</span></li>
+                    </ol>
+        <p class="chart-note">Indicadores calculados con los registros existentes.</p>
+    </section>
+            <section class="overview-chart" aria-labelledby="top-plans-heading">
+        <header class="chart-heading"><div><h2 id="top-plans-heading">Planes más vendidos</h2><p>Top 5 · Ventas confirmadas en los últimos 6 meses · Cantidad de ventas</p></div></header>
+                <p class="chart-empty">Aún no hay ventas confirmadas de planes en este período.</p>
+            </section>
+                        <dialog class="inventory-dialog" id="equipment-dialog" aria-labelledby="equipment-title">
+            <header class="inventory-heading"><h2 id="equipment-title">Inventario de equipos</h2><form method="dialog"><button type="submit" class="secondary" autofocus aria-label="Cerrar inventario de equipos">Cerrar ×</button></form></header>
+                            <p class="muted">Unidades disponibles para asignación, agrupadas por nombre, tipo, marca y modelo. Mínimo recomendado: 1 por grupo.</p>
+                                    <div class="table-scroll">
+<table class="users-table inventory-table">
+    <caption class="sr-only">Existencias actuales de equipos</caption>
+    <thead><tr>
+        <th scope="col">Equipo</th>
+        <th scope="col" class="stock-column">Disponibles</th>
+    </tr></thead>
+    <tbody>
+        <tr><td colspan="2" class="empty-state">No hay equipos activos registrados.</td></tr>    </tbody>
+</table>
+</div>
+            <footer class="inventory-footer"><a class="action-link"  href="http://127.0.0.1:8011/equipment" >Abrir equipos →</a></footer>
+        </dialog>
+                <dialog class="inventory-dialog" id="materials-dialog" aria-labelledby="materials-title">
+            <header class="inventory-heading"><h2 id="materials-title">Inventario de materiales</h2><form method="dialog"><button type="submit" class="secondary" autofocus aria-label="Cerrar inventario de materiales">Cerrar ×</button></form></header>
+                            <p class="muted">Materiales activos con su stock actual y mínimo recomendado.</p>
+                                                            <p class="stock-warning" role="status">⚠ Stock igual o inferior al mínimo: 49 materiales.</p>
+                                        <div class="table-scroll">
+<table class="users-table inventory-table">
+    <caption class="sr-only">Existencias actuales de materiales</caption>
+    <thead><tr>
+        <th scope="col">Material</th>
+        <th scope="col" class="stock-column">Stock actual</th>
+    </tr></thead>
+    <tbody>
+                <tr>
+            <td><strong>Cable QA 0e24532529428282</strong><small class="table-subtitle">MAT-0045</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 15f045dd13ac0dda</strong><small class="table-subtitle">MAT-0030</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 1b1ffc5c9eebf1c5</strong><small class="table-subtitle">MAT-0041</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 1c55451ab89aaa74</strong><small class="table-subtitle">MAT-0032</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 1e7a6db30fc41489</strong><small class="table-subtitle">MAT-0046</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 2001c5fb6431cb3d</strong><small class="table-subtitle">MAT-0019</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 203417b1d83e36e4</strong><small class="table-subtitle">MAT-0024</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 2b9ad363302ee761</strong><small class="table-subtitle">MAT-0023</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 46018f443e52459f</strong><small class="table-subtitle">MAT-0001</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 47d8b841866909f5</strong><small class="table-subtitle">MAT-0039</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 51279808ddad4aa7</strong><small class="table-subtitle">MAT-0025</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 56276d96115dab83</strong><small class="table-subtitle">MAT-0006</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 5f1ecdd08f76754a</strong><small class="table-subtitle">MAT-0003</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 5f1fdd5967cf6c67</strong><small class="table-subtitle">MAT-0028</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 67bb7f71e5c3a8fe</strong><small class="table-subtitle">MAT-0036</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 697b39a44f885e2f</strong><small class="table-subtitle">MAT-0029</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 6ef728c707eb9955</strong><small class="table-subtitle">MAT-0035</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 6fcae4806c0c7437</strong><small class="table-subtitle">MAT-0040</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 70c07cf7ce9e71ae</strong><small class="table-subtitle">MAT-0027</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 7311cfc0e6387117</strong><small class="table-subtitle">MAT-0014</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 83149b776e0ca96b</strong><small class="table-subtitle">MAT-0037</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 86606a90c5be90e4</strong><small class="table-subtitle">MAT-0002</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 8668e25c498b7249</strong><small class="table-subtitle">MAT-0021</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 87a82c9a3ff2e97c</strong><small class="table-subtitle">MAT-0048</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 89f179e020bea87a</strong><small class="table-subtitle">MAT-0022</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 8a496f1fb988f1e5</strong><small class="table-subtitle">MAT-0049</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 8bdbad39b09c873b</strong><small class="table-subtitle">MAT-0031</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 8e80207f6e92516a</strong><small class="table-subtitle">MAT-0042</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 90071efeb06cd9ce</strong><small class="table-subtitle">MAT-0033</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 90aba100b52d4257</strong><small class="table-subtitle">MAT-0015</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 929590a3554b6fae</strong><small class="table-subtitle">MAT-0011</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 946094d351e4913a</strong><small class="table-subtitle">MAT-0009</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 984a886846509524</strong><small class="table-subtitle">MAT-0008</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA 9eb4efc05eb700f7</strong><small class="table-subtitle">MAT-0018</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA a48fbbd8a2ba3327</strong><small class="table-subtitle">MAT-0004</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA a4e1fa5f23bfd99a</strong><small class="table-subtitle">MAT-0012</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA ac7de6f90f10aa1a</strong><small class="table-subtitle">MAT-0005</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA b82ec6270ecb47d1</strong><small class="table-subtitle">MAT-0010</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA bcf1462068dea728</strong><small class="table-subtitle">MAT-0043</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA c37a15c6c2ec17ec</strong><small class="table-subtitle">MAT-0016</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA d65f7b17c7526fa3</strong><small class="table-subtitle">MAT-0044</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA d669cb9d2841ce7a</strong><small class="table-subtitle">MAT-0038</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA df4519cd9024e172</strong><small class="table-subtitle">MAT-0017</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA ef2a1346f7c1817f</strong><small class="table-subtitle">MAT-0026</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA f4386ef80172cd56</strong><small class="table-subtitle">MAT-0047</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA f4b3ad8f08530613</strong><small class="table-subtitle">MAT-0034</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA f6bb5754fd945fb5</strong><small class="table-subtitle">MAT-0013</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA f70bd533cf44fbf1</strong><small class="table-subtitle">MAT-0007</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+                <tr>
+            <td><strong>Cable QA fa4405aebe7755c6</strong><small class="table-subtitle">MAT-0020</small></td>
+            <td class="stock-column">
+                <strong>1 metros</strong>
+                                    <span class="stock-warning">⚠ Stock mínimo</span>                    <small class="table-subtitle">Mínimo: 2</small>
+                            </td>
+        </tr>
+            </tbody>
+</table>
+</div>
+            <footer class="inventory-footer"><a class="action-link"  href="http://127.0.0.1:8011/materials" >Abrir materiales →</a></footer>
+        </dialog>
+            </section>
+</main>
+</div>
+</body>
+</html>

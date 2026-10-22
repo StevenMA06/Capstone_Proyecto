@@ -1,0 +1,105 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--grep",
+      "CP-IA-01",
+      "--workers=1",
+      "--retries=0",
+      "--max-failures=1"
+    ],
+    "configFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\playwright.config.ts",
+    "rootDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "dniMode": "real",
+      "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC"
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/artifacts/e2e/2026-10-17T06-27-13-272Z/evidencias",
+        "repeatEach": 5,
+        "retries": 0,
+        "metadata": {
+          "dniMode": "real",
+          "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC"
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-27-13-272Z/html",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-27-13-272Z/resultados.json"
+        }
+      ],
+      [
+        "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\ppf-reporter.mjs",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: El puerto 8011 está ocupado. Cambia E2E_PORT.",
+      "stack": "Error: El puerto 8011 está ocupado. Cambia E2E_PORT.\n    at startServer (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\server.mjs:10:25)\n    at globalSetup (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\global-setup.ts:4:12)",
+      "location": {
+        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\server.mjs",
+        "column": 25,
+        "line": 10
+      },
+      "snippet": "\u001b[90m   at \u001b[39m..\\scripts\\e2e\\server.mjs:10\n\n\u001b[0m \u001b[90m  8 |\u001b[39m \u001b[36mtry\u001b[39m {\n \u001b[90m  9 |\u001b[39m     \u001b[36mconst\u001b[39m response \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m fetch(\u001b[32m`${baseURL}/login`\u001b[39m\u001b[33m,\u001b[39m { signal\u001b[33m:\u001b[39m \u001b[33mAbortSignal\u001b[39m\u001b[33m.\u001b[39mtimeout(\u001b[35m1000\u001b[39m) })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mif\u001b[39m (response) \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`El puerto ${new URL(baseURL).port} está ocupado. Cambia E2E_PORT.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 12 |\u001b[39m     \u001b[36mif\u001b[39m (error\u001b[33m.\u001b[39mmessage\u001b[33m.\u001b[39mincludes(\u001b[32m'está ocupado'\u001b[39m)) \u001b[36mthrow\u001b[39m error\u001b[33m;\u001b[39m\n \u001b[90m 13 |\u001b[39m }\u001b[0m"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-10-17T06:27:13.281Z",
+    "duration": 462.85699999999997,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

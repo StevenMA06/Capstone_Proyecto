@@ -1,0 +1,549 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--grep",
+      "CP-IA-01",
+      "--workers=1",
+      "--retries=0"
+    ],
+    "configFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\playwright.config.ts",
+    "rootDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "dniMode": "real",
+      "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC",
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/artifacts/e2e/2026-10-17T06-24-03-650Z/evidencias",
+        "repeatEach": 5,
+        "retries": 0,
+        "metadata": {
+          "dniMode": "real",
+          "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC",
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z/html",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z/resultados.json"
+        }
+      ],
+      [
+        "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\ppf-reporter.mjs",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "asistente.spec.ts",
+      "file": "asistente.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2240,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n    at chat (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:7:53)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:33:5",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                      "column": 53,
+                      "line": 7
+                    },
+                    "snippet": "\u001b[0m \u001b[90m  5 |\u001b[39m\n \u001b[90m  6 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m chat(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m     expect((\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/chatbot'\u001b[39m))\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Asistente IA/\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m  9 |\u001b[39m }\n \u001b[90m 10 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m send(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m text\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m suggestion \u001b[33m=\u001b[39m \u001b[36mfalse\u001b[39m) {\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                        "column": 53,
+                        "line": 7
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n\n\u001b[0m \u001b[90m  5 |\u001b[39m\n \u001b[90m  6 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m chat(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m     expect((\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/chatbot'\u001b[39m))\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Asistente IA/\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m  9 |\u001b[39m }\n \u001b[90m 10 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m send(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m text\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m suggestion \u001b[33m=\u001b[39m \u001b[36mfalse\u001b[39m) {\u001b[0m\n\u001b[2m    at chat (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:7:53)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:33:5\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T06:24:05.399Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                    "column": 53,
+                    "line": 7
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-269633d70d08a41fcf99",
+          "file": "asistente.spec.ts",
+          "line": 30,
+          "column": 1
+        },
+        {
+          "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2345,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n    at chat (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:7:53)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:33:5",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                      "column": 53,
+                      "line": 7
+                    },
+                    "snippet": "\u001b[0m \u001b[90m  5 |\u001b[39m\n \u001b[90m  6 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m chat(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m     expect((\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/chatbot'\u001b[39m))\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Asistente IA/\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m  9 |\u001b[39m }\n \u001b[90m 10 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m send(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m text\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m suggestion \u001b[33m=\u001b[39m \u001b[36mfalse\u001b[39m) {\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                        "column": 53,
+                        "line": 7
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n\n\u001b[0m \u001b[90m  5 |\u001b[39m\n \u001b[90m  6 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m chat(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m     expect((\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/chatbot'\u001b[39m))\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Asistente IA/\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m  9 |\u001b[39m }\n \u001b[90m 10 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m send(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m text\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m suggestion \u001b[33m=\u001b[39m \u001b[36mfalse\u001b[39m) {\u001b[0m\n\u001b[2m    at chat (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:7:53)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:33:5\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T06:24:08.193Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat1\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat1\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat1\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat1\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                    "column": 53,
+                    "line": 7
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-f8a10f131081f6fad65b",
+          "file": "asistente.spec.ts",
+          "line": 30,
+          "column": 1
+        },
+        {
+          "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2124,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n    at chat (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:7:53)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:33:5",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                      "column": 53,
+                      "line": 7
+                    },
+                    "snippet": "\u001b[0m \u001b[90m  5 |\u001b[39m\n \u001b[90m  6 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m chat(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m     expect((\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/chatbot'\u001b[39m))\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Asistente IA/\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m  9 |\u001b[39m }\n \u001b[90m 10 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m send(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m text\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m suggestion \u001b[33m=\u001b[39m \u001b[36mfalse\u001b[39m) {\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                        "column": 53,
+                        "line": 7
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n\n\u001b[0m \u001b[90m  5 |\u001b[39m\n \u001b[90m  6 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m chat(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m     expect((\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/chatbot'\u001b[39m))\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Asistente IA/\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m  9 |\u001b[39m }\n \u001b[90m 10 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m send(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m text\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m suggestion \u001b[33m=\u001b[39m \u001b[36mfalse\u001b[39m) {\u001b[0m\n\u001b[2m    at chat (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:7:53)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:33:5\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T06:24:11.109Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat2\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat2\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat2\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat2\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                    "column": 53,
+                    "line": 7
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-e25dbf1fc30ceed6a524",
+          "file": "asistente.spec.ts",
+          "line": 30,
+          "column": 1
+        },
+        {
+          "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2310,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n    at chat (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:7:53)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:33:5",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                      "column": 53,
+                      "line": 7
+                    },
+                    "snippet": "\u001b[0m \u001b[90m  5 |\u001b[39m\n \u001b[90m  6 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m chat(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m     expect((\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/chatbot'\u001b[39m))\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Asistente IA/\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m  9 |\u001b[39m }\n \u001b[90m 10 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m send(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m text\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m suggestion \u001b[33m=\u001b[39m \u001b[36mfalse\u001b[39m) {\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                        "column": 53,
+                        "line": 7
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n\n\u001b[0m \u001b[90m  5 |\u001b[39m\n \u001b[90m  6 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m chat(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m     expect((\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/chatbot'\u001b[39m))\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Asistente IA/\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m  9 |\u001b[39m }\n \u001b[90m 10 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m send(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m text\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m suggestion \u001b[33m=\u001b[39m \u001b[36mfalse\u001b[39m) {\u001b[0m\n\u001b[2m    at chat (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:7:53)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:33:5\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T06:24:13.844Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat3\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat3\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat3\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat3\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                    "column": 53,
+                    "line": 7
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-db9df02629848e3a16c0",
+          "file": "asistente.spec.ts",
+          "line": 30,
+          "column": 1
+        },
+        {
+          "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2216,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n    at chat (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:7:53)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:33:5",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                      "column": 53,
+                      "line": 7
+                    },
+                    "snippet": "\u001b[0m \u001b[90m  5 |\u001b[39m\n \u001b[90m  6 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m chat(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m     expect((\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/chatbot'\u001b[39m))\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Asistente IA/\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m  9 |\u001b[39m }\n \u001b[90m 10 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m send(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m text\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m suggestion \u001b[33m=\u001b[39m \u001b[36mfalse\u001b[39m) {\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                        "column": 53,
+                        "line": 7
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n\n\u001b[0m \u001b[90m  5 |\u001b[39m\n \u001b[90m  6 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m chat(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  7 |\u001b[39m     expect((\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/chatbot'\u001b[39m))\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  8 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'heading'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/Asistente IA/\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m  9 |\u001b[39m }\n \u001b[90m 10 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m send(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m text\u001b[33m:\u001b[39m string\u001b[33m,\u001b[39m suggestion \u001b[33m=\u001b[39m \u001b[36mfalse\u001b[39m) {\u001b[0m\n\u001b[2m    at chat (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:7:53)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:33:5\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T06:24:16.734Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat4\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat4\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat4\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-24-03-650Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat4\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                    "column": 53,
+                    "line": 7
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-adf06256ff349bd51b43",
+          "file": "asistente.spec.ts",
+          "line": 30,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-17T06:24:03.658Z",
+    "duration": 15522.143,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 5,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "runId": "2026-10-17T02-58-43-574Z",
+  "playwright": "1.62.1",
+  "dniMode": "real",
+  "driveMode": "real",
+  "aiMode": "real",
+  "suiteStatus": "passed",
+  "cases": [
+    {
+      "cp": "CP-IA-01",
+      "cycle": 1,
+      "status": "OK",
+      "actualStatus": "passed",
+      "durationMs": 18697,
+      "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+      "started": "2026-10-17T02:58:45.108Z",
+      "retry": 0,
+      "error": "",
+      "errors": [],
+      "annotations": [
+        {
+          "type": "browser-version",
+          "description": "151.0.7922.34"
+        }
+      ],
+      "evidence": [
+        {
+          "name": "ia-consulta-vacia-bloqueada",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "ia-acceso-no-autorizado",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "ia-contratos-respuesta-real",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "ia-contratos-respuesta-real-datos",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "ia-materiales-respuesta-real",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "ia-materiales-respuesta-real-datos",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "video",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T02-58-43-574Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\video.webm"
+        },
+        {
+          "name": "trace",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T02-58-43-574Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\trace.zip"
+        }
+      ]
+    }
+  ],
+  "scope": "Únicamente los casos y pasos ejecutados. No certifica otros módulos, segundo factor, entrega real de correos ni hardware mínimo. Drive solo se acredita con E2E_DRIVE_MODE=real y CP-INS-02 satisfactorio. Las respuestas de IA requieren E2E_AI_MODE=real. Los prerrequisitos preparados por fixture no certifican sus módulos. Si falla la apertura de una vista, solo quedan acreditados los pasos posteriores que se ejecuten explícitamente como diagnóstico; el caso conserva el fallo inicial."
+}

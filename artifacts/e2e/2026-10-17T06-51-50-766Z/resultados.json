@@ -1,0 +1,96 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--grep",
+      "CP-EQP-02"
+    ],
+    "configFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\playwright.config.ts",
+    "rootDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "dniMode": "real",
+      "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC"
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/artifacts/e2e/2026-10-17T06-51-50-766Z/evidencias",
+        "repeatEach": 5,
+        "retries": 0,
+        "metadata": {
+          "dniMode": "real",
+          "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC"
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-51-50-766Z/html",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-51-50-766Z/resultados.json"
+        }
+      ],
+      [
+        "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\ppf-reporter.mjs",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: No tests found",
+      "stack": "Error: No tests found"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-10-17T06:51:50.774Z",
+    "duration": 1342.77,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

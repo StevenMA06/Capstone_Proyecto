@@ -38,30 +38,70 @@ class ClientDuplicateDocumentTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function rechaza_dni_duplicado_con_mismo_tipo_documento()
+    /**
+     * Data Provider: Múltiples DNIs duplicados
+     */
+    public function dniDuplicadoProvider(): array
+    {
+        return [
+            'DNI simple duplicado' => [
+                'tipo_doc' => 'DNI',
+                'numero_existente' => '12345678',
+                'numero_duplicado' => '12345678',
+                'nombre_original' => 'Cliente Original',
+                'nombre_duplicado' => 'Intento Duplicado'
+            ],
+            'RUC empresarial duplicado' => [
+                'tipo_doc' => 'RUC',
+                'numero_existente' => '20123456789',
+                'numero_duplicado' => '20123456789',
+                'nombre_original' => 'Empresa Original SAC',
+                'nombre_duplicado' => 'Empresa Duplicada SAC'
+            ],
+            'CE extranjero duplicado' => [
+                'tipo_doc' => 'CE',
+                'numero_existente' => '001234567',
+                'numero_duplicado' => '001234567',
+                'nombre_original' => 'John Doe',
+                'nombre_duplicado' => 'John Smith'
+            ],
+            'DNI con ceros a la izquierda' => [
+                'tipo_doc' => 'DNI',
+                'numero_existente' => '00123456',
+                'numero_duplicado' => '00123456',
+                'nombre_original' => 'Cliente Ceros',
+                'nombre_duplicado' => 'Intento Ceros'
+            ],
+        ];
+    }
+
+    /** 
+     * @test 
+     * @dataProvider dniDuplicadoProvider
+     */
+    public function rechaza_dni_duplicado_con_mismo_tipo_documento($tipo_doc, $numero_existente, $numero_duplicado, $nombre_original, $nombre_duplicado)
     {
         echo "\n" . str_repeat("═", 80) . "\n";
-        echo "❌ TEST: Rechaza DNI duplicado con mismo tipo_documento\n";
+        echo "❌ TEST: Rechaza {$tipo_doc} duplicado con mismo tipo_documento\n";
         echo str_repeat("═", 80) . "\n";
 
-        // Crear cliente existente con DNI 12345678
+        // Crear cliente existente
         $existingClient = Client::factory()->create([
-            'tipo_documento' => 'DNI',
-            'numero_documento' => '12345678',
-            'nombres_razon_social' => 'Cliente Original',
+            'tipo_documento' => $tipo_doc,
+            'numero_documento' => $numero_existente,
+            'nombres_razon_social' => $nombre_original,
             'estado' => 'ACTIVO'
         ]);
 
-        echo "\n📥 DATOS DE ENTRADA:\n";
-        echo "   • Cliente existente: DNI 12345678\n";
-        echo "   • Intento de crear: DNI 12345678 (DUPLICADO)\n";
+        echo "\n📥 DATOS DE ENTRADA (Ciclo actual):\n";
+        echo "   • Cliente existente: {$tipo_doc} {$numero_existente}\n";
+        echo "   • Intento de crear: {$tipo_doc} {$numero_duplicado} (DUPLICADO)\n";
         echo "   • Constraint: UNIQUE (tipo_documento, numero_documento)\n";
 
         $duplicateData = [
-            'tipo_documento' => 'DNI',
-            'numero_documento' => '12345678',  // DUPLICADO
-            'nombres_razon_social' => 'Intento Duplicado',
+            'tipo_documento' => $tipo_doc,
+            'numero_documento' => $numero_duplicado,
+            'nombres_razon_social' => $nombre_duplicado,
             'apellidos' => 'García López',
             'correo' => 'nuevo@example.com',
             'telefono' => '987654321',
@@ -88,18 +128,11 @@ class ClientDuplicateDocumentTest extends TestCase
         echo "   ✓ HTTP Status: 302 (redirect back)\n";
         echo "   ✓ Error: 'Este número ya está registrado para el tipo de documento seleccionado.'\n";
         echo "   ✓ Input preservado (excepto contraseñas)\n";
-        echo "   ✓ Solo 1 cliente en BD\n";
+        echo "   ✓ Solo 1 cliente en BD ({$tipo_doc})\n";
 
         $response->assertRedirect();
         $response->assertSessionHasErrors('numero_documento');
-        $this->assertDatabaseCount('clientes', 1);  // Solo el cliente original
-        
-        // Verificar mensaje específico
-        $errors = session('errors');
-        if ($errors) {
-            $error = $errors->get('numero_documento')[0] ?? '';
-            echo "   ✓ Mensaje completo: '{$error}'\n";
-        }
+        $this->assertDatabaseCount('clientes', 1);
 
         echo str_repeat("═", 80) . "\n";
     }

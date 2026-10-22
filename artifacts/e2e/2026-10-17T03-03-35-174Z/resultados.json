@@ -1,0 +1,207 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--grep",
+      "CP-IA-02"
+    ],
+    "configFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\playwright.config.ts",
+    "rootDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "dniMode": "real",
+      "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC",
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/artifacts/e2e/2026-10-17T03-03-35-174Z/evidencias",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "dniMode": "real",
+          "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC",
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-03-35-174Z/html",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-03-35-174Z/resultados.json"
+        }
+      ],
+      [
+        "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\ppf-reporter.mjs",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "asistente.spec.ts",
+      "file": "asistente.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "CP-IA-02 — Consulta operativa, nueva conversación y protección de contraseñas",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 17822,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.chatbot-message.assistant .message-content').last()\nTimeout: 10000ms\n\u001b[32m- Expected substring  - 3\u001b[39m\n\u001b[31m+ Received string     + 3\u001b[39m\n\n\u001b[32m- ¡Hola! 👋\u001b[39m\n\u001b[32m-\u001b[39m\n\u001b[32m- Actualmente, no ten\u001b[39m\n\u001b[31m+\u001b[39m\n\u001b[31m+ \u001b[7m                    \u001b[27m¡Hola! 👋Actualmente, no ten\u001b[7memos ningún pago vencido. ¡Es una excelente noticia para Lunnys Perú! ✅¿Hay algo más en lo que pueda ayudarte hoy? Tal vez quieras saber sobre pagos pendientes o el estado de nuestros equipos.\u001b[27m\u001b[39m\n\u001b[31m+ \u001b[43m                \u001b[49m\u001b[39m\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('.chatbot-message.assistant .message-content').last()\u001b[22m\n\u001b[2m    23 × locator resolved to <div class=\"message-content\">…</div>\u001b[22m\n\u001b[2m       - unexpected value \"\u001b[22m\n\u001b[2m                    ¡Hola! 👋Actualmente, no tenemos ningún pago vencido. ¡Es una excelente noticia para Lunnys Perú! ✅¿Hay algo más en lo que pueda ayudarte hoy? Tal vez quieras saber sobre pagos pendientes o el estado de nuestros equipos.\u001b[22m\n\u001b[2m                \"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.chatbot-message.assistant .message-content').last()\nTimeout: 10000ms\n\u001b[32m- Expected substring  - 3\u001b[39m\n\u001b[31m+ Received string     + 3\u001b[39m\n\n\u001b[32m- ¡Hola! 👋\u001b[39m\n\u001b[32m-\u001b[39m\n\u001b[32m- Actualmente, no ten\u001b[39m\n\u001b[31m+\u001b[39m\n\u001b[31m+ \u001b[7m                    \u001b[27m¡Hola! 👋Actualmente, no ten\u001b[7memos ningún pago vencido. ¡Es una excelente noticia para Lunnys Perú! ✅¿Hay algo más en lo que pueda ayudarte hoy? Tal vez quieras saber sobre pagos pendientes o el estado de nuestros equipos.\u001b[27m\u001b[39m\n\u001b[31m+ \u001b[43m                \u001b[49m\u001b[39m\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('.chatbot-message.assistant .message-content').last()\u001b[22m\n\u001b[2m    23 × locator resolved to <div class=\"message-content\">…</div>\u001b[22m\n\u001b[2m       - unexpected value \"\u001b[22m\n\u001b[2m                    ¡Hola! 👋Actualmente, no tenemos ningún pago vencido. ¡Es una excelente noticia para Lunnys Perú! ✅¿Hay algo más en lo que pueda ayudarte hoy? Tal vez quieras saber sobre pagos pendientes o el estado de nuestros equipos.\u001b[22m\n\u001b[2m                \"\u001b[22m\n\n    at send (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:17:86)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:84:22\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:82:15",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                      "column": 86,
+                      "line": 17
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m     expect(response\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m body \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m response\u001b[33m.\u001b[39mjson()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.chatbot-message.assistant .message-content'\u001b[39m)\u001b[33m.\u001b[39mlast())\u001b[33m.\u001b[39mtoContainText(body\u001b[33m.\u001b[39mresponse\u001b[33m.\u001b[39mslice(\u001b[35m0\u001b[39m\u001b[33m,\u001b[39m \u001b[35m30\u001b[39m))\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mreturn\u001b[39m body\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m }\n \u001b[90m 20 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m reset(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                        "column": 86,
+                        "line": 17
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.chatbot-message.assistant .message-content').last()\nTimeout: 10000ms\n\u001b[32m- Expected substring  - 3\u001b[39m\n\u001b[31m+ Received string     + 3\u001b[39m\n\n\u001b[32m- ¡Hola! 👋\u001b[39m\n\u001b[32m-\u001b[39m\n\u001b[32m- Actualmente, no ten\u001b[39m\n\u001b[31m+\u001b[39m\n\u001b[31m+ \u001b[7m                    \u001b[27m¡Hola! 👋Actualmente, no ten\u001b[7memos ningún pago vencido. ¡Es una excelente noticia para Lunnys Perú! ✅¿Hay algo más en lo que pueda ayudarte hoy? Tal vez quieras saber sobre pagos pendientes o el estado de nuestros equipos.\u001b[27m\u001b[39m\n\u001b[31m+ \u001b[43m                \u001b[49m\u001b[39m\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('.chatbot-message.assistant .message-content').last()\u001b[22m\n\u001b[2m    23 × locator resolved to <div class=\"message-content\">…</div>\u001b[22m\n\u001b[2m       - unexpected value \"\u001b[22m\n\u001b[2m                    ¡Hola! 👋Actualmente, no tenemos ningún pago vencido. ¡Es una excelente noticia para Lunnys Perú! ✅¿Hay algo más en lo que pueda ayudarte hoy? Tal vez quieras saber sobre pagos pendientes o el estado de nuestros equipos.\u001b[22m\n\u001b[2m                \"\u001b[22m\n\n\n\u001b[0m \u001b[90m 15 |\u001b[39m     expect(response\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m body \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m response\u001b[33m.\u001b[39mjson()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.chatbot-message.assistant .message-content'\u001b[39m)\u001b[33m.\u001b[39mlast())\u001b[33m.\u001b[39mtoContainText(body\u001b[33m.\u001b[39mresponse\u001b[33m.\u001b[39mslice(\u001b[35m0\u001b[39m\u001b[33m,\u001b[39m \u001b[35m30\u001b[39m))\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mreturn\u001b[39m body\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m }\n \u001b[90m 20 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m reset(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\u001b[0m\n\u001b[2m    at send (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:17:86)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:84:22\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:82:15\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Consultar pagos vencidos mediante Gemini real",
+                      "duration": 14099,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.chatbot-message.assistant .message-content').last()\nTimeout: 10000ms\n\u001b[32m- Expected substring  - 3\u001b[39m\n\u001b[31m+ Received string     + 3\u001b[39m\n\n\u001b[32m- ¡Hola! 👋\u001b[39m\n\u001b[32m-\u001b[39m\n\u001b[32m- Actualmente, no ten\u001b[39m\n\u001b[31m+\u001b[39m\n\u001b[31m+ \u001b[7m                    \u001b[27m¡Hola! 👋Actualmente, no ten\u001b[7memos ningún pago vencido. ¡Es una excelente noticia para Lunnys Perú! ✅¿Hay algo más en lo que pueda ayudarte hoy? Tal vez quieras saber sobre pagos pendientes o el estado de nuestros equipos.\u001b[27m\u001b[39m\n\u001b[31m+ \u001b[43m                \u001b[49m\u001b[39m\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('.chatbot-message.assistant .message-content').last()\u001b[22m\n\u001b[2m    23 × locator resolved to <div class=\"message-content\">…</div>\u001b[22m\n\u001b[2m       - unexpected value \"\u001b[22m\n\u001b[2m                    ¡Hola! 👋Actualmente, no tenemos ningún pago vencido. ¡Es una excelente noticia para Lunnys Perú! ✅¿Hay algo más en lo que pueda ayudarte hoy? Tal vez quieras saber sobre pagos pendientes o el estado de nuestros equipos.\u001b[22m\n\u001b[2m                \"\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.chatbot-message.assistant .message-content').last()\nTimeout: 10000ms\n\u001b[32m- Expected substring  - 3\u001b[39m\n\u001b[31m+ Received string     + 3\u001b[39m\n\n\u001b[32m- ¡Hola! 👋\u001b[39m\n\u001b[32m-\u001b[39m\n\u001b[32m- Actualmente, no ten\u001b[39m\n\u001b[31m+\u001b[39m\n\u001b[31m+ \u001b[7m                    \u001b[27m¡Hola! 👋Actualmente, no ten\u001b[7memos ningún pago vencido. ¡Es una excelente noticia para Lunnys Perú! ✅¿Hay algo más en lo que pueda ayudarte hoy? Tal vez quieras saber sobre pagos pendientes o el estado de nuestros equipos.\u001b[27m\u001b[39m\n\u001b[31m+ \u001b[43m                \u001b[49m\u001b[39m\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('.chatbot-message.assistant .message-content').last()\u001b[22m\n\u001b[2m    23 × locator resolved to <div class=\"message-content\">…</div>\u001b[22m\n\u001b[2m       - unexpected value \"\u001b[22m\n\u001b[2m                    ¡Hola! 👋Actualmente, no tenemos ningún pago vencido. ¡Es una excelente noticia para Lunnys Perú! ✅¿Hay algo más en lo que pueda ayudarte hoy? Tal vez quieras saber sobre pagos pendientes o el estado de nuestros equipos.\u001b[22m\n\u001b[2m                \"\u001b[22m\n\n    at send (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:17:86)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:84:22\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:82:15",
+                        "location": {
+                          "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                          "column": 86,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m     expect(response\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m     \u001b[36mconst\u001b[39m body \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m response\u001b[33m.\u001b[39mjson()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'.chatbot-message.assistant .message-content'\u001b[39m)\u001b[33m.\u001b[39mlast())\u001b[33m.\u001b[39mtoContainText(body\u001b[33m.\u001b[39mresponse\u001b[33m.\u001b[39mslice(\u001b[35m0\u001b[39m\u001b[33m,\u001b[39m \u001b[35m30\u001b[39m))\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mreturn\u001b[39m body\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m }\n \u001b[90m 20 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m reset(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m) {\u001b[0m"
+                      }
+                    }
+                  ],
+                  "startTime": "2026-10-17T03:03:36.978Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-03-35-174Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-03-35-174Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-03-35-174Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-03-35-174Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts",
+                    "column": 86,
+                    "line": 17
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-9436cc9809e34630331b",
+          "file": "asistente.spec.ts",
+          "line": 77,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-17T03:03:35.188Z",
+    "duration": 19994.754999999997,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

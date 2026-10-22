@@ -1,0 +1,547 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--grep",
+      "CP-IA-02"
+    ],
+    "configFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\playwright.config.ts",
+    "rootDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "dniMode": "real",
+      "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC",
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/artifacts/e2e/2026-10-17T04-18-23-223Z/evidencias",
+        "repeatEach": 5,
+        "retries": 0,
+        "metadata": {
+          "dniMode": "real",
+          "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC",
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z/html",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z/resultados.json"
+        }
+      ],
+      [
+        "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\ppf-reporter.mjs",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "asistente.spec.ts",
+      "file": "asistente.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "CP-IA-02 — Consulta operativa, nueva conversación y protección de contraseñas",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5490,
+                  "error": {
+                    "message": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418301_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418301_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.",
+                    "stack": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418301_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418301_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.\n    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\n    at fixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\helpers.ts:17:12)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:79:18",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                      "column": 15,
+                      "line": 21
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m raw \u001b[33m=\u001b[39m \u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                        "column": 15,
+                        "line": 21
+                      },
+                      "message": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418301_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418301_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.\n\n\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m raw \u001b[33m=\u001b[39m \u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\u001b[22m\n\u001b[2m    at fixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\helpers.ts:17:12)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:79:18\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T04:18:30.138Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                    "column": 15,
+                    "line": 21
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-9436cc9809e34630331b",
+          "file": "asistente.spec.ts",
+          "line": 77,
+          "column": 1
+        },
+        {
+          "title": "CP-IA-02 — Consulta operativa, nueva conversación y protección de contraseñas",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2131,
+                  "error": {
+                    "message": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418374_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418374_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.",
+                    "stack": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418374_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418374_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.\n    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\n    at fixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\helpers.ts:17:12)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:79:18",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                      "column": 15,
+                      "line": 21
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m raw \u001b[33m=\u001b[39m \u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                        "column": 15,
+                        "line": 21
+                      },
+                      "message": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418374_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418374_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.\n\n\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m raw \u001b[33m=\u001b[39m \u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\u001b[22m\n\u001b[2m    at fixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\helpers.ts:17:12)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:79:18\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T04:18:37.460Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat1\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat1\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat1\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat1\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                    "column": 15,
+                    "line": 21
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-c2df6be99085ed224ec4",
+          "file": "asistente.spec.ts",
+          "line": 77,
+          "column": 1
+        },
+        {
+          "title": "CP-IA-02 — Consulta operativa, nueva conversación y protección de contraseñas",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2255,
+                  "error": {
+                    "message": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418402_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418402_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.",
+                    "stack": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418402_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418402_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.\n    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\n    at fixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\helpers.ts:17:12)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:79:18",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                      "column": 15,
+                      "line": 21
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m raw \u001b[33m=\u001b[39m \u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                        "column": 15,
+                        "line": 21
+                      },
+                      "message": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418402_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418402_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.\n\n\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m raw \u001b[33m=\u001b[39m \u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\u001b[22m\n\u001b[2m    at fixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\helpers.ts:17:12)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:79:18\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T04:18:40.310Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat2\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat2\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat2\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat2\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                    "column": 15,
+                    "line": 21
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-c529b203c2babb072838",
+          "file": "asistente.spec.ts",
+          "line": 77,
+          "column": 1
+        },
+        {
+          "title": "CP-IA-02 — Consulta operativa, nueva conversación y protección de contraseñas",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2222,
+                  "error": {
+                    "message": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418432_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418432_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.",
+                    "stack": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418432_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418432_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.\n    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\n    at fixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\helpers.ts:17:12)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:79:18",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                      "column": 15,
+                      "line": 21
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m raw \u001b[33m=\u001b[39m \u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                        "column": 15,
+                        "line": 21
+                      },
+                      "message": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418432_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418432_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.\n\n\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m raw \u001b[33m=\u001b[39m \u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\u001b[22m\n\u001b[2m    at fixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\helpers.ts:17:12)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:79:18\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T04:18:43.243Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat3\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat3\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat3\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat3\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                    "column": 15,
+                    "line": 21
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-287a8c86e154a441fd38",
+          "file": "asistente.spec.ts",
+          "line": 77,
+          "column": 1
+        },
+        {
+          "title": "CP-IA-02 — Consulta operativa, nueva conversación y protección de contraseñas",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [
+                {
+                  "type": "browser-version",
+                  "description": "151.0.7922.34"
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2453,
+                  "error": {
+                    "message": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418460_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418460_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.",
+                    "stack": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418460_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418460_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.\n    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\n    at fixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\helpers.ts:17:12)\n    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:79:18",
+                    "location": {
+                      "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                      "column": 15,
+                      "line": 21
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m raw \u001b[33m=\u001b[39m \u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                        "column": 15,
+                        "line": 21
+                      },
+                      "message": "Error: No se pudo ejecutar la preparación E2E (ri-ai-data).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [1049] Unknown database 'lunnys_dni_20261016_03_202610170418460_e2e_test' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: lunnys_dni_20261016_03_202610170418460_e2e_test, SQL: select * from `usuarios` where `nombre_usuario` = qa_e2e_gerencia limit 1)\nRevisa .env.e2e y que MySQL esté iniciado.\n\n\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m raw \u001b[33m=\u001b[39m \u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\u001b[22m\n\u001b[2m    at fixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\helpers.ts:17:12)\u001b[22m\n\u001b[2m    at C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\asistente.spec.ts:79:18\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-17T04:18:46.118Z",
+                  "annotations": [
+                    {
+                      "type": "browser-version",
+                      "description": "151.0.7922.34"
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat4\\test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat4\\video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat4\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T04-18-23-223Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium-repeat4\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+                    "column": 15,
+                    "line": 21
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "9a473d43914a5fb9c379-bee98b57e4090d0ab134",
+          "file": "asistente.spec.ts",
+          "line": 77,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-17T04:18:23.233Z",
+    "duration": 25659.354,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 5,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "runId": "2026-10-17T03-30-35-580Z",
+  "playwright": "1.62.1",
+  "dniMode": "real",
+  "driveMode": "real",
+  "aiMode": "real",
+  "suiteStatus": "failed",
+  "cases": [
+    {
+      "cp": "CP-IA-01",
+      "cycle": 1,
+      "status": "No OK",
+      "actualStatus": "failed",
+      "durationMs": 20394,
+      "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+      "started": "2026-10-17T03:30:37.420Z",
+      "retry": 0,
+      "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+      "errors": [
+        "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m"
+      ],
+      "annotations": [
+        {
+          "type": "browser-version",
+          "description": "151.0.7922.34"
+        }
+      ],
+      "evidence": [
+        {
+          "name": "ia-consulta-vacia-bloqueada",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "ia-acceso-no-autorizado",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "ia-contratos-respuesta-real",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "ia-contratos-respuesta-real-datos",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "screenshot",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-30-35-580Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\test-failed-1.png"
+        },
+        {
+          "name": "video",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-30-35-580Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\video.webm"
+        },
+        {
+          "name": "error-context",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-30-35-580Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\error-context.md"
+        },
+        {
+          "name": "trace",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-30-35-580Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\trace.zip"
+        }
+      ]
+    },
+    {
+      "cp": "CP-IA-02",
+      "cycle": 1,
+      "status": "No OK",
+      "actualStatus": "failed",
+      "durationMs": 9656,
+      "title": "CP-IA-02 — Consulta operativa, nueva conversación y protección de contraseñas",
+      "started": "2026-10-17T03:30:59.214Z",
+      "retry": 0,
+      "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+      "errors": [
+        "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m"
+      ],
+      "annotations": [
+        {
+          "type": "browser-version",
+          "description": "151.0.7922.34"
+        }
+      ],
+      "evidence": [
+        {
+          "name": "ia-pagos-respuesta-real",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "ia-pagos-respuesta-real-datos",
+          "path": "(adjunto en reporte HTML)"
+        },
+        {
+          "name": "screenshot",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-30-35-580Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\test-failed-1.png"
+        },
+        {
+          "name": "video",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-30-35-580Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\video.webm"
+        },
+        {
+          "name": "error-context",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-30-35-580Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\error-context.md"
+        },
+        {
+          "name": "trace",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T03-30-35-580Z\\evidencias\\asistente-CP-IA-02-—-Consu-f29e2-y-protección-de-contraseñas-chromium\\trace.zip"
+        }
+      ]
+    }
+  ],
+  "scope": "Únicamente los casos y pasos ejecutados. No certifica otros módulos, segundo factor, entrega real de correos ni hardware mínimo. Drive solo se acredita con E2E_DRIVE_MODE=real y CP-INS-02 satisfactorio. Las respuestas de IA requieren E2E_AI_MODE=real. Los prerrequisitos preparados por fixture no certifican sus módulos. Si falla la apertura de una vista, solo quedan acreditados los pasos posteriores que se ejecuten explícitamente como diagnóstico; el caso conserva el fallo inicial."
+}

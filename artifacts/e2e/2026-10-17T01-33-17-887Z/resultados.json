@@ -1,0 +1,102 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--grep",
+      "CP-IA-01"
+    ],
+    "configFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\playwright.config.ts",
+    "rootDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "dniMode": "real",
+      "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC"
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/artifacts/e2e/2026-10-17T01-33-17-887Z/evidencias",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "dniMode": "real",
+          "alcance": "CP-CLI-01/02, CP-PLA-01/02, CP-CON-01/02, CP-PAG-01/02, CP-EQU-01/02, CP-MAT-01/02, CP-KAR-01/02, CP-ZON-01/02, CP-PED-01/02, CP-INS-01/02, CP-REP-01/02, CP-IND-01/02, CP-BI-01/02, CP-IA-01/02; no evalúa RF-ACC"
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/xampp/htdocs/Capstone/Capstone_Proyecto/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T01-33-17-887Z/html",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T01-33-17-887Z/resultados.json"
+        }
+      ],
+      [
+        "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\ppf-reporter.mjs",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: No se pudo ejecutar la preparación E2E (init).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [2002] No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión\nRevisa .env.e2e y que MySQL esté iniciado.",
+      "stack": "Error: No se pudo ejecutar la preparación E2E (init).\nPHP Warning:  Module \"openssl\" is already loaded in Unknown on line 0\nPHP Warning:  Module \"ftp\" is already loaded in Unknown on line 0\nFalló la preparación E2E: SQLSTATE[HY000] [2002] No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión\nRevisa .env.e2e y que MySQL esté iniciado.\n    at runFixture (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs:21:15)\n    at startServer (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\server.mjs:15:18)\n    at globalSetup (C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\e2e\\global-setup.ts:4:12)",
+      "location": {
+        "file": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\scripts\\e2e\\fixture-runner.mjs",
+        "column": 15,
+        "line": 21
+      },
+      "snippet": "\u001b[90m   at \u001b[39m..\\scripts\\e2e\\fixture-runner.mjs:21\n\n\u001b[0m \u001b[90m 19 |\u001b[39m     } \u001b[36mcatch\u001b[39m (error) {\n \u001b[90m 20 |\u001b[39m         \u001b[36mconst\u001b[39m detail \u001b[33m=\u001b[39m diagnostic(\u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstderr \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m \u001b[33mString\u001b[39m(error\u001b[33m.\u001b[39mstdout \u001b[33m||\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim() \u001b[33m||\u001b[39m error\u001b[33m.\u001b[39mmessage)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 21 |\u001b[39m         \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`No se pudo ejecutar la preparación E2E (${command}).\\n${detail}\\nRevisa .env.e2e y que MySQL esté iniciado.`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 22 |\u001b[39m     }\n \u001b[90m 23 |\u001b[39m     \u001b[36mtry\u001b[39m {\n \u001b[90m 24 |\u001b[39m         \u001b[36mconst\u001b[39m result \u001b[33m=\u001b[39m \u001b[33mJSON\u001b[39m\u001b[33m.\u001b[39mparse(\u001b[33mString\u001b[39m(output)\u001b[33m.\u001b[39mreplace(\u001b[35m/^\\uFEFF/\u001b[39m\u001b[33m,\u001b[39m \u001b[32m''\u001b[39m)\u001b[33m.\u001b[39mtrim())\u001b[33m;\u001b[39m\u001b[0m"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-10-17T01:33:17.931Z",
+    "duration": 24161.625,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

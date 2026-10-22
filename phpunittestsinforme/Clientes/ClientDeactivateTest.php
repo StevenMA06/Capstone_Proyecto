@@ -38,8 +38,50 @@ class ClientDeactivateTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function desactiva_cliente_activo_correctamente()
+    /**
+     * Data Provider: Múltiples tipos de clientes activos
+     */
+    public function clienteActivoProvider(): array
+    {
+        return [
+            'Cliente DNI persona natural' => [
+                'tipo_documento' => 'DNI',
+                'numero_documento' => '12345678',
+                'nombres_razon_social' => 'Juan Pérez García',
+                'tipo_cliente' => 'Persona natural'
+            ],
+            'Empresa con RUC' => [
+                'tipo_documento' => 'RUC',
+                'numero_documento' => '20123456789',
+                'nombres_razon_social' => 'Empresa Tecnológica SAC',
+                'tipo_cliente' => 'Empresa'
+            ],
+            'Extranjero con CE' => [
+                'tipo_documento' => 'CE',
+                'numero_documento' => '001234567',
+                'nombres_razon_social' => 'John Smith',
+                'tipo_cliente' => 'Extranjero'
+            ],
+            'Cliente con documento OTRO' => [
+                'tipo_documento' => 'OTRO',
+                'numero_documento' => 'PASS-ABC123',
+                'nombres_razon_social' => 'Cliente Internacional',
+                'tipo_cliente' => 'Otro documento'
+            ],
+            'Cliente con múltiples contratos' => [
+                'tipo_documento' => 'DNI',
+                'numero_documento' => '87654321',
+                'nombres_razon_social' => 'María Rodríguez López',
+                'tipo_cliente' => 'Cliente frecuente'
+            ],
+        ];
+    }
+
+    /** 
+     * @test 
+     * @dataProvider clienteActivoProvider
+     */
+    public function desactiva_cliente_activo_correctamente($tipo_documento, $numero_documento, $nombres_razon_social, $tipo_cliente)
     {
         echo "\n" . str_repeat("═", 80) . "\n";
         echo "✅ TEST: Desactiva cliente ACTIVO correctamente\n";
@@ -47,16 +89,18 @@ class ClientDeactivateTest extends TestCase
 
         // Crear cliente ACTIVO
         $client = Client::factory()->create([
-            'tipo_documento' => 'DNI',
-            'numero_documento' => '12345678',
-            'nombres_razon_social' => 'Cliente Activo',
+            'tipo_documento' => $tipo_documento,
+            'numero_documento' => $numero_documento,
+            'nombres_razon_social' => $nombres_razon_social,
             'estado' => 'ACTIVO'
         ]);
 
-        echo "\n📥 DATOS DE ENTRADA:\n";
+        echo "\n📥 DATOS DE ENTRADA (Ciclo actual):\n";
         echo "   • Cliente ID: {$client->getKey()}\n";
+        echo "   • Tipo: {$tipo_cliente}\n";
+        echo "   • Documento: {$tipo_documento} {$numero_documento}\n";
         echo "   • Estado actual: ACTIVO\n";
-        echo "   • Nombres: {$client->nombres_razon_social}\n";
+        echo "   • Nombres: {$nombres_razon_social}\n";
 
         echo "\n🔧 CONTROLLER EJECUTADO:\n";
         echo "   → ClientController::deactivate()\n";
@@ -78,7 +122,7 @@ class ClientDeactivateTest extends TestCase
         echo "   ✓ Estado: INACTIVO\n";
         echo "   ✓ Mensaje: 'Cliente inhabilitado. Su información y sus historiales se conservan.'\n";
         echo "   ✓ Datos preservados: nombres, documento, dirección, etc.\n";
-        echo "   ✓ Historiales intactos\n";
+        echo "   ✓ Historiales intactos ({$tipo_cliente})\n";
 
         $response->assertRedirect(route('clients.show', $client));
         $response->assertSessionHas('status');
@@ -86,8 +130,8 @@ class ClientDeactivateTest extends TestCase
         $this->assertDatabaseHas('clientes', [
             'cliente_id' => $client->getKey(),
             'estado' => 'INACTIVO',
-            'nombres_razon_social' => 'Cliente Activo',  // Sin cambiar
-            'numero_documento' => '12345678',  // Sin cambiar
+            'nombres_razon_social' => $nombres_razon_social,
+            'numero_documento' => $numero_documento,
         ]);
 
         echo str_repeat("═", 80) . "\n";
@@ -142,25 +186,56 @@ class ClientDeactivateTest extends TestCase
         echo str_repeat("═", 80) . "\n";
     }
 
-    /** @test */
-    public function cliente_pendiente_tambien_puede_desactivarse()
+    /**
+     * Data Provider: Múltiples estados no-activos
+     */
+    public function estadosNoActivosProvider(): array
+    {
+        return [
+            'Cliente PENDIENTE sin contrato' => [
+                'estado' => 'PENDIENTE',
+                'tipo_documento' => 'DNI',
+                'numero_documento' => '99887766',
+                'motivo' => 'Cliente registrado sin contrato aún'
+            ],
+            'Cliente ya INACTIVO' => [
+                'estado' => 'INACTIVO',
+                'tipo_documento' => 'RUC',
+                'numero_documento' => '20111222333',
+                'motivo' => 'Ya fue desactivado previamente'
+            ],
+            'Cliente SUSPENDIDO temporalmente' => [
+                'estado' => 'SUSPENDIDO',
+                'tipo_documento' => 'CE',
+                'numero_documento' => '009988776',
+                'motivo' => 'Suspensión temporal por mora'
+            ],
+        ];
+    }
+
+    /** 
+     * @test 
+     * @dataProvider estadosNoActivosProvider
+     */
+    public function cliente_pendiente_tambien_puede_desactivarse($estado, $tipo_documento, $numero_documento, $motivo)
     {
         echo "\n" . str_repeat("═", 80) . "\n";
-        echo "⚠️  TEST: Cliente PENDIENTE no se desactiva (solo ACTIVO)\n";
+        echo "⚠️  TEST: Cliente {$estado} no se desactiva (solo ACTIVO)\n";
         echo str_repeat("═", 80) . "\n";
 
-        // Crear cliente PENDIENTE
+        // Crear cliente con estado específico
         $client = Client::factory()->create([
-            'tipo_documento' => 'DNI',
-            'numero_documento' => '99887766',
-            'nombres_razon_social' => 'Cliente Pendiente',
-            'estado' => 'PENDIENTE'
+            'tipo_documento' => $tipo_documento,
+            'numero_documento' => $numero_documento,
+            'nombres_razon_social' => "Cliente {$estado}",
+            'estado' => $estado
         ]);
 
-        echo "\n📥 DATOS DE ENTRADA:\n";
+        echo "\n📥 DATOS DE ENTRADA (Ciclo actual):\n";
         echo "   • Cliente ID: {$client->getKey()}\n";
-        echo "   • Estado actual: PENDIENTE\n";
-        echo "   • Situación: Cliente registrado sin contrato aún\n";
+        echo "   • Estado actual: {$estado}\n";
+        echo "   • Documento: {$tipo_documento} {$numero_documento}\n";
+        echo "   • Situación: {$motivo}\n";
 
         echo "\n🔧 REPOSITORY EJECUTADO:\n";
         echo "   → ClientRepository::deactivate()\n";
@@ -172,21 +247,21 @@ class ClientDeactivateTest extends TestCase
 
         echo "\n⚙️ VALIDACIÓN:\n";
         echo "   → Query WHERE busca estado = 'ACTIVO'\n";
-        echo "   → Cliente tiene estado = 'PENDIENTE'\n";
+        echo "   → Cliente tiene estado = '{$estado}'\n";
         echo "   → 0 filas afectadas\n";
-        echo "   → Estado PENDIENTE preservado\n";
+        echo "   → Estado {$estado} preservado\n";
 
         echo "\n✅ RESULTADO:\n";
-        echo "   ✓ Estado: PENDIENTE (sin cambios)\n";
+        echo "   ✓ Estado: {$estado} (sin cambios)\n";
         echo "   ✓ Solo clientes ACTIVOS son desactivables\n";
-        echo "   ✓ Lógica de negocio: PENDIENTE != ACTIVO\n";
+        echo "   ✓ Lógica de negocio: {$estado} != ACTIVO\n";
         echo "   ✓ Repository protege con WHERE condicional\n";
 
         $response->assertRedirect();
         
         $this->assertDatabaseHas('clientes', [
             'cliente_id' => $client->getKey(),
-            'estado' => 'PENDIENTE',  // Sin cambiar
+            'estado' => $estado,  // Sin cambiar
         ]);
 
         echo str_repeat("═", 80) . "\n";

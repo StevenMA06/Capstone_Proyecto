@@ -1,0 +1,201 @@
+{
+  "runId": "2026-10-17T06-19-59-151Z",
+  "playwright": "1.62.1",
+  "dniMode": "real",
+  "driveMode": "real",
+  "aiMode": "real",
+  "suiteStatus": "failed",
+  "cases": [
+    {
+      "cp": "CP-IA-01",
+      "cycle": 1,
+      "status": "No OK",
+      "actualStatus": "failed",
+      "durationMs": 8077,
+      "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+      "started": "2026-10-17T06:20:01.080Z",
+      "retry": 0,
+      "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+      "errors": [
+        "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m"
+      ],
+      "annotations": [
+        {
+          "type": "browser-version",
+          "description": "151.0.7922.34"
+        }
+      ],
+      "evidence": [
+        {
+          "name": "screenshot",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\test-failed-1.png"
+        },
+        {
+          "name": "video",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\video.webm"
+        },
+        {
+          "name": "error-context",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\error-context.md"
+        },
+        {
+          "name": "trace",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium\\trace.zip"
+        }
+      ]
+    },
+    {
+      "cp": "CP-IA-01",
+      "cycle": 2,
+      "status": "No OK",
+      "actualStatus": "failed",
+      "durationMs": 2074,
+      "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+      "started": "2026-10-17T06:20:11.148Z",
+      "retry": 0,
+      "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+      "errors": [
+        "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m"
+      ],
+      "annotations": [
+        {
+          "type": "browser-version",
+          "description": "151.0.7922.34"
+        }
+      ],
+      "evidence": [
+        {
+          "name": "screenshot",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat1\\test-failed-1.png"
+        },
+        {
+          "name": "video",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat1\\video.webm"
+        },
+        {
+          "name": "error-context",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat1\\error-context.md"
+        },
+        {
+          "name": "trace",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat1\\trace.zip"
+        }
+      ]
+    },
+    {
+      "cp": "CP-IA-01",
+      "cycle": 3,
+      "status": "No OK",
+      "actualStatus": "failed",
+      "durationMs": 2235,
+      "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+      "started": "2026-10-17T06:20:13.820Z",
+      "retry": 0,
+      "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+      "errors": [
+        "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m"
+      ],
+      "annotations": [
+        {
+          "type": "browser-version",
+          "description": "151.0.7922.34"
+        }
+      ],
+      "evidence": [
+        {
+          "name": "screenshot",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat2\\test-failed-1.png"
+        },
+        {
+          "name": "video",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat2\\video.webm"
+        },
+        {
+          "name": "error-context",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat2\\error-context.md"
+        },
+        {
+          "name": "trace",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat2\\trace.zip"
+        }
+      ]
+    },
+    {
+      "cp": "CP-IA-01",
+      "cycle": 4,
+      "status": "No OK",
+      "actualStatus": "failed",
+      "durationMs": 2453,
+      "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+      "started": "2026-10-17T06:20:16.686Z",
+      "retry": 0,
+      "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+      "errors": [
+        "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m"
+      ],
+      "annotations": [
+        {
+          "type": "browser-version",
+          "description": "151.0.7922.34"
+        }
+      ],
+      "evidence": [
+        {
+          "name": "screenshot",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat3\\test-failed-1.png"
+        },
+        {
+          "name": "video",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat3\\video.webm"
+        },
+        {
+          "name": "error-context",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat3\\error-context.md"
+        },
+        {
+          "name": "trace",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat3\\trace.zip"
+        }
+      ]
+    },
+    {
+      "cp": "CP-IA-01",
+      "cycle": 5,
+      "status": "No OK",
+      "actualStatus": "failed",
+      "durationMs": 2016,
+      "title": "CP-IA-01 — Consultas sugeridas, consulta vacía y acceso autorizado",
+      "started": "2026-10-17T06:20:19.711Z",
+      "retry": 0,
+      "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+      "errors": [
+        "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m500\u001b[39m"
+      ],
+      "annotations": [
+        {
+          "type": "browser-version",
+          "description": "151.0.7922.34"
+        }
+      ],
+      "evidence": [
+        {
+          "name": "screenshot",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat4\\test-failed-1.png"
+        },
+        {
+          "name": "video",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat4\\video.webm"
+        },
+        {
+          "name": "error-context",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat4\\error-context.md"
+        },
+        {
+          "name": "trace",
+          "path": "C:\\xampp\\htdocs\\Capstone\\Capstone_Proyecto\\artifacts\\e2e\\2026-10-17T06-19-59-151Z\\evidencias\\asistente-CP-IA-01-—-Consu-0c223-a-vacía-y-acceso-autorizado-chromium-repeat4\\trace.zip"
+        }
+      ]
+    }
+  ],
+  "scope": "Únicamente los casos y pasos ejecutados. No certifica otros módulos, segundo factor, entrega real de correos ni hardware mínimo. Drive solo se acredita con E2E_DRIVE_MODE=real y CP-INS-02 satisfactorio. Las respuestas de IA requieren E2E_AI_MODE=real. Los prerrequisitos preparados por fixture no certifican sus módulos. Si falla la apertura de una vista, solo quedan acreditados los pasos posteriores que se ejecuten explícitamente como diagnóstico; el caso conserva el fallo inicial."
+}
