@@ -28,8 +28,8 @@
     {{ $payment->exists ? 'Completa los datos del pago cuando el cliente realice el pago.' : 'Los campos marcados con * son obligatorios. El código se genera automáticamente.' }}
 </p>
 @can('payments.manage')
-@routecan($payment->exists ? 'payments.update' : 'payments.store')<form class="account-form" method="POST" action="{{ $payment->exists ? route('payments.update', $payment) : route('payments.store') }}" novalidate>
-    @csrf
+@routecan($payment->exists ? 'payments.update' : 'payments.store')<form class="account-form" method="POST" action="{{ $payment->exists ? route('payments.update', $payment) : route('payments.store') }}" novalidate @if(! $payment->exists) data-auto-indicator="pagos" data-auto-context="payment-create" data-auto-start-fields="#fecha_pago,#metodo_pago" @endif>
+    @csrf @if(! $payment->exists) @include('components.automatic-indicator-fields', ['context' => 'payment-create']) @endif
     @if($payment->exists) @method('PUT') @endif
     
     <div>

@@ -46,6 +46,8 @@ class ClientController extends Controller
             ]);
         }
 
+        app(\App\Services\AutomaticIndicatorService::class)->complete($request, $request->user(), 'clientes', 'cliente', $client->getKey());
+
         return redirect()->route('clients.show', $client)
             ->with('status', 'Cliente #'.$client->getKey().' registrado correctamente.');
     }

@@ -81,6 +81,7 @@ class ContractController extends Controller
             $data['responsable_id'] = (int) $request->user()->empleado_id;
         }
         $id = $this->contracts->create($data, (int) $request->user()->getKey());
+        app(\App\Services\AutomaticIndicatorService::class)->complete($request, $request->user(), 'contratos', 'contrato', $id);
 
         return redirect()->route('contracts.show', $id)
             ->with('status', 'Contrato registrado correctamente. Su pedido de instalación ya está disponible para coordinar la visita.');

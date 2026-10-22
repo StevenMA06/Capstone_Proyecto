@@ -13,8 +13,8 @@
 </div>
 <p class="muted">Los campos marcados con * son obligatorios.</p>
 @can('clients.manage')
-@routecan($client->exists ? 'clients.update' : 'clients.store')<form class="account-form" method="POST" action="{{ $client->exists ? route('clients.update', $client) : route('clients.store') }}" novalidate>
-    @csrf
+@routecan($client->exists ? 'clients.update' : 'clients.store')<form class="account-form" method="POST" action="{{ $client->exists ? route('clients.update', $client) : route('clients.store') }}" novalidate @if(! $client->exists) data-auto-indicator="clientes" data-auto-context="client-create" data-auto-start-fields="#tipo_documento,#numero_documento" @endif>
+    @csrf @if(! $client->exists) @include('components.automatic-indicator-fields', ['context' => 'client-create']) @endif
     @if($client->exists) @method('PUT') @endif
     <div>
         <label for="tipo_documento">Tipo de documento *</label>
