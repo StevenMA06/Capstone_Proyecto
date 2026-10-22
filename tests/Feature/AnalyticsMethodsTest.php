@@ -7,10 +7,14 @@ use App\Services\AnalyticsService;
 use App\Services\ReportExportService;
 use App\Services\PretestMeasurementService;
 use App\Services\IndicatorQueryService;
+use App\Services\AutomaticIndicatorService;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Database\Schema\Blueprint;
+use Carbon\CarbonImmutable;
 
 class AnalyticsMethodsTest extends TestCase
 {
@@ -36,10 +40,11 @@ class AnalyticsMethodsTest extends TestCase
         Schema::create('pagos',function(Blueprint $t){$t->id('pago_id');$t->unsignedBigInteger('registrado_por');$t->dateTime('creado_en');$t->dateTime('fecha_pago')->nullable();$t->decimal('monto',12,2);$t->string('estado');});
         Schema::create('clientes',function(Blueprint $t){$t->id('cliente_id');$t->dateTime('creado_en');$t->string('estado');});
         Schema::create('equipos',function(Blueprint $t){$t->id('equipo_id');$t->string('estado');});
-        Schema::create('materiales',function(Blueprint $t){$t->id('material_id');$t->string('nombre');$t->decimal('stock_actual',12,3);$t->decimal('stock_minimo',12,3);$t->string('unidad_medida');});
+        Schema::create('materiales',function(Blueprint $t){$t->id('material_id');$t->string('nombre');$t->decimal('stock_actual',12,3);$t->decimal('stock_minimo',12,3);$t->string('unidad_medida');$t->string('unidad_base')->nullable();$t->string('unidad_empaque')->nullable();$t->decimal('factor_conversion',10,3)->nullable();$t->boolean('inventario_en_empaque')->default(false);});
         Schema::create('movimientos_inventario',function(Blueprint $t){$t->id('movimiento_id');$t->unsignedBigInteger('responsable_id')->nullable();$t->unsignedBigInteger('equipo_id')->nullable();$t->unsignedBigInteger('material_id')->nullable();$t->dateTime('fecha_movimiento');});
-        Schema::create('pedidos_instalacion',function(Blueprint $t){$t->id('pedido_id');$t->dateTime('fecha_solicitud');$t->string('estado');});
+        Schema::create('pedidos_instalacion',function(Blueprint $t){$t->id('pedido_id');$t->dateTime('fecha_solicitud');$t->dateTime('asignado_en')->nullable();$t->string('estado');});
         (require database_path('migrations/2026_10_13_000001_create_observaciones_pretest_table.php'))->up();
+        (require database_path('migrations/2026_10_21_000001_create_mediciones_automaticas_table.php'))->up();
     }
     protected function tearDown(): void
     {
@@ -58,6 +63,106 @@ class AnalyticsMethodsTest extends TestCase
             DB::table('ventas')->insert(['contrato_id'=>$id,'responsable_id'=>1,'fecha_venta'=>$date,'monto'=>$amount,'estado'=>$state]);
         }
     }
+    public function test_automatic_indicators_preserve_one_completed_attempt_and_sum_order_segments(): void
+    {
+        DB::table('usuarios')->insert(['usuario_id' => 1, 'empleado_id' => null]);
+        $user = new User;
+        $user->setAttribute('usuario_id', 1);
+        $user->exists = true;
+        $service = app(AutomaticIndicatorService::class);
+        $now = now('America/Lima');
+        $payload = fn (string $token) => [
+            'indicador_token' => $token,
+            'indicador_inicio' => $now->copy()->subMinutes(3)->toIso8601String(),
+            'indicador_ultima_interaccion' => $now->copy()->subSeconds(10)->toIso8601String(),
+            'indicador_activo_segundos' => 90,
+            'indicador_pausa_descartada_segundos' => 90,
+        ];
+
+        $clientRequest = Request::create('/', 'POST', $payload('11a11111-1111-4111-8111-111111111111'));
+        $service->complete($clientRequest, $user, 'clientes', 'cliente', 7);
+        $service->complete($clientRequest, $user, 'clientes', 'cliente', 7);
+        $this->assertSame(1, DB::table('mediciones_automaticas')->where('indicador', 'clientes')->count());
+        $this->assertSame(90, (int) DB::table('mediciones_automaticas')->where('indicador', 'clientes')->value('duracion_activa_segundos'));
+        $this->assertGreaterThan(0, (int) DB::table('mediciones_automaticas')->where('indicador', 'clientes')->value('pausa_descartada_segundos'));
+
+        DB::table('pedidos_instalacion')->insert([
+            'pedido_id' => 8, 'fecha_solicitud' => $now, 'asignado_en' => $now, 'estado' => 'PROGRAMADO',
+        ]);
+        $service->complete(Request::create('/', 'POST', $payload('22a22222-2222-4222-8222-222222222222')), $user,
+            'pedido_recursos', 'solicitud_recurso', 81, 8, 81);
+        // Dos solicitudes de recursos representan intentos distintos, incluido uno rechazado y reenviado.
+        $service->complete(Request::create('/', 'POST', $payload('55a55555-5555-4555-8555-555555555555')), $user,
+            'pedido_recursos', 'solicitud_recurso', 82, 8, 82);
+        $service->complete(Request::create('/', 'POST', $payload('33a33333-3333-4333-8333-333333333333')), $user,
+            'pedido_asignacion', 'pedido', 8, 8);
+
+        DB::table('pedidos_instalacion')->insert([
+            'pedido_id' => 9, 'fecha_solicitud' => $now, 'asignado_en' => $now, 'estado' => 'PROGRAMADO',
+        ]);
+        $service->complete(Request::create('/', 'POST', $payload('44a44444-4444-4444-8444-444444444444')), $user,
+            'pedido_asignacion', 'pedido', 9, 9);
+
+        $result = $service->orderProgramming($now->toDateString(), $now->toDateString());
+        $this->assertSame(1, $result['count']);
+        $this->assertSame(4.5, $result['average']);
+        $this->assertSame('pedidos programados', $result['count_label']);
+    }
+
+    public function test_automatic_indicator_durations_are_deterministic_and_use_one_timezone(): void
+    {
+        DB::table('usuarios')->insert(['usuario_id' => 1, 'empleado_id' => null]);
+        $user = new User;
+        $user->setAttribute('usuario_id', 1);
+        $user->exists = true;
+        $service = app(AutomaticIndicatorService::class);
+        $end = CarbonImmutable::create(2026, 10, 21, 15, 0, 0, 'America/Lima');
+        $this->travelTo($end);
+
+        try {
+            $complete = function (string $token, int $referenceId, int $elapsed, int $active, int $discarded, ?int $lastOffset = null) use ($service, $user, $end): void {
+                $start = $end->subSeconds($elapsed);
+                $last = $end->subSeconds($lastOffset ?? 0);
+                $request = Request::create('/', 'POST', [
+                    'indicador_token' => $token,
+                    // Exactamente el formato UTC enviado por Date.prototype.toISOString().
+                    'indicador_inicio' => $start->setTimezone('UTC')->format('Y-m-d\\TH:i:s.v\\Z'),
+                    'indicador_ultima_interaccion' => $last->setTimezone('UTC')->format('Y-m-d\\TH:i:s.v\\Z'),
+                    'indicador_activo_segundos' => $active,
+                    'indicador_pausa_descartada_segundos' => $discarded,
+                ]);
+                $service->complete($request, $user, 'clientes', 'cliente', $referenceId);
+            };
+
+            // Trabajo continuo: 10 s activos, sin pausa.
+            $complete('a1a11111-1111-4111-8111-111111111111', 101, 10, 10, 0);
+            // Inactividad menor que el umbral: los 60 s permanecen activos.
+            $complete('a2a22222-2222-4222-8222-222222222222', 102, 60, 60, 0);
+            // Inactividad de 150 s: el cliente acumula el límite de 120 s.
+            $complete('a3a33333-3333-4333-8333-333333333333', 103, 150, 120, 30);
+            // Tras una pausa de 30 s, una interacción válida agrega 20 s y el
+            // guardado agrega 10 s: 150 s activos acumulados, sin reinicio.
+            $complete('a4a44444-4444-4444-8444-444444444444', 104, 180, 150, 30, 0);
+
+            $rows = DB::table('mediciones_automaticas')->where('indicador', 'clientes')->orderBy('referencia_id')->get();
+            $this->assertCount(4, $rows);
+            $this->assertSame([10, 60, 120, 150], $rows->pluck('duracion_activa_segundos')->map(fn ($value) => (int) $value)->all());
+            $this->assertSame([0, 0, 30, 30], $rows->pluck('pausa_descartada_segundos')->map(fn ($value) => (int) $value)->all());
+
+            $this->assertSame(0, (int) $rows[0]->pausa_descartada_segundos);
+            $this->assertSame(0, (int) $rows[1]->pausa_descartada_segundos);
+            $this->assertSame(30, (int) $rows[2]->pausa_descartada_segundos);
+            $this->assertSame(30, (int) $rows[3]->pausa_descartada_segundos);
+
+            // El panel usa AVG(duracion_activa_segundos), luego convierte a minutos.
+            $panel = $service->registration('clientes', 'Registro de clientes', '2026-10-21', '2026-10-21', '', '', '', '');
+            $this->assertSame(4, $panel['count']);
+            $this->assertEqualsWithDelta(85 / 60, $panel['average'], 0.000001);
+        } finally {
+            $this->travelBack();
+        }
+    }
+
     public function test_sales_and_staff_do_not_multiply_contracts_or_amounts(): void
     {
         $this->seedSales(); $service=app(BusinessIntelligenceService::class);
@@ -145,8 +250,8 @@ class AnalyticsMethodsTest extends TestCase
             $table->dateTime('creado_en')->nullable();
         });
         DB::table('materiales')->insert([
-            ['codigo'=>'MAT-01','nombre'=>'Cable activo','stock_actual'=>8,'stock_minimo'=>2,'unidad_medida'=>'m','estado'=>'ACTIVO','creado_en'=>'2001-01-15 09:00:00'],
-            ['codigo'=>'MAT-02','nombre'=>'Cable inactivo','stock_actual'=>8,'stock_minimo'=>2,'unidad_medida'=>'m','estado'=>'INACTIVO','creado_en'=>'2001-01-15 09:00:00'],
+            ['codigo'=>'MAT-01','nombre'=>'Cable activo','stock_actual'=>8,'stock_minimo'=>2,'unidad_medida'=>'m','unidad_base'=>'m','estado'=>'ACTIVO','creado_en'=>'2001-01-15 09:00:00'],
+            ['codigo'=>'MAT-02','nombre'=>'Cable inactivo','stock_actual'=>8,'stock_minimo'=>2,'unidad_medida'=>'m','unidad_base'=>'m','estado'=>'INACTIVO','creado_en'=>'2001-01-15 09:00:00'],
         ]);
 
         $chart=app(BusinessIntelligenceService::class)->chart('materiales','mes','bar','cantidad','2001-01-01','2001-01-31');

@@ -43,6 +43,8 @@ return function (string $command, string $arg, User $actor, array $clientData, a
     $tech = $makeUser('tech', Role::TECHNICIAN, true);
     $other = $makeUser('other', Role::TECHNICIAN, true);
     $warehouse = $makeUser('warehouse', Role::WAREHOUSE);
+    $requester = $makeUser('requester', Role::INSTALLATIONS);
+    $requester->roles()->syncWithoutDetaching([Role::where('nombre', Role::WAREHOUSE)->value('rol_id')]);
     $reviewer = $makeUser('reviewer', Role::MANAGER);
     $orders = app(InstallationOrderService::class);
     $resources = app(InstallationResourceRequestService::class);
@@ -79,6 +81,7 @@ return function (string $command, string $arg, User $actor, array $clientData, a
         }
     }
     return ['first' => $first, 'second' => $second, 'office' => $office->nombre_usuario,
+        'warehouse' => $warehouse->nombre_usuario, 'requester' => $requester->nombre_usuario, 'reviewer' => $reviewer->nombre_usuario,
         'tech' => $tech->nombre_usuario, 'tech_id' => $tech->empleado_id, 'other' => $other->nombre_usuario,
         'other_id' => $other->empleado_id];
 };

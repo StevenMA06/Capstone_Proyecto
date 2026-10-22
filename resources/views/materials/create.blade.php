@@ -3,8 +3,8 @@
 @section('materials-content')
 <div class="form-layout">
     @can('materials.manage')
-@routecan($material->exists ? 'materials.update' : 'materials.store')<form class="standard-form" method="POST" action="{{ $material->exists ? route('materials.update', $material) : route('materials.store') }}" novalidate>
-        @csrf
+@routecan($material->exists ? 'materials.update' : 'materials.store')<form class="standard-form" method="POST" action="{{ $material->exists ? route('materials.update', $material) : route('materials.store') }}" novalidate @if(! $material->exists) data-auto-indicator="materiales" data-auto-context="material-create" data-auto-start-fields="#nombre" @endif>
+        @csrf @if(! $material->exists) @include('components.automatic-indicator-fields', ['context' => 'material-create']) @endif
         @if($material->exists)
             @method('PUT')
         @endif

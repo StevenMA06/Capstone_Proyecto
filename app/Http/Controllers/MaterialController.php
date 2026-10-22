@@ -79,6 +79,8 @@ class MaterialController extends Controller
             ]);
         }
 
+        app(\App\Services\AutomaticIndicatorService::class)->complete($request, $request->user(), 'materiales', 'material', $material->getKey());
+
         $message = 'Material registrado correctamente.';
         if ($material->stock_actual > 0) {
             $message .= ' Se generó automáticamente el movimiento de entrada en el Kardex.';

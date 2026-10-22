@@ -3,8 +3,8 @@
 @section('equipments-content')
 <div class="form-layout">
     @can('equipments.manage')
-@routecan($equipment->exists ? 'equipments.update' : 'equipments.store')<form class="standard-form" method="POST" action="{{ $equipment->exists ? route('equipments.update', $equipment) : route('equipments.store') }}" novalidate>
-        @csrf
+@routecan($equipment->exists ? 'equipments.update' : 'equipments.store')<form class="standard-form" method="POST" action="{{ $equipment->exists ? route('equipments.update', $equipment) : route('equipments.store') }}" novalidate @if(! $equipment->exists) data-auto-indicator="equipos" data-auto-context="equipment-create" data-auto-start-fields="#numero_serie" @endif>
+        @csrf @if(! $equipment->exists) @include('components.automatic-indicator-fields', ['context' => 'equipment-create']) @endif
         @if($equipment->exists)
             @method('PUT')
         @endif

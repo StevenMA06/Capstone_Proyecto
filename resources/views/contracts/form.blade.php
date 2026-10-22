@@ -13,11 +13,11 @@
         <p class="notice">Se necesita al menos un cliente, una zona y una cuenta responsable activa vinculada.</p>
     @endif
     @php($selectedClient = $clients->firstWhere('cliente_id', (int) old('cliente_id', $contract->cliente_id ?? ($selectedClientId ?? 0))))
-    @can('contracts.manage')<form method="POST" @if ($contract) enctype="multipart/form-data" @endif
+    @can('contracts.manage')<form method="POST" @if ($contract) enctype="multipart/form-data" @endif @if (! $contract) data-auto-indicator="contratos" data-auto-context="contract-create" data-auto-start-fields="#cliente_id" @endif
         action="{{ $contract ? route('contracts.update', $contract->contrato_id) : route('contracts.store') }}"
         class="account-form contracts-form" data-coverage="{{ $coverage->toJson() }}"
         data-current-plan="{{ $contract->plan_id ?? '' }}" data-current-price="{{ $contract->precio_contratado ?? '' }}">
-        @csrf @if ($contract)
+        @csrf @if (! $contract) @include('components.automatic-indicator-fields', ['context' => 'contract-create']) @endif @if ($contract)
             @method('PUT')
         @endif
         <div class="contracts-form-grid">

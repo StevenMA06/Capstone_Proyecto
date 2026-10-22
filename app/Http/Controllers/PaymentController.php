@@ -91,6 +91,8 @@ class PaymentController extends Controller
             return back()->withInput()->withErrors($exception->errors());
         }
 
+        app(\App\Services\AutomaticIndicatorService::class)->complete($request, $request->user(), 'pagos', 'pago', $payment->getKey());
+
         return redirect()->route('payments.show', $payment)
             ->with('status', 'Pago #'.$payment->getKey().' registrado correctamente.');
     }

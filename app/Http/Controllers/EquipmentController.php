@@ -65,6 +65,8 @@ class EquipmentController extends Controller
             ]);
         }
 
+        app(\App\Services\AutomaticIndicatorService::class)->complete($request, $request->user(), 'equipos', 'equipo', $equipment->getKey());
+
         return redirect()->route('equipments.show', $equipment)
             ->with('status', 'Equipo registrado correctamente. Se generó automáticamente el movimiento de entrada en el Kardex.');
     }

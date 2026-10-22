@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ asset('css/management.css') }}?v=15">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     @include('layouts.session-monitor')
+    <script src="{{ asset('js/automatic-indicators.js') }}?v=4" defer></script>
     @stack('styles')
     <link rel="stylesheet" href="{{ asset('css/record-tables.css') }}?v=1">
     <script src="{{ asset('js/validation-es.js') }}?v=1" defer></script>

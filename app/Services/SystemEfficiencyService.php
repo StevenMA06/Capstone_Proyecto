@@ -7,26 +7,34 @@ use Illuminate\Support\Facades\Schema;
 
 class SystemEfficiencyService
 {
-    private const PROCESSES = [
-        'clientes' => ['Registro de clientes', 'El sistema aún no registra un evento de inicio y otro de finalización para este flujo.'],
-        'contratos' => ['Registro de contratos', 'El sistema aún no registra un evento de inicio y otro de finalización para este flujo.'],
-        'pagos' => ['Registro de pagos', 'El sistema aún no registra un evento de inicio y otro de finalización para este flujo.'],
-        'instalaciones' => ['Ejecución de instalaciones', null],
-        'inventario' => ['Registro de inventario', 'El sistema aún no registra un evento de inicio y otro de finalización para este flujo.'],
-    ];
-
     public function summary(string $from, string $to, string $process): array
     {
-        $definitions = $process === 'all'
-            ? self::PROCESSES
-            : array_intersect_key(self::PROCESSES, [$process => true]);
-
-        $measurements = [];
-        foreach ($definitions as $key => [$title, $unavailableReason]) {
-            $measurements[$key] = $key === 'instalaciones'
-                ? $this->installations($from, $to, $title)
-                : $this->unavailable($title, $unavailableReason);
-        }
+        $automatic = app(AutomaticIndicatorService::class);
+        $all = [
+            'clientes' => $automatic->registration('clientes', 'Registro de clientes', $from, $to,
+                'Primera interacción válida con Tipo de documento o Número de documento.', 'Guardado exitoso al pulsar «Registrar cliente».',
+                'Registro creado en clientes.', 'No inicia al abrir el formulario. Conserva el inicio tras errores corregibles y descuenta inactividad.'),
+            'contratos' => $automatic->registration('contratos', 'Registro de contratos', $from, $to,
+                'Primera selección válida del Cliente.', 'Guardado exitoso al pulsar «Guardar contrato».',
+                'Contrato creado y pedido asociado disponible.', 'No inicia al abrir el formulario. Conserva el inicio tras errores corregibles y descuenta inactividad.'),
+            'pagos' => $automatic->registration('pagos', 'Registro de pagos', $from, $to,
+                'Primera interacción válida con Fecha de pago o Método de pago.', 'Guardado exitoso al confirmar el pago.',
+                'Pago creado en pagos.', 'No inicia al abrir el formulario. Conserva el inicio tras errores corregibles y descuenta inactividad.'),
+            'instalaciones' => $this->installations($from, $to, 'Ejecución de instalaciones'),
+            'pedido_programacion' => $automatic->orderProgramming($from, $to),
+            'equipos' => $automatic->registration('equipos', 'Registro de equipos', $from, $to,
+                'Primera introducción de datos en N° Serie.', 'Guardado exitoso al pulsar «Registrar equipo».',
+                'Equipo creado y movimiento de inventario asociado.', 'No inicia al abrir el formulario. Conserva el inicio tras errores corregibles y descuenta inactividad.'),
+            'materiales' => $automatic->registration('materiales', 'Registro de materiales', $from, $to,
+                'Primera introducción de datos en Nombre del material.', 'Guardado exitoso al pulsar «Registrar material».',
+                'Material creado y movimiento de inventario asociado si corresponde.', 'No inicia al abrir el formulario. Conserva el inicio tras errores corregibles y descuenta inactividad.'),
+        ];
+        $keys = match ($process) {
+            'clientes' => ['clientes'], 'contratos' => ['contratos'], 'pagos' => ['pagos'],
+            'instalaciones' => ['instalaciones', 'pedido_programacion'], 'inventario' => ['equipos', 'materiales'],
+            default => array_keys($all),
+        };
+        $measurements = array_intersect_key($all, array_flip($keys));
 
         return compact('measurements');
     }
@@ -50,6 +58,7 @@ class SystemEfficiencyService
             'title' => $title,
             'available' => true,
             'count' => (int) ($row->cantidad ?? 0),
+            'count_label' => 'instalaciones finalizadas',
             'average' => $row?->promedio !== null ? (float) $row->promedio / 60 : null,
             'minimum' => $row?->minimo !== null ? (float) $row->minimo / 60 : null,
             'maximum' => $row?->maximo !== null ? (float) $row->maximo / 60 : null,

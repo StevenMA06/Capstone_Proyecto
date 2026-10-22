@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AutomaticIndicatorService;
 use App\Services\InstallationOrderService;
 use App\Services\InstallationResourceRequestService;
 use App\Support\ResourceRejectionReasons;
@@ -14,7 +15,11 @@ use Illuminate\Validation\ValidationException;
 
 class InstallationOrderController extends Controller
 {
-    public function __construct(private InstallationOrderService $orders, private InstallationResourceRequestService $resources) {}
+    public function __construct(
+        private InstallationOrderService $orders,
+        private InstallationResourceRequestService $resources,
+        private AutomaticIndicatorService $indicators,
+    ) {}
 
     public function index(Request $request)
     {
@@ -214,11 +219,16 @@ class InstallationOrderController extends Controller
         ], [
             'tecnico_secundario_id.different' => 'El técnico principal y el segundo técnico deben ser personas distintas.',
         ]);
+        $previouslyAssigned = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->value('tecnico_id');
         $this->orders->assign($request->user(), $pedido, $data['tecnico_id'],
             $data['motivo_reprogramacion'] ?? null, $data['fecha_programada'] ?? null,
             isset($data['tecnico_secundario_id']) ? (int) $data['tecnico_secundario_id'] : null);
 
-        $code = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->value('codigo');
+        $order = DB::table('pedidos_instalacion')->where('pedido_id', $pedido)->first(['codigo', 'estado']);
+        if (! $previouslyAssigned && $order?->estado === 'PROGRAMADO') {
+            $this->indicators->complete($request, $request->user(), 'pedido_asignacion', 'pedido', $pedido, $pedido);
+        }
+        $code = $order?->codigo;
         return redirect()->to(route('orders.index', ['search' => $code]).'#pedido-'.$pedido)
             ->with('status', 'Equipo técnico definido para la visita. Cada técnico recibirá un aviso y deberá confirmar antes de iniciar.');
     }
@@ -273,7 +283,8 @@ class InstallationOrderController extends Controller
             throw ValidationException::withMessages(['recurso' => 'Selecciona equipo, material o ambos antes de enviar la solicitud.']);
         }
 
-        DB::transaction(function () use ($request, $pedido, $data, $materialRequests): void {
+        $groupId = null;
+        DB::transaction(function () use ($request, $pedido, $data, $materialRequests, &$groupId): void {
             $groupId = $this->resources->createRequestGroup($request->user(), $pedido,
                 filled($data['equipo_id'] ?? null), $materialRequests !== []);
             if (filled($data['equipo_id'] ?? null)) {
@@ -284,6 +295,8 @@ class InstallationOrderController extends Controller
                     (string) $material['cantidad_asignada'], $groupId);
             }
         }, 3);
+
+        $this->indicators->complete($request, $request->user(), 'pedido_recursos', 'solicitud_recurso', (int) $groupId, $pedido, (int) $groupId);
 
         $parts = array_filter([filled($data['equipo_id'] ?? null) ? 'equipo' : null,
             $materialRequests !== [] ? count($materialRequests).' '.(count($materialRequests) === 1 ? 'material' : 'materiales') : null]);

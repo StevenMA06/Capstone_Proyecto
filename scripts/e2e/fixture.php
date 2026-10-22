@@ -5,8 +5,13 @@ use App\Models\Employee;
 use App\Models\Role;
 use App\Models\ServicePlan;
 use App\Models\User;
+use App\Services\AutomaticIndicatorService;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 // Herramienta CLI exclusiva de Playwright: no añade rutas ni cambia producción.
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
@@ -71,6 +76,55 @@ try {
             $output = (require __DIR__.'/inventory-fixtures.php')($command, $argv[2] ?? '', $actor, $clientData, $planData);
         } elseif (str_starts_with($command, 'commercial-')) {
             $output = (require __DIR__.'/commercial-fixtures.php')($command, $argv[2] ?? '', $actor, $clientData, $planData);
+        } elseif ($command === 'indicator-order-state') {
+            if (! ctype_digit((string) ($argv[2] ?? ''))) throw new RuntimeException('Pedido de indicador E2E inválido.');
+            $output = ['rows' => DB::table('mediciones_automaticas')->where('pedido_id', (int) $argv[2])
+                ->orderBy('medicion_id')->get()->map(fn ($row) => (array) $row)->all()];
+        } elseif ($command === 'indicator-state') {
+            [$indicator, $referenceType, $referenceId] = array_pad(explode('|', $argv[2] ?? '', 3), 3, null);
+            if (! in_array($indicator, ['clientes', 'contratos', 'pagos', 'equipos', 'materiales', 'pedido_recursos', 'pedido_asignacion'], true)
+                || ! ctype_digit((string) $referenceId)) throw new RuntimeException('Consulta de indicador E2E inválida.');
+            $output = ['rows' => DB::table('mediciones_automaticas')->where('indicador', $indicator)
+                ->where('referencia_tipo', $referenceType)->where('referencia_id', (int) $referenceId)
+                ->orderBy('medicion_id')->get()->map(fn ($row) => (array) $row)->all()];
+        } elseif ($command === 'indicator-deterministic') {
+            // Casos controlados contra MySQL E2E. Carbon se restablece antes de salir
+            // para no afectar los demás fixtures ni el servidor HTTP.
+            $end = CarbonImmutable::create(2026, 10, 22, 10, 0, 0, 'America/Lima');
+            Carbon::setTestNow($end);
+            try {
+                $service = app(AutomaticIndicatorService::class);
+                $baseReference = random_int(900000000, 999999000);
+                $tokens = [];
+                foreach ([[10, 10, 0], [60, 60, 0], [150, 120, 30], [180, 150, 30]] as $index => [$elapsed, $active, $discarded]) {
+                    $token = (string) Str::uuid();
+                    $tokens[] = $token;
+                    $start = $end->subSeconds($elapsed);
+                    $request = Request::create('/', 'POST', [
+                        'indicador_token' => $token,
+                        'indicador_inicio' => $start->setTimezone('UTC')->format('Y-m-d\\TH:i:s.v\\Z'),
+                        'indicador_ultima_interaccion' => $end->setTimezone('UTC')->format('Y-m-d\\TH:i:s.v\\Z'),
+                        'indicador_activo_segundos' => $active,
+                        'indicador_pausa_descartada_segundos' => $discarded,
+                    ]);
+                    $service->complete($request, $actor, 'clientes', 'prueba_indicador', $baseReference + $index);
+                }
+                $output = ['rows' => DB::table('mediciones_automaticas')->whereIn('token', $tokens)
+                    ->orderBy('medicion_id')->get()->map(fn ($row) => (array) $row)->all()];
+            } finally {
+                Carbon::setTestNow();
+            }
+        } elseif ($command === 'indicator-order-summary') {
+            $date = $argv[2] ?? now('America/Lima')->toDateString();
+            if (! preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date)) throw new RuntimeException('Fecha de indicador inválida.');
+            $rows = DB::table('mediciones_automaticas as m')->join('pedidos_instalacion as p', 'p.pedido_id', '=', 'm.pedido_id')
+                ->whereIn('m.indicador', ['pedido_recursos', 'pedido_asignacion'])->where('m.estado', 'COMPLETADA')
+                ->whereNotNull('p.asignado_en')->whereBetween('p.asignado_en', [$date.' 00:00:00', $date.' 23:59:59'])
+                ->groupBy('m.pedido_id')
+                ->havingRaw("SUM(CASE WHEN m.indicador = 'pedido_recursos' THEN 1 ELSE 0 END) > 0 AND SUM(CASE WHEN m.indicador = 'pedido_asignacion' THEN 1 ELSE 0 END) > 0")
+                ->select('m.pedido_id')->selectRaw('SUM(m.duracion_activa_segundos) AS duracion')->get();
+            $panel = app(AutomaticIndicatorService::class)->orderProgramming($date, $date);
+            $output = ['raw' => ['count' => $rows->count(), 'average' => $rows->isEmpty() ? null : (float) $rows->avg('duracion') / 60], 'panel' => $panel];
         } else {
         $output = match ($command) {
             'client-data' => $clientData,
