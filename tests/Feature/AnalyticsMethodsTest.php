@@ -34,7 +34,7 @@ class AnalyticsMethodsTest extends TestCase
         $connection['database']=$this->fixtureDatabase; $connection['url']=null;
         config(['database.connections.analytics_methods'=>$connection,'database.default'=>'analytics_methods']);
         Schema::create('empleados',function(Blueprint $t){$t->id('empleado_id');$t->string('nombres');$t->string('apellidos');$t->string('cargo');});
-        Schema::create('usuarios',function(Blueprint $t){$t->id('usuario_id');$t->unsignedBigInteger('empleado_id')->nullable();});
+        Schema::create('usuarios',function(Blueprint $t){$t->id('usuario_id');$t->unsignedBigInteger('empleado_id')->nullable();$t->string('nombre_usuario')->nullable();});
         Schema::create('contratos',function(Blueprint $t){$t->id('contrato_id');$t->unsignedBigInteger('responsable_id');$t->dateTime('fecha_registro');$t->string('estado');});
         Schema::create('ventas',function(Blueprint $t){$t->id('venta_id');$t->unsignedBigInteger('contrato_id')->unique();$t->unsignedBigInteger('responsable_id');$t->dateTime('fecha_venta');$t->decimal('monto',12,2);$t->string('estado');});
         Schema::create('pagos',function(Blueprint $t){$t->id('pago_id');$t->unsignedBigInteger('registrado_por');$t->dateTime('creado_en');$t->dateTime('fecha_pago')->nullable();$t->decimal('monto',12,2);$t->string('estado');});
@@ -260,6 +260,34 @@ class AnalyticsMethodsTest extends TestCase
         $this->assertSame(1.0,$chart['total']);
         $this->assertSame(1,$report['total']);
     }
+    public function test_kardex_report_shows_the_responsible_name_instead_of_the_user_id(): void
+    {
+        Schema::table('equipos', function (Blueprint $table): void {
+            $table->string('codigo')->nullable();
+            $table->string('nombre')->nullable();
+        });
+        Schema::table('materiales', function (Blueprint $table): void {
+            $table->string('codigo')->nullable();
+        });
+        Schema::table('movimientos_inventario', function (Blueprint $table): void {
+            $table->string('tipo_movimiento')->nullable();
+            $table->decimal('cantidad', 12, 3)->nullable();
+        });
+
+        DB::table('empleados')->insert(['empleado_id' => 8, 'nombres' => 'Rosa', 'apellidos' => 'Quispe', 'cargo' => 'Almacén']);
+        DB::table('usuarios')->insert(['usuario_id' => 8, 'empleado_id' => 8, 'nombre_usuario' => 'rosa.quispe']);
+        DB::table('equipos')->insert(['equipo_id' => 4, 'codigo' => 'EQ-004', 'nombre' => 'Router', 'estado' => 'DISPONIBLE']);
+        DB::table('movimientos_inventario')->insert([
+            'movimiento_id' => 1, 'responsable_id' => 8, 'equipo_id' => 4,
+            'tipo_movimiento' => 'ENTRADA', 'cantidad' => 1, 'fecha_movimiento' => '2001-01-15 09:00:00',
+        ]);
+
+        $report = app(ReportExportService::class)->report('kardex_movimientos', '2001-01-01', '2001-01-31');
+
+        $this->assertSame('Responsable', $report['columns'][7]);
+        $this->assertSame('Rosa Quispe', $report['rows'][0][7]);
+    }
+
     public function test_data_routes_require_authentication(): void
     {
         $this->getJson('/analytics/avg-client-registration-time')->assertUnauthorized();

@@ -42,3 +42,6 @@ Thumbs.db
 /stress-test-results/
 hardware-metrics-*.csv
 .hardware-profile
+
+# Artefactos locales generados por pruebas y herramientas.
+/artifacts/
