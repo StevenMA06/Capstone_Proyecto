@@ -37,7 +37,7 @@ class ReportExportService
         'materiales_existencias' => ['Inventario', 'Existencias de materiales', 'Corte actual', ['Código','Material','Stock actual','Stock mínimo','Unidad','Estado']],
         'materiales_bajo_minimo' => ['Inventario', 'Materiales bajo el stock mínimo', 'Corte actual', ['Código','Material','Stock actual','Stock mínimo','Unidad','Estado']],
         'equipos_estado' => ['Inventario', 'Disponibilidad de equipos', 'Corte actual', ['Código','Equipo','N.º de serie','Condición','Estado']],
-        'kardex_movimientos' => ['Inventario', 'Movimientos de Kardex', 'Fecha de movimiento', ['ID movimiento','Código','Artículo','Movimiento','Fecha','Cantidad','Unidad','ID responsable']],
+        'kardex_movimientos' => ['Inventario', 'Movimientos de Kardex', 'Fecha de movimiento', ['ID movimiento','Código','Artículo','Movimiento','Fecha','Cantidad','Unidad','Responsable']],
     ];
 
     public function modules(bool $manager): array
@@ -82,9 +82,9 @@ class ReportExportService
                 ->select('codigo', 'nombre', 'stock_actual', 'stock_minimo')
                 ->selectRaw('CASE WHEN inventario_en_empaque = 1 THEN unidad_empaque ELSE unidad_base END as unidad_medida')->addSelect('estado')->orderBy('nombre'),
             'equipos_estado' => DB::table('equipos')->where('estado', '<>', 'INACTIVO')->select('codigo', 'nombre', 'numero_serie', 'condicion', 'estado')->orderBy('estado')->orderBy('nombre'),
-            'kardex_movimientos' => DB::table('movimientos_inventario')->leftJoin('equipos', 'equipos.equipo_id', '=', 'movimientos_inventario.equipo_id')->leftJoin('materiales', 'materiales.material_id', '=', 'movimientos_inventario.material_id')->leftJoin('usuarios', 'usuarios.usuario_id', '=', 'movimientos_inventario.responsable_id')
+            'kardex_movimientos' => DB::table('movimientos_inventario')->leftJoin('equipos', 'equipos.equipo_id', '=', 'movimientos_inventario.equipo_id')->leftJoin('materiales', 'materiales.material_id', '=', 'movimientos_inventario.material_id')->leftJoin('usuarios', 'usuarios.usuario_id', '=', 'movimientos_inventario.responsable_id')->leftJoin('empleados', 'empleados.empleado_id', '=', 'usuarios.empleado_id')
                 ->whereBetween(DB::raw('DATE(movimientos_inventario.fecha_movimiento)'), [$from, $to])
-                ->select('movimientos_inventario.movimiento_id', DB::raw("COALESCE(equipos.codigo, materiales.codigo) AS codigo"), DB::raw("COALESCE(equipos.nombre, materiales.nombre) AS articulo"), 'movimientos_inventario.tipo_movimiento', 'movimientos_inventario.fecha_movimiento', 'movimientos_inventario.cantidad', DB::raw("COALESCE(CASE WHEN materiales.inventario_en_empaque = 1 THEN materiales.unidad_empaque ELSE materiales.unidad_base END, 'unidad') AS unidad"), 'movimientos_inventario.responsable_id')->orderByDesc('movimientos_inventario.fecha_movimiento'),
+                ->select('movimientos_inventario.movimiento_id', DB::raw("COALESCE(equipos.codigo, materiales.codigo) AS codigo"), DB::raw("COALESCE(equipos.nombre, materiales.nombre) AS articulo"), 'movimientos_inventario.tipo_movimiento', 'movimientos_inventario.fecha_movimiento', 'movimientos_inventario.cantidad', DB::raw("COALESCE(CASE WHEN materiales.inventario_en_empaque = 1 THEN materiales.unidad_empaque ELSE materiales.unidad_base END, 'unidad') AS unidad"), DB::raw("COALESCE(NULLIF(TRIM(CONCAT(COALESCE(empleados.nombres, ''), ' ', COALESCE(empleados.apellidos, ''))), ''), usuarios.nombre_usuario, CONCAT('Usuario #', movimientos_inventario.responsable_id)) AS responsable"))->orderByDesc('movimientos_inventario.fecha_movimiento'),
             default => throw new \InvalidArgumentException('El tipo de reporte no existe.'),
         };
 
