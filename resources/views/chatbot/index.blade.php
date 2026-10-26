@@ -344,7 +344,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const suggestionsArea = document.getElementById('suggestionsArea');
     
     let conversationHistory = [];
+    let displayedMessages = [];
     let isFirstMessage = true;
+    const storageKey = 'chatbot:conversation:{{ auth()->id() }}';
+
+    // Conservar esta conversación durante la sesión de la pestaña.
+    try {
+        const saved = JSON.parse(sessionStorage.getItem(storageKey) || '{}');
+        if (Array.isArray(saved.messages)) {
+            displayedMessages = saved.messages.filter(item =>
+                item && ['user', 'assistant'].includes(item.role) &&
+                typeof item.content === 'string' && item.content.length <= 10000 &&
+                (item.source === null || item.source === undefined || typeof item.source === 'string')
+            ).slice(-50);
+            conversationHistory = Array.isArray(saved.history)
+                ? saved.history.filter(item => item && ['user', 'assistant'].includes(item.role) && typeof item.content === 'string').slice(-10)
+                : [];
+            if (displayedMessages.length) {
+                messagesArea.innerHTML = '';
+                suggestionsArea.style.display = 'none';
+                isFirstMessage = false;
+                displayedMessages.forEach(item => addMessage(item.role, item.content, item.source, false));
+            }
+        }
+    } catch (error) {
+        // Puede estar deshabilitado el almacenamiento de la pestaña.
+    }
+
+    function saveConversation() {
+        try {
+            sessionStorage.setItem(storageKey, JSON.stringify({ messages: displayedMessages, history: conversationHistory }));
+        } catch (error) {
+            // El chat sigue funcionando si el navegador no permite guardar la sesión.
+        }
+    }
 
     // Auto-resize textarea
     messageInput.addEventListener('input', function() {
@@ -366,6 +399,8 @@ document.addEventListener('DOMContentLoaded', function() {
     btnNewConversation.addEventListener('click', function() {
         if (confirm('¿Iniciar una nueva conversación? Se perderá el historial actual.')) {
             conversationHistory = [];
+            displayedMessages = [];
+            try { sessionStorage.removeItem(storageKey); } catch (error) {}
             messagesArea.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon"><i class="bi bi-chat-dots"></i></div>
@@ -434,6 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (conversationHistory.length > 10) {
                     conversationHistory = conversationHistory.slice(-10);
                 }
+                saveConversation();
             } else {
                 addMessage('assistant', data.response || 'Ocurrió un error al procesar tu consulta.', null);
             }
@@ -448,25 +484,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function addMessage(role, content, source = null) {
+    function addMessage(role, content, source = null, persist = true) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `chatbot-message ${role}`;
         
-        const avatar = role === 'user' ? '{{ substr(auth()->user()->name, 0, 1) }}' : '<i class="bi bi-robot"></i>';
         const avatarClass = role === 'user' ? 'user' : 'assistant';
-        
-        messageDiv.innerHTML = `
-            <div class="message-avatar ${avatarClass}">${avatar}</div>
-            <div>
-                <div class="message-content">
-                    ${content}
-                </div>
-                ${source ? `<div class="message-source">Fuente interna: ${source}</div>` : ''}
-            </div>
-        `;
+        const avatar = document.createElement('div');
+        avatar.className = `message-avatar ${avatarClass}`;
+        if (role === 'user') avatar.textContent = @json(mb_substr(auth()->user()->name, 0, 1));
+        else avatar.innerHTML = '<i class="bi bi-robot"></i>';
+        const body = document.createElement('div');
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        messageContent.textContent = content;
+        body.appendChild(messageContent);
+        if (source) {
+            const sourceElement = document.createElement('div');
+            sourceElement.className = 'message-source';
+            sourceElement.textContent = `Fuente interna: ${source}`;
+            body.appendChild(sourceElement);
+        }
+        messageDiv.append(avatar, body);
         
         messagesArea.appendChild(messageDiv);
         messagesArea.scrollTop = messagesArea.scrollHeight;
+        if (persist) {
+            displayedMessages.push({ role, content, source });
+            displayedMessages = displayedMessages.slice(-50);
+            saveConversation();
+        }
     }
 
     function addLoadingIndicator() {

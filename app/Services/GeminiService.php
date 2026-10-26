@@ -11,6 +11,7 @@ use App\Models\Employee;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 
 class GeminiService
 {
@@ -52,10 +53,16 @@ class GeminiService
             
         } catch (\Exception $e) {
             Log::error('Gemini API Error: ' . $e->getMessage());
+
+            $message = $e instanceof QueryException
+                ? 'No pude consultar los datos internos para responder. Contacta al administrador si vuelve a ocurrir.'
+                : ($e->getCode() === 429
+                    ? 'Gemini alcanzó su límite de consultas. Intenta más tarde.'
+                    : 'Lo siento, ocurrió un error al procesar tu consulta. Por favor, intenta nuevamente.');
             
             return [
                 'success' => false,
-                'response' => 'Lo siento, ocurrió un error al procesar tu consulta. Por favor, intenta nuevamente.',
+                'response' => $message,
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ];
         }
@@ -75,6 +82,7 @@ class GeminiService
             'clientes_activos' => Client::where('estado', 'ACTIVO')->count(),
             'total_contratos' => Contract::count(),
             'contratos_activos' => Contract::where('estado', 'ACTIVO')->count(),
+            'contratos_registrados_mes_actual' => Contract::whereBetween('fecha_registro', [now()->startOfMonth(), now()->endOfMonth()])->count(),
             'total_empleados' => Employee::count(),
             'empleados_activos' => Employee::where('estado', 'ACTIVO')->count(),
             'total_equipos' => Equipment::count(),
@@ -153,7 +161,7 @@ class GeminiService
                 'total' => Client::count(),
                 'activos' => Client::where('estado', 'ACTIVO')->count(),
                 'inactivos' => Client::where('estado', 'INACTIVO')->count(),
-                'con_contrato' => Client::has('contract')->count(),
+                'con_contrato' => Client::whereIn('cliente_id', Contract::select('cliente_id'))->count(),
                 'nota' => '⚠️ Por privacidad, no se muestran datos personales de clientes (nombres, DNI, teléfonos, direcciones)'
             ];
         }
@@ -180,9 +188,7 @@ class GeminiService
         }
 
         if (preg_match('/pago|pagos|deuda|mora|pendiente/i', $query)) {
-            $context['pagos_pendientes'] = Payment::where('estado', 'PENDIENTE')
-                ->orWhere('estado', 'VENCIDO')
-                ->count();
+            $context['pagos_pendientes'] = Payment::where('estado', 'PENDIENTE')->count();
             
             $context['monto_pendiente'] = Payment::whereIn('estado', ['PENDIENTE', 'VENCIDO'])
                 ->sum('monto');
@@ -338,7 +344,7 @@ class GeminiService
             ]);
 
         if (!$response->successful()) {
-            throw new \Exception('Error en la API de Gemini: ' . $response->body());
+            throw new \RuntimeException('Error en la API de Gemini: ' . $response->body(), $response->status());
         }
 
         $data = $response->json();
