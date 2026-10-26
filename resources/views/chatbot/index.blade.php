@@ -107,6 +107,37 @@
     color: white;
 }
 
+.chatbot-message.assistant .message-content {
+    white-space: normal;
+    line-height: 1.5;
+}
+
+.chatbot-message.assistant .message-content p,
+.chatbot-message.assistant .message-content ul,
+.chatbot-message.assistant .message-content ol {
+    margin: 0 0 0.75rem;
+}
+
+.chatbot-message.assistant .message-content > :last-child {
+    margin-bottom: 0;
+}
+
+.chatbot-message.assistant .message-content ul,
+.chatbot-message.assistant .message-content ol {
+    padding-left: 1.4rem;
+}
+
+.chatbot-message.assistant .message-content li + li {
+    margin-top: 0.25rem;
+}
+
+.chatbot-message.assistant .message-content h3 {
+    margin: 0 0 0.6rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
 .message-source {
     font-size: 0.75rem;
     color: #6b7280;
@@ -496,7 +527,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const body = document.createElement('div');
         const messageContent = document.createElement('div');
         messageContent.className = 'message-content';
-        messageContent.textContent = content;
+        if (role === 'assistant') renderAssistantMessage(messageContent, content);
+        else messageContent.textContent = content;
         body.appendChild(messageContent);
         if (source) {
             const sourceElement = document.createElement('div');
@@ -512,6 +544,61 @@ document.addEventListener('DOMContentLoaded', function() {
             displayedMessages.push({ role, content, source });
             displayedMessages = displayedMessages.slice(-50);
             saveConversation();
+        }
+    }
+
+    function appendFormattedText(element, text) {
+        const bold = /\*\*([^*]+)\*\*/g;
+        let start = 0;
+        for (const match of text.matchAll(bold)) {
+            element.appendChild(document.createTextNode(text.slice(start, match.index)));
+            const strong = document.createElement('strong');
+            strong.textContent = match[1];
+            element.appendChild(strong);
+            start = match.index + match[0].length;
+        }
+        element.appendChild(document.createTextNode(text.slice(start)));
+    }
+
+    function renderAssistantMessage(container, content) {
+        let list = null;
+        let paragraph = null;
+        for (const rawLine of content.split(/\r?\n/)) {
+            const line = rawLine.trim();
+            if (!line) {
+                list = null;
+                paragraph = null;
+                continue;
+            }
+            const heading = line.match(/^#{1,3}\s+(.+)$/);
+            const bullet = line.match(/^[*-]\s+(.+)$/);
+            const numbered = line.match(/^\d+[.)]\s+(.+)$/);
+            if (heading) {
+                list = null;
+                paragraph = null;
+                const title = document.createElement('h3');
+                appendFormattedText(title, heading[1]);
+                container.appendChild(title);
+            } else if (bullet || numbered) {
+                paragraph = null;
+                const tag = bullet ? 'ul' : 'ol';
+                if (!list || list.tagName.toLowerCase() !== tag) {
+                    list = document.createElement(tag);
+                    container.appendChild(list);
+                }
+                const item = document.createElement('li');
+                appendFormattedText(item, (bullet || numbered)[1]);
+                list.appendChild(item);
+            } else {
+                list = null;
+                if (!paragraph) {
+                    paragraph = document.createElement('p');
+                    container.appendChild(paragraph);
+                } else {
+                    paragraph.appendChild(document.createElement('br'));
+                }
+                appendFormattedText(paragraph, line);
+            }
         }
     }
 

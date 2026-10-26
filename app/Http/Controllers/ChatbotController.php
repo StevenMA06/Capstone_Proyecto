@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\GeminiService;
+use App\Services\LocalChatService;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\Payment;
@@ -20,7 +21,7 @@ use Illuminate\Support\Str;
 
 class ChatbotController extends Controller
 {
-    public function __construct(private GeminiService $gemini) {}
+    public function __construct(private GeminiService $gemini, private LocalChatService $localChat) {}
 
     /**
      * Muestra la interfaz del chatbot
@@ -60,17 +61,25 @@ class ChatbotController extends Controller
             ]);
         }
 
-        // Verificar que Gemini esté configurado
-        if (!$this->gemini->isConfigured()) {
-            return response()->json([
-                'success' => false,
-                'response' => 'El chatbot no está configurado correctamente. Por favor, contacta al administrador.',
-                'source' => 'Sistema'
-            ]);
+        // Consultar Gemini cuando esté disponible; el asistente interno cubre
+        // las métricas conocidas si la API está desactivada o falla.
+        if ($this->gemini->isConfigured()) {
+            $result = $this->gemini->query($message, $history);
+            if ($result['success']) {
+                return response()->json($result);
+            }
         }
 
-        // Procesar la consulta con Gemini
-        return response()->json($this->gemini->query($message, $history));
+        try {
+            return response()->json($this->localChat->query($message));
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'response' => 'No pude consultar los datos internos en este momento. Intenta nuevamente.',
+                'source' => 'Sistema',
+            ]);
+        }
     }
 
     /**

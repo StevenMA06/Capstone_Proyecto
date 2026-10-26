@@ -21,9 +21,9 @@ class GeminiService
 
     public function __construct()
     {
-        $this->apiKey = config('gemini.api_key');
-        $this->model = config('gemini.model');
-        $this->apiUrl = config('gemini.api_url');
+        $this->apiKey = (string) config('gemini.api_key', '');
+        $this->model = (string) config('gemini.model', '');
+        $this->apiUrl = (string) config('gemini.api_url', '');
     }
 
     /**
@@ -201,6 +201,14 @@ class GeminiService
                 ->groupBy('estado')
                 ->get()
                 ->toArray();
+
+            // Dar detalles de cada equipo para consultas generales, con un límite
+            // explícito para no enviar un inventario enorme al modelo.
+            $context['equipos_detalle'] = Equipment::orderBy('codigo')
+                ->limit(20)
+                ->get(['codigo', 'nombre', 'tipo', 'marca', 'modelo', 'estado'])
+                ->toArray();
+            $context['equipos_detalle_limite'] = 20;
             
             $context['equipos_mantenimiento'] = Equipment::where('estado', 'MANTENIMIENTO')
                 ->get(['codigo', 'nombre', 'tipo'])
@@ -263,6 +271,7 @@ class GeminiService
         $prompt .= "1. Usa los datos del contexto JSON para dar respuestas precisas y actualizadas\n";
         $prompt .= "2. IMPORTANTE: Para conteos totales (clientes, contratos, pagos, etc.), usa SIEMPRE las cifras de 'stats' en el JSON, NO cuentes manualmente los elementos listados\n";
         $prompt .= "3. Las listas detalladas (contratos_activos, materiales_stock_bajo, etc.) pueden estar limitadas a los primeros N elementos, pero 'stats' siempre tiene el conteo completo\n";
+        $prompt .= "3a. Para equipos, usa 'equipos_detalle' cuando pidan datos de todos los equipos. Si la lista está limitada, dilo claramente; no afirmes que los demás equipos carecen de datos.\n";
         $prompt .= "4. Para montos monetarios, usa el formato: S/ X,XXX.XX (soles peruanos)\n";
         $prompt .= "5. Para fechas, usa formato legible: '15 de octubre de 2026'\n";
         $prompt .= "6. Formatea números grandes con separadores de miles: 1,234 en lugar de 1234\n";
