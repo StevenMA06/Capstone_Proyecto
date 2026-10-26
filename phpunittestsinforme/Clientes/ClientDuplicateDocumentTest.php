@@ -41,7 +41,7 @@ class ClientDuplicateDocumentTest extends TestCase
     /**
      * Data Provider: Múltiples DNIs duplicados
      */
-    public function dniDuplicadoProvider(): array
+    public static function dniDuplicadoProvider(): array
     {
         return [
             'DNI simple duplicado' => [

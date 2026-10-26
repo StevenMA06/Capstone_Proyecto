@@ -1,0 +1,112 @@
+GUÍA PARA EJECUTAR LUNNYS PERÚ: APLICACIÓN, PAGOS Y CORREOS
+========================================================
+
+Ubicación del proyecto:
+C:\xampp\htdocs\Capstone\Capstone_Proyecto
+
+En este equipo, PHP no está en el PATH de PowerShell. Usa
+C:\xampp\php\php.exe en lugar de escribir solo php.
+
+1. PREPARACIÓN INICIAL (una sola vez en una instalación nueva)
+-----------------------------------------------------------
+- Instala las dependencias con composer install.
+- Configura el archivo .env con la base de datos y el proveedor de correo.
+- Inicia MySQL desde el panel de XAMPP y crea la base indicada en .env.
+- Desde PowerShell, situado en la carpeta del proyecto, ejecuta:
+
+  C:\xampp\php\php.exe artisan key:generate
+  C:\xampp\php\php.exe artisan config:clear
+  C:\xampp\php\php.exe artisan migrate --seed
+  C:\xampp\php\php.exe artisan app:create-user --role=Administrador --username=administrador
+
+En una instalación existente, conserva la APP_KEY y los datos: no repitas
+key:generate ni uses migrate:fresh. Si el código se actualizó, ejecuta
+C:\xampp\php\php.exe artisan migrate.
+
+2. PARA USAR EL SISTEMA CADA DÍA
+--------------------------------
+Inicia MySQL en XAMPP. Luego abre dos terminales PowerShell en la carpeta
+del proyecto y déjalas abiertas:
+
+Terminal 1 (sitio web):
+  C:\xampp\php\php.exe artisan serve --host=127.0.0.1 --port=8000
+
+Abre http://127.0.0.1:8000/login
+
+Terminal 2 (tareas automáticas):
+  C:\xampp\php\php.exe artisan schedule:work
+
+El programador ejecuta automáticamente:
+- Cada minuto: employees:expire y contracts:finalize.
+- Cada minuto: payments:update-overdue y contracts:cancel-for-non-payment.
+- Cada hora: payments:send-reminders.
+
+Para comprobar el calendario:
+  C:\xampp\php\php.exe artisan schedule:list
+
+En un servidor se programa artisan schedule:run cada minuto en el
+programador del sistema, en vez de dejar schedule:work abierto.
+
+3. COMANDOS MANUALES DE PAGOS
+----------------------------
+Primero se puede simular el efecto sin modificar datos:
+
+  C:\xampp\php\php.exe artisan payments:update-overdue --dry-run
+  C:\xampp\php\php.exe artisan contracts:cancel-for-non-payment --dry-run
+  C:\xampp\php\php.exe artisan payments:send-reminders --dry-run
+
+Para ejecutar los cambios o envíos reales inmediatamente:
+
+  C:\xampp\php\php.exe artisan payments:update-overdue
+  C:\xampp\php\php.exe artisan contracts:cancel-for-non-payment
+  C:\xampp\php\php.exe artisan payments:send-reminders
+
+payments:update-overdue actualiza los estados de pagos atrasados.
+contracts:cancel-for-non-payment cancela contratos que cumplen la condición
+de impago. payments:send-reminders envía recordatorios antes del vencimiento,
+avisos de vencimiento y notificaciones de cancelación. El envío normal
+registra qué avisos ya se enviaron para no repetirlos en siguientes ciclos.
+
+Con schedule:work abierto, NO hace falta ejecutar estos tres comandos
+manualmente cada día. Se usan para comprobar o adelantar una ejecución.
+
+4. CORREOS Y PRUEBAS
+-------------------
+El .env de este proyecto indica MAIL_MAILER=brevo. Para enviar correos
+reales hacen falta BREVO_API_KEY válida y MAIL_FROM_ADDRESS verificado.
+Después de modificar .env, ejecuta:
+
+  C:\xampp\php\php.exe artisan optimize:clear
+
+Prueba básica hacia una dirección tuya:
+
+  C:\xampp\php\php.exe artisan app:mail-test tu-correo@example.com
+
+Prueba de aviso de pago vencido:
+
+  C:\xampp\php\php.exe artisan test:send-overdue-email --payment=123
+
+Sustituye 123 por el ID de un pago de prueba cuyo cliente tenga un correo
+controlado por ti. Este comando ENVÍA un correo real. Si omites --payment,
+envía a TODOS los pagos en estado VENCIDO:
+
+  C:\xampp\php\php.exe artisan test:send-overdue-email
+
+El comando de prueba no tiene --dry-run ni marca el aviso como enviado;
+por eso puede repetir correos. Para revisar destinatarios sin enviarlos,
+usa payments:send-reminders --dry-run (con los filtros del envío normal).
+
+ACCESS_TWO_FACTOR_ENABLED=false en el .env actual: el código de acceso por
+correo está desactivado. Si quieres activarlo, primero confirma que llega
+app:mail-test, cambia la variable a true y ejecuta artisan optimize:clear.
+
+5. QUÉ NO REQUIERE OTRO PROCESO
+------------------------------
+- Los pagos se registran y confirman desde la interfaz. No hay una pasarela
+  de cobro automático ni un servicio de pagos adicional que arrancar.
+- Con QUEUE_CONNECTION=sync, los correos no requieren queue:work.
+- npm run dev es para desarrollo de recursos Vite; no sustituye al servidor
+  Laravel ni al programador de tareas.
+
+Nota: estos comandos actúan sobre la base configurada en .env. Revisa esa
+configuración antes de ejecutar los comandos reales.

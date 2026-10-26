@@ -185,7 +185,7 @@ class ContractStoreTest extends TestCase
             'duracion_texto' => ['doce', 'Duración como texto'],
             'duracion_decimal' => [12.5, 'Duración 12.5 (decimal)'],
             'duracion_null' => [null, 'Duración NULL'],
-            'duracion_muy_grande' => [999, 'Duración 999 meses (83 años)'],
+            'duracion_muy_grande' => [65536, 'Duración superior al máximo permitido de 65535 meses'],
             'duracion_negativa_grande' => [-100, 'Duración -100 meses'],
             'duracion_float_negativo' => [-5.5, 'Duración -5.5'],
             'duracion_string_vacio' => ['', 'Duración string vacío'],

@@ -46,7 +46,7 @@ class AccountActiveMiddlewareTest extends TestCase
     /**
      * Data Provider: Múltiples casos de usuario activo
      */
-    public function usuarioActivoProvider(): array
+    public static function usuarioActivoProvider(): array
     {
         return [
             'Administrador estándar' => [
@@ -134,7 +134,7 @@ class AccountActiveMiddlewareTest extends TestCase
     /**
      * Data Provider: Múltiples casos de usuario inactivo
      */
-    public function usuarioInactivoProvider(): array
+    public static function usuarioInactivoProvider(): array
     {
         return [
             'Empleado despedido' => [
@@ -217,7 +217,7 @@ class AccountActiveMiddlewareTest extends TestCase
     /**
      * Data Provider: Múltiples casos de fecha de cese
      */
-    public function fechaCeseProvider(): array
+    public static function fechaCeseProvider(): array
     {
         return [
             'Cese hace 10 días' => [

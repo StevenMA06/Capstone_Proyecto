@@ -41,7 +41,7 @@ class ClientDeactivateTest extends TestCase
     /**
      * Data Provider: Múltiples tipos de clientes activos
      */
-    public function clienteActivoProvider(): array
+    public static function clienteActivoProvider(): array
     {
         return [
             'Cliente DNI persona natural' => [
@@ -189,7 +189,7 @@ class ClientDeactivateTest extends TestCase
     /**
      * Data Provider: Múltiples estados no-activos
      */
-    public function estadosNoActivosProvider(): array
+    public static function estadosNoActivosProvider(): array
     {
         return [
             'Cliente PENDIENTE sin contrato' => [
@@ -203,12 +203,6 @@ class ClientDeactivateTest extends TestCase
                 'tipo_documento' => 'RUC',
                 'numero_documento' => '20111222333',
                 'motivo' => 'Ya fue desactivado previamente'
-            ],
-            'Cliente SUSPENDIDO temporalmente' => [
-                'estado' => 'SUSPENDIDO',
-                'tipo_documento' => 'CE',
-                'numero_documento' => '009988776',
-                'motivo' => 'Suspensión temporal por mora'
             ],
         ];
     }

@@ -22,7 +22,7 @@ class UserAuthorizationSimpleTest extends TestCase
     /**
      * Data Provider: Múltiples casos de usuario inactivo con diferentes roles
      */
-    public function usuarioInactivoProvider(): array
+    public static function usuarioInactivoProvider(): array
     {
         return [
             'Admin inactivo' => [
@@ -32,13 +32,13 @@ class UserAuthorizationSimpleTest extends TestCase
                 'permiso' => 'contracts.create'
             ],
             'Vendedor inactivo' => [
-                'rol' => 'Vendedor',
+                'rol' => Role::OFFICE,
                 'cargo' => 'Vendedor',
                 'estado' => 'INACTIVO',
                 'permiso' => 'clients.view'
             ],
             'Técnico inactivo' => [
-                'rol' => 'Técnico',
+                'rol' => Role::TECHNICIAN,
                 'cargo' => 'Técnico',
                 'estado' => 'INACTIVO',
                 'permiso' => 'installation_orders.view'
@@ -50,7 +50,7 @@ class UserAuthorizationSimpleTest extends TestCase
                 'permiso' => 'payments.complete'
             ],
             'Almacenero inactivo' => [
-                'rol' => 'Almacenero',
+                'rol' => Role::WAREHOUSE,
                 'cargo' => 'Almacenero',
                 'estado' => 'INACTIVO',
                 'permiso' => 'materials.view'
@@ -114,26 +114,26 @@ class UserAuthorizationSimpleTest extends TestCase
     /**
      * Data Provider: Múltiples permisos para validar acceso admin
      */
-    public function permisosAdminProvider(): array
+    public static function permisosAdminProvider(): array
     {
         return [
             'Permisos de contratos' => [
-                'permisos' => ['contracts.create', 'contracts.view', 'contracts.update', 'contracts.delete']
+                'permisos' => ['contracts.create', 'contracts.view', 'contracts.update', 'contracts.reactivate']
             ],
             'Permisos de clientes' => [
-                'permisos' => ['clients.create', 'clients.view', 'clients.update', 'clients.deactivate']
+                'permisos' => ['clients.create', 'clients.view', 'clients.update', 'clients.status']
             ],
             'Permisos de pagos' => [
-                'permisos' => ['payments.view', 'payments.complete', 'payments.generate', 'payments.cancel']
+                'permisos' => ['payments.view', 'payments.complete', 'payments.create', 'payments.cancel']
             ],
             'Permisos de órdenes' => [
-                'permisos' => ['installation_orders.create', 'installation_orders.assign', 'installation_orders.cancel']
+                'permisos' => ['orders.view', 'orders.schedule', 'orders.cancel']
             ],
             'Permisos de técnicos' => [
-                'permisos' => ['technicians.view', 'technicians.assign', 'technicians.availability']
+                'permisos' => ['technician.view', 'technician.supervise', 'technician.start']
             ],
             'Permisos de materiales' => [
-                'permisos' => ['materials.create', 'materials.view', 'materials.stock_entry', 'materials.stock_exit']
+                'permisos' => ['materials.create', 'materials.view', 'materials.entry', 'materials.exit']
             ],
         ];
     }
@@ -196,7 +196,7 @@ class UserAuthorizationSimpleTest extends TestCase
     /**
      * Data Provider: Múltiples permisos inexistentes
      */
-    public function permisoInexistenteProvider(): array
+    public static function permisoInexistenteProvider(): array
     {
         return [
             'Permiso con typo' => [
@@ -276,7 +276,7 @@ class UserAuthorizationSimpleTest extends TestCase
     /**
      * Data Provider: Múltiples escenarios de fecha de cese
      */
-    public function fechaCeseProvider(): array
+    public static function fechaCeseProvider(): array
     {
         return [
             'Cese hace 5 días' => [
@@ -288,13 +288,13 @@ class UserAuthorizationSimpleTest extends TestCase
             'Cese hace 1 mes' => [
                 'dias_atras' => 30,
                 'cargo' => 'Vendedor',
-                'rol' => 'Vendedor',
+                'rol' => Role::OFFICE,
                 'permiso' => 'clients.view'
             ],
             'Cese hace 3 meses' => [
                 'dias_atras' => 90,
                 'cargo' => 'Técnico',
-                'rol' => 'Técnico',
+                'rol' => Role::TECHNICIAN,
                 'permiso' => 'installation_orders.view'
             ],
             'Cese ayer' => [
@@ -306,7 +306,7 @@ class UserAuthorizationSimpleTest extends TestCase
             'Cese hace 1 año' => [
                 'dias_atras' => 365,
                 'cargo' => 'Almacenero',
-                'rol' => 'Almacenero',
+                'rol' => Role::WAREHOUSE,
                 'permiso' => 'materials.view'
             ],
         ];

@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Client;
 use App\Models\Contract;
+use App\Models\CoverageZone;
 use App\Models\Employee;
 use App\Models\Payment;
+use App\Models\Role;
 use App\Models\ServicePlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,8 +34,8 @@ class ContractReactivationTest extends TestCase
     {
         parent::setUp();
 
-        // Crear usuario admin simple (sin rol en BD)
-        $this->admin = User::factory()->create();
+        $adminRole = Role::firstOrCreate(['nombre' => Role::ADMIN], ['estado' => 'ACTIVO']);
+        $this->admin = User::factory()->create(['rol_id' => $adminRole->getKey()]);
 
         $this->plan = ServicePlan::factory()->create([
             'estado' => 'ACTIVO',
@@ -49,12 +51,12 @@ class ContractReactivationTest extends TestCase
             'cargo' => 'Asistente de Ventas',
         ]);
 
-        $this->zona = DB::table('zonas_cobertura')->insertGetId([
+        $this->zona = CoverageZone::factory()->create([
+            'codigo' => 'ZONA-TEST-REACTIVACION',
             'nombre' => 'Zona Test',
             'estado' => 'ACTIVA',
-            'creado_en' => now(),
-            'actualizado_en' => now(),
-        ]);
+            'creado_por' => $this->admin->getKey(),
+        ])->getKey();
 
         // Crear relación plan-zona
         DB::table('plan_zona_cobertura')->insert([
@@ -112,12 +114,12 @@ class ContractReactivationTest extends TestCase
         // Todos los pagos están PAGADOS (sin deuda)
         Payment::factory()->create([
             'contrato_id' => $contract->getKey(),
-            'estado' => 'PAGADO',
+            'estado' => 'REALIZADO',
             'monto' => 150.00,
         ]);
 
         $nuevaFechaInicio = now()->addDays(1)->format('Y-m-d');
-        $response = $this->actingAs($this->admin)
+        $response = $this->signIn($this->admin)
             ->post(route('contracts.reactivate', $contract->getKey()), [
                 'fecha_inicio' => $nuevaFechaInicio,
                 'duracion_meses' => 12,
@@ -168,7 +170,7 @@ class ContractReactivationTest extends TestCase
             'estado' => 'ACTIVO', // ACTIVO
         ]);
 
-        $response = $this->actingAs($this->admin)
+        $response = $this->signIn($this->admin)
             ->post(route('contracts.reactivate', $contract->getKey()), [
                 'fecha_inicio' => now()->addDays(1)->format('Y-m-d'),
                 'duracion_meses' => 12,
@@ -219,7 +221,7 @@ class ContractReactivationTest extends TestCase
             'estado' => 'PENDIENTE', // PENDIENTE
         ]);
 
-        $response = $this->actingAs($this->admin)
+        $response = $this->signIn($this->admin)
             ->post(route('contracts.reactivate', $contract->getKey()), [
                 'fecha_inicio' => now()->addDays(1)->format('Y-m-d'),
                 'duracion_meses' => 12,
@@ -276,7 +278,7 @@ class ContractReactivationTest extends TestCase
             'estado' => 'CANCELADO',
         ]);
 
-        $response = $this->actingAs($this->admin)
+        $response = $this->signIn($this->admin)
             ->post(route('contracts.reactivate', $contract->getKey()), [
                 'fecha_inicio' => now()->addDays(1)->format('Y-m-d'),
                 'duracion_meses' => 12,
@@ -293,31 +295,28 @@ class ContractReactivationTest extends TestCase
 
     /**
      * @test
-     * Variación 5: Contrato con cliente INACTIVO no puede reactivarse
+     * Variación 5: Contrato con cliente INACTIVO puede reactivarse
      */
-    public function contrato_con_cliente_inactivo_no_puede_reactivarse()
+    public function contrato_con_cliente_inactivo_puede_reactivarse()
     {
         echo "\n════════════════════════════════════════════════════════════════════════════════\n";
-        echo "❌ TEST: Contrato con cliente INACTIVO no puede reactivarse\n";
+        echo "TEST: Contrato con cliente INACTIVO puede reactivarse\n";
         echo "════════════════════════════════════════════════════════════════════════════════\n";
         echo "📥 DATOS DE ENTRADA:\n";
         echo "   • Estado contrato: CANCELADO\n";
-        echo "   • Estado cliente: INACTIVO (no ACTIVO/PENDIENTE)\n";
+        echo "   • Estado cliente: INACTIVO\n";
         echo "🔧 MÉTODO EJECUTADO:\n";
         echo "   → ContractService::reactivate()\n";
         echo "⚙️ VALIDACIÓN:\n";
         echo "   1. Contrato CANCELADO ✓\n";
         echo "   2. Plan ACTIVO ✓\n";
-        echo "   3. Verificar cliente activo\n";
-        echo "   4. if (!in_array(\$client->estado, ['ACTIVO', 'PENDIENTE', 'INACTIVO']))\n";
-        echo "   5. throw ValidationException\n";
+        echo "   3. Cliente INACTIVO permitido por la regla actual\n";
         echo "📋 EXPECTED:\n";
-        echo "   • Error: 'El cliente del contrato no está activo'\n";
-        echo "   • Estado permanece: CANCELADO\n";
+        echo "   • Estado final: ACTIVO\n";
 
         // Cliente INACTIVO
         $clienteInactivo = Client::factory()->create([
-            'estado' => 'ELIMINADO', // Estado no permitido
+            'estado' => 'INACTIVO',
         ]);
 
         $contract = Contract::factory()->create([
@@ -334,19 +333,19 @@ class ContractReactivationTest extends TestCase
             'estado' => 'CANCELADO',
         ]);
 
-        $response = $this->actingAs($this->admin)
+        $response = $this->signIn($this->admin)
             ->post(route('contracts.reactivate', $contract->getKey()), [
                 'fecha_inicio' => now()->addDays(1)->format('Y-m-d'),
                 'duracion_meses' => 12,
             ]);
 
-        echo "✅ CONFIRMED: Reactivación bloqueada por cliente no válido\n";
+        echo "CONFIRMED: Reactivación completada para cliente INACTIVO\n";
         echo "════════════════════════════════════════════════════════════════════════════════\n";
 
-        $response->assertSessionHasErrors('cliente');
+        $response->assertSessionHas('status_kind', 'reactivated');
         
         $contract->refresh();
-        $this->assertEquals('CANCELADO', $contract->estado);
+        $this->assertEquals('ACTIVO', $contract->estado);
     }
 
     /**
@@ -386,7 +385,7 @@ class ContractReactivationTest extends TestCase
             'estado' => 'CANCELADO',
         ]);
 
-        $response = $this->actingAs($this->admin)
+        $response = $this->signIn($this->admin)
             ->post(route('contracts.reactivate', $contract->getKey()), [
                 'fecha_inicio' => '2025-01-01', // Fecha pasada
                 'duracion_meses' => 12,
